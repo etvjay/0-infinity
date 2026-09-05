@@ -1,0 +1,27 @@
+# 0-infinity Workflows
+
+## Opportunity workflow
+
+```text
+DISCOVERED → RESEARCHING → COUNCIL_REVIEW
+→ THESIS_ACCEPTED | THESIS_REFUSED
+→ MANDATE_ISSUED → ARMED → TRIGGERED → VALIDATING
+→ SUBMITTING → ACKNOWLEDGED → PARTIALLY_FILLED | FILLED
+```
+
+Alternative terminal states: `REFUSED`, `INVALIDATED`, `EXPIRED`, `SUPERSEDED`, `CANCELLED`, `FAILED`.
+
+## Thesis maintenance
+
+```text
+ACTIVE → REFRESHING → RENEWED | SUPERSEDED | REVOKED | EXPIRED
+```
+
+Refresh creates new immutable versions; it never edits an old mandate.
+
+## Development workflow
+
+```text
+CHANGE RECORD → BUILDER → TESTER → NEGATIVE MUTATIONS → REVIEWER
+→ APPROVE/REVISE → INTEGRATE → RUNTIME EVIDENCE → GROUND TRUTH
+```

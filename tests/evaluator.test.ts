@@ -5,10 +5,10 @@ import { createMandateRuntime } from "../src/runtime/mandateRuntime.js";
 import { evaluateMandate, type EvaluationPolicy, type LiveAccountState, type LiveMarketState, type StateEnvelope } from "../src/evaluator/index.js";
 
 const thesis: TradeThesis = { thesisId: "thesis-1", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .8, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c" }, createdAt: 1_000, expiresAt: 61_000 };
-const compilerPolicy: CompilerPolicy = { accountId: "acct-1", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 5, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_000, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
+const compilerPolicy: CompilerPolicy = { accountId: "acct-1", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 5, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_975, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
 const mandate = compileMandate({ workflowId: "wf-1" }, thesis, compilerPolicy, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
 const policy: EvaluationPolicy = { maxMarketAgeMs: 1_000, maxAccountAgeMs: 1_000, maxAnchorVersionLag: 3n };
-const market: StateEnvelope<LiveMarketState> = { version: 7n, observedAt: 2_500, receivedAt: 2_501, value: { venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", bidPrice: 99_900, askPrice: 100_000, markPrice: 99_950, expectedMoveBps: 50, spreadBps: 5, slippageBps: 2, feeBps: 3, fundingCostBps: 0 } };
+const market: StateEnvelope<LiveMarketState> = { version: 7n, observedAt: 2_500, receivedAt: 2_501, value: { venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", bidPrice: 99_950, askPrice: 100_000, markPrice: 99_975, expectedMoveBps: 50, spreadBps: 5, slippageBps: 2, feeBps: 3, fundingCostBps: 0 } };
 const account: StateEnvelope<LiveAccountState> = { version: 4n, observedAt: 2_500, receivedAt: 2_501, value: { accountId: "acct-1", availableNotional: 2_000, currentNotional: 0, currentLossBps: 0 } };
 const active = { workflowId: "wf-1", authorityStatus: "ACTIVE" as const };
 const evaluate = (overrides: Partial<{ workflow: unknown; mandate: unknown; runtime: unknown; market: unknown; account: unknown; policy: unknown; now: unknown }> = {}) => (evaluateMandate as any)(
@@ -128,8 +128,51 @@ test("rejects impossible market values and negative costs", () => {
 test("uses canonical inclusive ABOVE and BELOW trigger boundaries", () => {
   const aboveThesis = { ...thesis, direction: "SHORT" as const, side: "SELL" as const };
   const above = compileMandate({ workflowId: "wf-a" }, aboveThesis, { ...compilerPolicy, entryTrigger: "ABOVE" as const }, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
-  const aboveMarket = { ...market, value: { ...market.value, symbol: above.symbol, markPrice: above.entry.minPrice, bidPrice: above.entry.minPrice, askPrice: above.entry.minPrice } };
+  const aboveMarket = { ...market, value: { ...market.value, symbol: above.symbol, markPrice: above.entry.maxPrice, bidPrice: above.entry.maxPrice, askPrice: above.entry.maxPrice, spreadBps: 0 } };
   assert.equal(evaluateMandate({ workflowId: "wf-a", authorityStatus: "ACTIVE" }, above, createMandateRuntime({ expiresAt: above.expiresAt }), aboveMarket, account, policy, 2_600).kind, "EXECUTION_INTENT");
-  const belowMarket = { ...market, value: { ...market.value, markPrice: mandate.entry.maxPrice, askPrice: mandate.entry.maxPrice, bidPrice: mandate.entry.maxPrice } };
+  const belowMarket = { ...market, value: { ...market.value, markPrice: mandate.entry.minPrice, askPrice: mandate.entry.minPrice, bidPrice: mandate.entry.minPrice, spreadBps: 0 } };
   assert.equal(evaluate({ market: belowMarket }).kind, "EXECUTION_INTENT");
+});
+
+test("rejects non-finite, negative, and unbounded evaluation policies", () => {
+  for (const field of ["maxMarketAgeMs", "maxAccountAgeMs"] as const) {
+    for (const value of [Number.NaN, Number.POSITIVE_INFINITY, -1]) {
+      const result = evaluate({ policy: { ...policy, [field]: value } });
+      assert.equal(result.kind, "EXECUTION_REFUSAL");
+    }
+  }
+  for (const value of [-1n, 1n << 200n]) {
+    const result = evaluate({ policy: { ...policy, maxAnchorVersionLag: value } });
+    assert.equal(result.kind, "EXECUTION_REFUSAL");
+  }
+});
+
+test("rejects malformed optional thesis hashes and future anchors", () => {
+  const malformed = { ...mandate, thesisHash: 42, provenance: { ...mandate.provenance, thesisHash: 42 } };
+  assert.equal(evaluate({ mandate: malformed }).kind, "EXECUTION_REFUSAL");
+  const future = { ...mandate, anchor: { ...mandate.anchor, observedAt: 2_601, receivedAt: 2_602 } };
+  assert.equal(evaluate({ mandate: future }).kind, "EXECUTION_REFUSAL");
+});
+
+test("validates runtime history instead of trusting frozen forged state", () => {
+  const forged = Object.freeze({
+    state: "VALIDATING", expiresAt: mandate.expiresAt,
+    history: Object.freeze([{ fromState: "TRIGGERED", toState: "VALIDATING", at: 2_000, reason: "ok" }]),
+  });
+  assert.equal(evaluate({ runtime: forged }).kind, "EXECUTION_REFUSAL");
+});
+
+test("reconciles reported spread with ask-relative quote spread", () => {
+  assert.equal(evaluate({ market: { ...market, value: { ...market.value, spreadBps: 4 } } }).kind, "EXECUTION_REFUSAL");
+  assert.equal(evaluate({ market: { ...market, value: { ...market.value, spreadBps: -1 } } }).kind, "EXECUTION_REFUSAL");
+});
+
+test("trigger semantics are boundary-sensitive and non-vacuous", () => {
+  const belowMiss = evaluate({ market: { ...market, value: { ...market.value, markPrice: mandate.entry.minPrice + 1 } } });
+  assert.equal(belowMiss.kind, "EXECUTION_REFUSAL");
+  if (belowMiss.kind === "EXECUTION_REFUSAL") assert.equal(belowMiss.code, "ENTRY_TRIGGER_NOT_MET");
+  const aboveMandate = compileMandate({ workflowId: "wf-above" }, { ...thesis, direction: "SHORT", side: "SELL" }, { ...compilerPolicy, entryTrigger: "ABOVE" }, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
+  const aboveMiss = evaluateMandate({ workflowId: "wf-above", authorityStatus: "ACTIVE" }, aboveMandate, createMandateRuntime({ expiresAt: aboveMandate.expiresAt }), { ...market, value: { ...market.value, bidPrice: aboveMandate.entry.maxPrice - 1, askPrice: aboveMandate.entry.maxPrice - 1, markPrice: aboveMandate.entry.maxPrice - 1, spreadBps: 0, symbol: aboveMandate.symbol } }, account, policy, 2_600);
+  assert.equal(aboveMiss.kind, "EXECUTION_REFUSAL");
+  if (aboveMiss.kind === "EXECUTION_REFUSAL") assert.equal(aboveMiss.code, "ENTRY_TRIGGER_NOT_MET");
 });

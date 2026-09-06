@@ -18,7 +18,7 @@ Mandate authority/persistence boundary between immutable domain mandates and lat
 
 ## status
 
-`CANDIDATE / LOCAL_PASS — pending fresh independent review` (DECISION B-LOCK-001 remediation; local development backend evidence ceiling)
+`IMPLEMENTED / INTEGRATED / LOCAL_PASS` (DECISION B-LOCK-001; local development backend evidence ceiling)
 
 ## dependencies
 
@@ -98,11 +98,11 @@ The canonical invariant `INV-M05` names revoked mandates, but frozen M-B1-C deli
 
 ## evidence_produced
 
-`npm run check` PASS; `npm test` PASS; `git diff --check` PASS after focused remediation. Focused compiled Node tests cover replaced RELEASED-directory identity blocking, coherent persisted authority/runtime/revocation/consumption combinations, and typed fail-closed revoke rejection for submitting, consumed, expired, superseded, and terminal mandates while preserving idempotent repeated revoke for canonical revoked records. Evidence ceiling: `LOCAL DEVELOPMENT BACKEND` only; candidate remains pending fresh independent review.
+`npm run check` PASS; `npm test` PASS with 262/262 tests; focused compiled B tests PASS with 32/32 tests; `git diff --check` PASS. Independent review APPROVE on exact candidate `d5ae66a5b1220a8bf43dd4dcb62a160a815d2010`; cherry-picked integration commit is recorded separately by Git. Evidence ceiling: `LOCAL DEVELOPMENT BACKEND` only. This proves local persistence, fail-closed contention/recovery blocking, authority consumption semantics, and tested local races; it does not prove production/distributed durability, live exchange behavior, or Ground Truth promotion.
 
 ## review_verdict
 
-Pending independent review.
+`APPROVE` — independent review of exact commit `d5ae66a5b1220a8bf43dd4dcb62a160a815d2010` found no issues. The prior released-lock replacement was reproduced and returned `RECOVERY_BLOCKED` without mutating the lock.
 
 ## ground_truth_before
 

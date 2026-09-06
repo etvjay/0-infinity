@@ -4,7 +4,7 @@ Branch target: `agent/mb1-evaluator`.
 
 ## Status
 
-`IMPLEMENTED_LOCAL` — deterministic evaluator and focused tests added on integrated A/B/C baseline.
+`REVISED_LOCAL` — independent D review verdict `REVISE`; remediation applied for every listed fail-open finding. Review rejection: future timestamps, negative/impossible market/account values, incomplete mandate validation, optional authority status, incomplete account/version chronology checks, and under-specified trigger semantics could produce an execution intent or throw on hostile input.
 
 ## Scope
 

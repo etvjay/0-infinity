@@ -5,10 +5,10 @@ import { createMandateRuntime } from "../src/runtime/mandateRuntime.js";
 import { evaluateMandate, type EvaluationPolicy, type LiveAccountState, type LiveMarketState, type StateEnvelope } from "../src/evaluator/index.js";
 
 const thesis: TradeThesis = { thesisId: "thesis-1", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .8, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c" }, createdAt: 1_000, expiresAt: 61_000 };
-const compilerPolicy: CompilerPolicy = { accountId: "acct-1", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 5, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_975, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
+const compilerPolicy: CompilerPolicy = { accountId: "acct-1", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 6, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_975, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
 const mandate = compileMandate({ workflowId: "wf-1" }, thesis, compilerPolicy, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
 const policy: EvaluationPolicy = { maxMarketAgeMs: 1_000, maxAccountAgeMs: 1_000, maxAnchorVersionLag: 3n };
-const market: StateEnvelope<LiveMarketState> = { version: 7n, observedAt: 2_500, receivedAt: 2_501, value: { venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", bidPrice: 99_950, askPrice: 100_000, markPrice: 99_975, expectedMoveBps: 50, spreadBps: 5, slippageBps: 2, feeBps: 3, fundingCostBps: 0 } };
+const market: StateEnvelope<LiveMarketState> = { version: 7n, observedAt: 2_500, receivedAt: 2_501, value: { venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", bidPrice: 99_950, askPrice: 100_000, markPrice: 99_975, expectedMoveBps: 50, spreadBps: (100_000 - 99_950) / ((100_000 + 99_950) / 2) * 10_000, slippageBps: 2, feeBps: 3, fundingCostBps: 0 } };
 const account: StateEnvelope<LiveAccountState> = { version: 4n, observedAt: 2_500, receivedAt: 2_501, value: { accountId: "acct-1", availableNotional: 2_000, currentNotional: 0, currentLossBps: 0 } };
 const active = { workflowId: "wf-1", authorityStatus: "ACTIVE" as const };
 const evaluate = (overrides: Partial<{ workflow: unknown; mandate: unknown; runtime: unknown; market: unknown; account: unknown; policy: unknown; now: unknown }> = {}) => (evaluateMandate as any)(
@@ -62,7 +62,7 @@ test("refuses cost, risk, and version violations fail closed", () => {
 });
 
 test("refuses collapsed executable edge and excessive exposure", () => {
-  const edge = evaluateMandate(active, mandate, createMandateRuntime({ expiresAt: mandate.expiresAt }), { ...market, value: { ...market.value, expectedMoveBps: 15, spreadBps: 5, slippageBps: 5, feeBps: 5 } }, account, policy, 2_600);
+  const edge = evaluateMandate(active, mandate, createMandateRuntime({ expiresAt: mandate.expiresAt }), { ...market, value: { ...market.value, expectedMoveBps: 15, spreadBps: market.value.spreadBps, slippageBps: 5, feeBps: 5 } }, account, policy, 2_600);
   assert.equal(edge.kind, "EXECUTION_REFUSAL");
   if (edge.kind === "EXECUTION_REFUSAL") assert.equal(edge.code, "EXECUTABLE_EDGE_TOO_LOW");
   const exposure = evaluateMandate(active, mandate, createMandateRuntime({ expiresAt: mandate.expiresAt }), market, { ...account, value: { ...account.value, availableNotional: 500 } }, policy, 2_600);
@@ -103,8 +103,8 @@ test("rejects future and cross-envelope chronology", () => {
   }
 });
 
-test("checks non-negative account version and bounded account lag", () => {
-  for (const version of [-1n, 3n, 11n]) {
+test("checks only non-negative account replay versions", () => {
+  for (const version of [-1n]) {
     const result = evaluate({ account: { ...account, version } });
     assert.equal(result.kind, "EXECUTION_REFUSAL");
     if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, "STATE_VERSION_STALE");
@@ -134,14 +134,14 @@ test("uses canonical inclusive ABOVE and BELOW trigger boundaries", () => {
   assert.equal(evaluate({ market: belowMarket }).kind, "EXECUTION_INTENT");
 });
 
-test("rejects non-finite, negative, and unbounded evaluation policies", () => {
+test("rejects non-finite and negative evaluation policies", () => {
   for (const field of ["maxMarketAgeMs", "maxAccountAgeMs"] as const) {
     for (const value of [Number.NaN, Number.POSITIVE_INFINITY, -1]) {
       const result = evaluate({ policy: { ...policy, [field]: value } });
       assert.equal(result.kind, "EXECUTION_REFUSAL");
     }
   }
-  for (const value of [-1n, 1n << 200n]) {
+  for (const value of [-1n]) {
     const result = evaluate({ policy: { ...policy, maxAnchorVersionLag: value } });
     assert.equal(result.kind, "EXECUTION_REFUSAL");
   }
@@ -162,7 +162,7 @@ test("validates runtime history instead of trusting frozen forged state", () => 
   assert.equal(evaluate({ runtime: forged }).kind, "EXECUTION_REFUSAL");
 });
 
-test("reconciles reported spread with ask-relative quote spread", () => {
+test("reconciles reported spread with midpoint-relative quote spread", () => {
   assert.equal(evaluate({ market: { ...market, value: { ...market.value, spreadBps: 4 } } }).kind, "EXECUTION_REFUSAL");
   assert.equal(evaluate({ market: { ...market, value: { ...market.value, spreadBps: -1 } } }).kind, "EXECUTION_REFUSAL");
 });
@@ -175,4 +175,55 @@ test("trigger semantics are boundary-sensitive and non-vacuous", () => {
   const aboveMiss = evaluateMandate({ workflowId: "wf-above", authorityStatus: "ACTIVE" }, aboveMandate, createMandateRuntime({ expiresAt: aboveMandate.expiresAt }), { ...market, value: { ...market.value, bidPrice: aboveMandate.entry.maxPrice - 1, askPrice: aboveMandate.entry.maxPrice - 1, markPrice: aboveMandate.entry.maxPrice - 1, spreadBps: 0, symbol: aboveMandate.symbol } }, account, policy, 2_600);
   assert.equal(aboveMiss.kind, "EXECUTION_REFUSAL");
   if (aboveMiss.kind === "EXECUTION_REFUSAL") assert.equal(aboveMiss.code, "ENTRY_TRIGGER_NOT_MET");
+});
+
+test("covers just-below, exact, and just-above mandate trigger thresholds", () => {
+  for (const [markPrice, expected] of [[mandate.entry.minPrice - 1, "EXECUTION_INTENT"], [mandate.entry.minPrice, "EXECUTION_INTENT"], [mandate.entry.minPrice + 1, "ENTRY_TRIGGER_NOT_MET"]] as const) {
+    const result = evaluate({ market: { ...market, value: { ...market.value, markPrice } } });
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? "EXECUTION_INTENT" : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+  const aboveMandate = compileMandate({ workflowId: "wf-trigger-boundary" }, { ...thesis, direction: "SHORT", side: "SELL" }, { ...compilerPolicy, entryTrigger: "ABOVE" }, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
+  for (const [markPrice, expected] of [[aboveMandate.entry.maxPrice - 1, "ENTRY_TRIGGER_NOT_MET"], [aboveMandate.entry.maxPrice, "EXECUTION_INTENT"], [aboveMandate.entry.maxPrice + 1, "EXECUTION_INTENT"]] as const) {
+    const bidPrice = markPrice - 1;
+    const askPrice = markPrice + 1;
+    const boundaryMarket = { ...market, value: { ...market.value, symbol: aboveMandate.symbol, bidPrice, askPrice, markPrice, spreadBps: (askPrice - bidPrice) / ((askPrice + bidPrice) / 2) * 10_000 } };
+    const result = evaluateMandate({ workflowId: aboveMandate.workflowId, authorityStatus: "ACTIVE" }, aboveMandate, createMandateRuntime({ expiresAt: aboveMandate.expiresAt }), boundaryMarket, account, policy, 2_600);
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? "EXECUTION_INTENT" : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+});
+
+test("does not compare account replay versions to market versions", () => {
+  const result = evaluate({ account: { ...account, version: 10n ** 30n } });
+  assert.equal(result.kind, "EXECUTION_INTENT");
+});
+
+test("accepts any non-negative explicit same-stream anchor lag policy", () => {
+  const result = evaluate({ policy: { ...policy, maxAnchorVersionLag: 10n ** 30n }, market: { ...market, version: 10n ** 30n + 7n } });
+  assert.equal(result.kind, "EXECUTION_INTENT");
+});
+
+test("reconciles spread using the symmetric midpoint-relative basis", () => {
+  const bid = 99_950;
+  const ask = 100_000;
+  const midpointRelativeSpread = (ask - bid) / ((ask + bid) / 2) * 10_000;
+  const result = evaluate({ market: { ...market, value: { ...market.value, bidPrice: bid, askPrice: ask, spreadBps: midpointRelativeSpread } } });
+  assert.equal(result.kind, "EXECUTION_INTENT");
+});
+
+test("covers just-below, exact, and just-above freshness and spread boundaries", () => {
+  const freshAt = 2_600 - policy.maxMarketAgeMs;
+  for (const [observedAt, expected] of [[freshAt - 1, "MARKET_STATE_STALE"], [freshAt, "EXECUTION_INTENT"], [freshAt + 1, "EXECUTION_INTENT"]] as const) {
+    const result = evaluate({ market: { ...market, observedAt, receivedAt: observedAt }, account: { ...account, observedAt, receivedAt: observedAt } });
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? "EXECUTION_INTENT" : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+  const midpointRelativeSpread = market.value.spreadBps;
+  for (const [maxSpreadBps, expected] of [[midpointRelativeSpread - 1e-9, "COST_CEILING"], [midpointRelativeSpread, "EXECUTION_INTENT"], [midpointRelativeSpread + 1e-9, "EXECUTION_INTENT"]] as const) {
+    const boundaryMandate = compileMandate({ workflowId: `wf-spread-${maxSpreadBps}` }, thesis, { ...compilerPolicy, maxSpreadBps }, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
+    const result = evaluateMandate({ workflowId: boundaryMandate.workflowId, authorityStatus: "ACTIVE" }, boundaryMandate, createMandateRuntime({ expiresAt: boundaryMandate.expiresAt }), market, account, policy, 2_600);
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? "EXECUTION_INTENT" : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
 });

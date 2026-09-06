@@ -17,7 +17,6 @@ const frozenTree = (v: unknown, seen = new Set<object>()): boolean => { if (!obj
 const nonNegative = (v: unknown): v is number => finite(v) && v >= 0;
 const text = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 const MAX_AGE = Number.MAX_SAFE_INTEGER;
-const MAX_VERSION_LAG = 1_000_000_000n;
 
 function validMandate(value: unknown): value is ExecutionMandate {
   if (!object(value) || !frozenTree(value) || value.version !== 1 || value.maxUses !== 1) return false;
@@ -35,7 +34,7 @@ function validMandate(value: unknown): value is ExecutionMandate {
   return true;
 }
 function positive(v: unknown): v is number { return finite(v) && v > 0; }
-function validPolicy(value: unknown): value is EvaluationPolicy { return object(value) && finite(value.maxMarketAgeMs) && value.maxMarketAgeMs >= 0 && value.maxMarketAgeMs <= MAX_AGE && finite(value.maxAccountAgeMs) && value.maxAccountAgeMs >= 0 && value.maxAccountAgeMs <= MAX_AGE && typeof value.maxAnchorVersionLag === "bigint" && value.maxAnchorVersionLag >= 0n && value.maxAnchorVersionLag <= MAX_VERSION_LAG; }
+function validPolicy(value: unknown): value is EvaluationPolicy { return object(value) && finite(value.maxMarketAgeMs) && value.maxMarketAgeMs >= 0 && value.maxMarketAgeMs <= MAX_AGE && finite(value.maxAccountAgeMs) && value.maxAccountAgeMs >= 0 && value.maxAccountAgeMs <= MAX_AGE && typeof value.maxAnchorVersionLag === "bigint" && value.maxAnchorVersionLag >= 0n; }
 function validRuntime(value: unknown, now: number): value is MandateRuntime {
   if (!object(value) || !frozenTree(value) || !MANDATE_STATES.includes(value.state as MandateState) || !finite(value.expiresAt) || !Array.isArray(value.history) || !Object.isFrozen(value.history)) return false;
   let previous: MandateState = "ARMED", previousAt = -Infinity;
@@ -57,13 +56,13 @@ export function evaluateMandate(workflow: EvaluationWorkflow, mandate: Execution
     if (now > mandate.expiresAt || now > mandate.invalidation.thesisExpiry) return refuse("MANDATE_EXPIRED", "mandate or thesis has expired");
     if (!object(market) || !object(account) || !finite(market.observedAt) || !finite(market.receivedAt) || market.observedAt > now || market.receivedAt > now || market.receivedAt < market.observedAt || now - market.observedAt > policy.maxMarketAgeMs || now - market.receivedAt > policy.maxMarketAgeMs) return refuse("MARKET_STATE_STALE", "market state is stale or chronologically invalid");
     if (!finite(account.observedAt) || !finite(account.receivedAt) || account.observedAt > now || account.receivedAt > now || account.receivedAt < account.observedAt || now - account.observedAt > policy.maxAccountAgeMs || now - account.receivedAt > policy.maxAccountAgeMs) return refuse("ACCOUNT_STATE_STALE", "account state is stale or chronologically invalid");
-    if (mandate.anchor.observedAt > market.observedAt || mandate.anchor.receivedAt > market.receivedAt || market.version < mandate.anchor.stateVersion || typeof market.version !== "bigint" || market.version < 0n || market.version - mandate.anchor.stateVersion > policy.maxAnchorVersionLag || typeof account.version !== "bigint" || account.version < 0n || account.version > market.version + policy.maxAnchorVersionLag || market.version - account.version > policy.maxAnchorVersionLag) return refuse("STATE_VERSION_STALE", "state versions or anchor chronology are incoherent");
+    if (mandate.anchor.observedAt > market.observedAt || mandate.anchor.receivedAt > market.receivedAt || typeof market.version !== "bigint" || market.version < 0n || market.version < mandate.anchor.stateVersion || market.version - mandate.anchor.stateVersion > policy.maxAnchorVersionLag || typeof account.version !== "bigint" || account.version < 0n) return refuse("STATE_VERSION_STALE", "state versions or anchor chronology are incoherent");
     const mv = market.value, av = account.value;
     if (!object(mv) || !object(av) || mv.venue !== mandate.venue || mv.instrument !== mandate.instrument || mv.symbol !== mandate.symbol || av.accountId !== mandate.accountId) return refuse("STATE_BINDING", "live state binding does not match mandate");
     const bid = mv.bidPrice, ask = mv.askPrice, mark = mv.markPrice, expected = mv.expectedMoveBps, spread = mv.spreadBps, slippage = mv.slippageBps, fee = mv.feeBps, funding = mv.fundingCostBps, available = av.availableNotional, current = av.currentNotional, loss = av.currentLossBps;
     const nums = [bid, ask, mark, expected, spread, slippage, fee, funding, available, current, loss];
-    const canonicalSpread = finite(bid) && finite(ask) && ask > 0 ? (ask - bid) / ask * 10_000 : NaN;
-    if (nums.some((v) => !nonNegative(v)) || bid <= 0 || ask <= 0 || bid > ask || mark < bid || mark > ask || spread < 0 || !finite(canonicalSpread) || Math.abs(spread - canonicalSpread) > 1e-9) return refuse("STATE_BINDING", "live state contains impossible or inconsistent values");
+    const canonicalSpread = finite(bid) && finite(ask) && ask > 0 ? (ask - bid) / ((ask + bid) / 2) * 10_000 : NaN;
+    if (nums.some((v) => !nonNegative(v)) || bid <= 0 || ask <= 0 || bid > ask || mark < bid || mark > ask || spread < 0 || !finite(canonicalSpread) || spread !== canonicalSpread) return refuse("STATE_BINDING", "live state contains impossible or inconsistent values");
     const entryPrice = mandate.side === "BUY" ? ask : bid;
     if (entryPrice < mandate.entry.minPrice || entryPrice > mandate.entry.maxPrice) return refuse("ENTRY_PRICE_OUT_OF_BOUNDS", "current entry price is outside mandate bounds");
     if ((mandate.entry.trigger === "BELOW" && mark > mandate.entry.minPrice) || (mandate.entry.trigger === "ABOVE" && mark < mandate.entry.maxPrice)) return refuse("ENTRY_TRIGGER_NOT_MET", "entry trigger is not met");

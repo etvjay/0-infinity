@@ -18,7 +18,7 @@ Mandate authority/persistence boundary between immutable domain mandates and lat
 
 ## status
 
-`PROPOSED` — blocked until M-B1-A domain interfaces are reviewed and integrated.
+`BLOCKED_ARCHITECTURE` — implementation candidates were independently rejected because the local directory-lock protocol cannot provide safe cross-process orphan reclamation with the available interface.
 
 ## dependencies
 
@@ -87,13 +87,18 @@ The implementation must provide a durable boundary for the persisted authority r
 - Independent review verdict.
 - Proof ceiling: `LOCAL_PASS` only.
 
-## evidence_produced
-
-Pending A interface freeze and B implementation/review.
-
 ## review_verdict
 
-Pending independent review.
+`REJECT` — independent review of `39c49d1` reproduced a successor-deletion race during orphan recovery. `39c49d1` passed 258 tests, but the review found the implementation cannot safely claim cross-process orphan recovery.
+
+## evidence_produced
+
+Candidate-only evidence: `npm run check` PASS; `npm test` PASS with 258 tests; `git diff --check` PASS. These results do not support integration because the lock protocol remains unsafe under the reviewed race.
+
+## blocker
+
+The current JSON file adapter has no atomic compare-and-reclaim primitive. A safe B implementation needs an explicit stronger persistence/locking boundary (for example a database transaction or OS advisory-lock abstraction), or a deliberately fail-closed design that does not reclaim orphaned locks. Choosing either changes the B architecture and must be resolved before implementation resumes.
+
 
 ## ground_truth_before
 

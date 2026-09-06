@@ -18,7 +18,7 @@ Reasoning-to-authority domain/compiler boundary; no execution authority.
 
 ## status
 
-`IMPLEMENTING`
+`INTEGRATED_LOCAL` — candidate `d65d231` independently re-reviewed; integrated on `main` as `f8b3901` with follow-up test commit `3d0dcf5`.
 
 ## dependencies
 
@@ -87,11 +87,14 @@ The exported domain types must represent the canonical `TradeThesis`, `Execution
 
 ## evidence_produced
 
-Pending implementation and review.
+- `npm run check` — PASS on candidate and integrated main.
+- `npm test` — PASS: 230 tests, 0 failures on candidate and integrated main.
+- `git diff --check` — PASS.
+- Explicit compiler negative tests cover provenance, expiry shape, entry authority, negative ceilings, and caller mutation isolation.
 
 ## review_verdict
 
-Pending independent review.
+`APPROVE_WITH_REQUIRED_FOLLOWUPS` — independent re-review of `d65d231`; follow-up assertions for `minExecutableEdgeBps` and `maxLossBps` were added in `3d0dcf5`.
 
 ## ground_truth_before
 

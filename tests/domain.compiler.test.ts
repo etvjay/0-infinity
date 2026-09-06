@@ -44,7 +44,7 @@ test("rejects omitted or incoherent bounded entry policy", () => {
 });
 
 test("rejects every negative cost ceiling", () => {
-  for (const field of ["maxSpreadBps", "maxSlippageBps", "maxFeeBps", "maxFundingCostBps", "maxNotional"] as const) {
+  for (const field of ["minExecutableEdgeBps", "maxSpreadBps", "maxSlippageBps", "maxFeeBps", "maxFundingCostBps", "maxLossBps", "maxNotional"] as const) {
     assert.throws(() => compileMandate(input(), thesis, { ...policy, [field]: -1 }, anchor, 2_000), new RegExp(field));
   }
 });

@@ -18,7 +18,7 @@ Mandate authority/persistence boundary between immutable domain mandates and lat
 
 ## status
 
-`BLOCKED_ARCHITECTURE` — implementation candidates were independently rejected because the local directory-lock protocol cannot provide safe cross-process orphan reclamation with the available interface.
+`CANDIDATE / LOCAL_PASS — pending fresh independent review` (DECISION B-LOCK-001 remediation; local development backend evidence ceiling)
 
 ## dependencies
 
@@ -57,14 +57,21 @@ interface MandateStore {
   getActive(key: AuthorityKey): ExecutionMandate | null;
   supersede(oldMandateId: string, replacement: ExecutionMandate): Promise<void>;
   consumeForSubmission(mandateId: string, clientOrderId: string): Promise<void>;
+  revoke(mandateId: string): Promise<void>;
 }
 ```
 
-The implementation must provide a durable boundary for the persisted authority record, consumed marker, deterministic client order identity, and `SUBMITTING` runtime state. A successful consume operation must atomically prevent reuse and survive reload. Crash simulation must not claim outbound exchange effects.
+The implementation provides an adapter-owned transaction boundary. Memory persistence serializes all instances sharing one adapter. `JsonFilePersistence` is deliberately fail-closed under DECISION B-LOCK-001: it uses a single store-wide lock boundary because the file layout cannot prove key-level independence; active contention may wait only within `maxWaitMs` and returns typed `LOCK_CONTENTION`, while malformed, missing, released, orphan-looking, stale, dead-PID, timeout, restart, or otherwise ambiguous ownership returns typed `RECOVERY_BLOCKED`. No age, mtime, PID-death, timeout, release-marker-age, startup, or directory-existence heuristic may delete, rename, replace, or mutate a lock. Only the exact current in-process token plus filesystem lease identity may publish a `RELEASED` marker; ownership loss is fail-closed with no destructive fallback. A released marker can be reacquired only by that same exact in-process lease; after restart or by another unknown owner the scope remains blocked. The file adapter fsyncs temp files before replace; directory fsync, crash recovery, and production durability are not implemented or claimed. All mutations crossing a blocked boundary reject with `RECOVERY_BLOCKED`.
+
+Authority status is store-level and separate from frozen M-B1-C runtime vocabulary: `ACTIVE`, `SUPERSEDED`, `REVOKED`, and `CONSUMED`; no `REVOKED` runtime state is added. `consumedAt` and `clientOrderId` are durable consumption identity, with atomic one-consumer semantics and same-client idempotent retry retained. `getActive` requires store status `ACTIVE`, runtime `ARMED`, and no revocation marker; revocation is irreversible and superseded/consumed/expired authorities cannot be reused. Snapshot load validates mandate structure, collision-safe canonical JSON scope, runtime vocabulary, authority status, uniqueness, all numeric/provenance/expiry invariants, revocation combinations, and client identity before authority is exposed.
+
+### Revocation vocabulary contradiction
+
+The canonical invariant `INV-M05` names revoked mandates, but frozen M-B1-C deliberately exposes exactly 14 runtime states and has no `REVOKED` state. B therefore persists `revoked: true` as a store-level fail-closed marker while retaining the underlying C state (normally `ARMED`); store reads and consume/supersede reject it. A persisted `state: "REVOKED"` is intentionally rejected as malformed runtime data rather than extending C. A future canonical contract must decide whether revocation becomes a C transition/state or remains an authority-layer marker.
 
 ## tests_required
 
-- One active mandate per canonical scope.
+- One active mandate per canonical scope across instances sharing a persistence boundary.
 - Immutable historical versions.
 - Atomic supersession and active selection.
 - Durable reload preserving consumed/superseded/expired state.
@@ -77,6 +84,8 @@ The implementation must provide a durable boundary for the persisted authority r
 - Consume superseded, expired, revoked, consumed, or terminal mandate.
 - Crash before durable consume and recovery after durable consume.
 - Attempt to reactivate consumed authority.
+- Revoke and recover a mandate without reactivating it.
+- Malformed snapshots, forged scopes, invalid mandates, invalid client IDs, and client-ID collisions.
 - Atomic supersession under concurrent access.
 
 ## evidence_required
@@ -87,18 +96,13 @@ The implementation must provide a durable boundary for the persisted authority r
 - Independent review verdict.
 - Proof ceiling: `LOCAL_PASS` only.
 
-## review_verdict
-
-`REJECT` — independent review of `39c49d1` reproduced a successor-deletion race during orphan recovery. `39c49d1` passed 258 tests, but the review found the implementation cannot safely claim cross-process orphan recovery.
-
 ## evidence_produced
 
-Candidate-only evidence: `npm run check` PASS; `npm test` PASS with 258 tests; `git diff --check` PASS. These results do not support integration because the lock protocol remains unsafe under the reviewed race.
+`npm run check` PASS; `npm test` PASS; `git diff --check` PASS after focused remediation. Focused compiled Node tests cover replaced RELEASED-directory identity blocking, coherent persisted authority/runtime/revocation/consumption combinations, and typed fail-closed revoke rejection for submitting, consumed, expired, superseded, and terminal mandates while preserving idempotent repeated revoke for canonical revoked records. Evidence ceiling: `LOCAL DEVELOPMENT BACKEND` only; candidate remains pending fresh independent review.
 
-## blocker
+## review_verdict
 
-The current JSON file adapter has no atomic compare-and-reclaim primitive. A safe B implementation needs an explicit stronger persistence/locking boundary (for example a database transaction or OS advisory-lock abstraction), or a deliberately fail-closed design that does not reclaim orphaned locks. Choosing either changes the B architecture and must be resolved before implementation resumes.
-
+Pending independent review.
 
 ## ground_truth_before
 
@@ -115,5 +119,6 @@ Store slice may be `LOCAL_PASS`; full M-B1 remains `PARTIAL / UNVERIFIED`.
 
 ## open_questions
 
-- Concrete durable backend remains bounded to a local deterministic persistence adapter for M-B1; production durability is not claimed.
+- Concrete durable backend remains bounded to a local deterministic persistence adapter for M-B1; production durability and crash-recovery guarantees are not claimed.
+- The frozen C vocabulary versus canonical revoked invariant remains unresolved as described above.
 - Full ExecutionIntent integration is deferred until M-B1-D/E and later execution milestones.

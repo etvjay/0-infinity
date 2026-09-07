@@ -27,3 +27,10 @@ Current:
 | Live bounded execution | UNVERIFIED |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
+
+M-B1 proof receipt:
+
+- review: `APPROVE`, reviewed_head: `db1d0df`, canonical_main: `387b26e`.
+- tests: full `298/298`, compiler `13/13`, evaluator `29/29`, adversarial `10/10`, runtime_store `246/246`.
+- typecheck/build/diff_check: `PASS`.
+- evidence exclusions: no Binance connectivity, no live exchange behavior, no production durability, no profitability claim, no live execution.

@@ -12,4 +12,17 @@
 | M-B7 | Shadow Evidence | NOT STARTED |
 | M-B8 | Controlled Live Evidence + submission freeze | NOT STARTED |
 
-M-B1: A domain/compiler; B store; C state machine; D evaluator; E adversarial tests.
+M-B1 proof receipt:
+
+- review verdict: `APPROVE`
+- reviewed_head: `db1d0df`
+- canonical_main: `387b26e`
+- full: `298/298`
+- compiler: `13/13`
+- evaluator: `29/29`
+- adversarial: `10/10`
+- runtime_store: `246/246`
+- typecheck: `PASS`
+- build: `PASS`
+- diff_check: `PASS`
+- evidence exclusions: no Binance connectivity, no live exchange behavior, no production durability, no profitability claim, no live execution.

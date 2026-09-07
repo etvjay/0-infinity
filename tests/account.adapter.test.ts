@@ -39,6 +39,15 @@ test("missing credentials fail closed before the source is invoked", async () =>
   assert.equal(invoked, false);
 });
 
+test("inherited credentials fail closed before the source is invoked", async () => {
+  let invoked = false;
+  const source: AuthenticatedAccountStateSource = { async readAccountUpdate() { invoked = true; return update(); } };
+  const adapter = createAuthenticatedUsdMFuturesAccountAdapter(source, () => 1_700_000_001_001);
+  const inherited = Object.create({ apiKey: "inherited-key", apiSecret: "inherited-secret" }) as AccountAuthConfig;
+  await assert.rejects(adapter.read(inherited), (error: unknown) => error instanceof MissingAccountCredentialsError);
+  assert.equal(invoked, false);
+});
+
 test("credential boundary does not log or retain secret values", async () => {
   const secret = "do-not-leak";
   let received: AccountAuthConfig | undefined;

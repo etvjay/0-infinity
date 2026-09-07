@@ -11,6 +11,7 @@
 - product family: `USD_M_FUTURES_UM`
 - scope: injectable authenticated `AccountStateSource`, secret boundary, deterministic replay/mock adapter tests, fail-closed credential validation, versioned `LiveAccountState` handoff
 - evidence ceiling: `LOCAL_PASS`; private live account reads remain explicitly `BLOCKED_EXTERNAL`.
+- exact classification: `PRIVATE_ACCOUNT_LIVE_READ=BLOCKED_EXTERNAL`.
 
 ## implementation
 
@@ -21,9 +22,9 @@
 
 ## TDD and verification receipts
 
-- RED: focused adapter compilation failed because the four requested exports did not exist; no production adapter implementation existed yet.
-- GREEN: focused account run `9/9 PASS` (4 adapter + 5 normalizer tests).
-- full suite: `357/357 PASS` (`npm test`).
+- RED: focused inherited-credential regression failed as expected with `AssertionError: Missing expected rejection` (4 passing, 1 failing), proving prototype credentials were accepted.
+- GREEN: focused account adapter run `5/5 PASS`, including inherited-credential rejection with no source invocation.
+- full suite: `358/358 PASS` (`npm test`).
 - typecheck: `PASS` (`npm run check`).
 - build: `PASS` (`npm run build`).
 - diff check: `PASS` (`git diff --check`).

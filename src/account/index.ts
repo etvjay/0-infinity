@@ -178,7 +178,7 @@ export class MissingAccountCredentialsError extends Error {
 }
 
 function validateAccountAuth(auth: AccountAuthConfig | undefined): asserts auth is AccountAuthConfig {
-  if (!auth || typeof auth !== "object" || typeof auth.apiKey !== "string" || auth.apiKey.length === 0 || typeof auth.apiSecret !== "string" || auth.apiSecret.length === 0) {
+  if (!auth || typeof auth !== "object" || !own(auth, "apiKey") || !own(auth, "apiSecret") || typeof auth.apiKey !== "string" || auth.apiKey.length === 0 || typeof auth.apiSecret !== "string" || auth.apiSecret.length === 0) {
     throw new MissingAccountCredentialsError();
   }
 }

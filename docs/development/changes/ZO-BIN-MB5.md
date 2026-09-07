@@ -33,9 +33,9 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 
 ## review and evidence ceiling
 
-- remediation_code_head: `536071d76f70908d258606cf1f9f6d7c176bc74c`
-- review verdict: `REVISE` (provisional pending fresh review of the remediation head)
-- focused: `22/22`; full: `422/422`
+- remediation_code_head: `536071d76f70908d258606cf1f9f6d7c176bc74c`; final docs/review tree: `46c3e9f80294a426ffb765d7c042b216e1b7e39c`.
+- review verdict: `REVISE` for stale receipt attribution only; code findings were clear; receipt-only reconciliation remains pending.
+- focused: `23/23`; full: `423/423`.
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.
 
 ## exclusions and risks

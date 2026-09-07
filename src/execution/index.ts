@@ -21,10 +21,10 @@ interface StoredOrder extends OrderReceipt { readonly events: readonly string[];
 export interface OrderPersistence { load(clientOrderId: string): StoredOrder | undefined; save(order: StoredOrder): Promise<void>; }
 export class MemoryOrderPersistence implements OrderPersistence {
   private readonly orders = new Map<string, StoredOrder>(); private fail = false;
-  load(id: string): StoredOrder | undefined { const value = this.orders.get(id); return value ? clone(value) : undefined; }
+  load(id: string): StoredOrder | undefined { const value = this.orders.get(id); return value ? freeze(clone(value)) : undefined; }
   async save(order: StoredOrder): Promise<void> { if (this.fail) { this.fail = false; throw new Error("persistence failure"); } this.orders.set(order.clientOrderId, clone(order)); }
   failNextSave(): void { this.fail = true; }
-  replay(): readonly StoredOrder[] { return [...this.orders.values()].map(clone); }
+  replay(): readonly StoredOrder[] { return [...this.orders.values()].map((value) => freeze(clone(value))); }
 }
 export interface OrderWriterHooks { readonly beforeAdapterCall?: () => void | Promise<void>; readonly afterAdapterCall?: () => void | Promise<void>; }
 
@@ -43,6 +43,13 @@ function canonicalOwnData(value: object, allowed: readonly string[], required: r
   }
   return required.every((key) => Object.prototype.hasOwnProperty.call(value, key));
 }
+function canonicalFrozenStringArray(value: unknown): value is readonly string[] {
+  if (!Array.isArray(value) || !Object.isFrozen(value)) return false;
+  const keys = Reflect.ownKeys(value);
+  if (keys.some((key) => key !== "length" && (typeof key !== "string" || !/^\d+$/.test(key)))) return false;
+  if (keys.filter((key) => key !== "length").length !== value.length) return false;
+  return [...value].every((entry, index) => typeof entry === "string" && entry.length > 0 && Object.getOwnPropertyDescriptor(value, String(index))?.enumerable === true && "value" in Object.getOwnPropertyDescriptor(value, String(index))!);
+}
 function validIntent(value: unknown): value is BoundedIntent {
   if (!value || typeof value !== "object" || !Object.isFrozen(value) || !canonicalOwnData(value, INTENT_KEYS, INTENT_KEYS.slice(0, 11))) return false;
   const x = value as Record<string, unknown>;
@@ -58,10 +65,39 @@ function validEvent(value: unknown): value is FillEvent {
   if (typeof x.eventId !== "string" || x.eventId.length === 0 || !["ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "CANCELLED", "REJECTED", "FAILED"].includes(x.status as string)) return false;
   if (x.fillQuantity !== undefined && (typeof x.fillQuantity !== "number" || !Number.isFinite(x.fillQuantity) || x.fillQuantity < 0)) return false;
   if (x.fillPrice !== undefined && (typeof x.fillPrice !== "number" || !Number.isFinite(x.fillPrice) || x.fillPrice <= 0)) return false;
+  if (x.status === "PARTIALLY_FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0 || x.fillPrice === undefined)) return false;
   if (x.status === "FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0)) return false;
   return x.fillQuantity === undefined || x.fillQuantity === 0 || x.fillPrice !== undefined;
 }
 function deepFrozen(value: unknown, seen = new Set<object>()): boolean { if (!value || typeof value !== "object") return true; if (seen.has(value)) return true; seen.add(value); return Object.isFrozen(value) && Reflect.ownKeys(value).every((key) => { const descriptor = Object.getOwnPropertyDescriptor(value, key); return !!descriptor && "value" in descriptor && deepFrozen(descriptor.value, seen); }); }
+function validStoredOrder(value: unknown): value is StoredOrder {
+  if (!value || typeof value !== "object" || !Object.isFrozen(value) || !deepFrozen(value)) return false;
+  const allowed = ["clientOrderId", "mandateId", "workflowId", "symbol", "side", "accountId", "method", "attempt", "notional", "executableEdgeBps", "marketStateVersion", "accountStateVersion", "quantity", "price", "outcome", "filledQuantity", "averagePrice", "acceptanceProvenance", "cancelState", "fillEventIds", "intent", "events", "filledNotional", "intentFingerprint"] as const;
+  const required = allowed.filter((key) => key !== "accountId" && key !== "averagePrice");
+  if (!canonicalOwnData(value, allowed, required)) return false;
+  const x = value as Record<string, any>;
+  if (![x.clientOrderId, x.mandateId, x.workflowId, x.symbol].every((v) => typeof v === "string" && v.length > 0)) return false;
+  if (x.accountId !== undefined && typeof x.accountId !== "string") return false;
+  if (x.side !== "BUY" && x.side !== "SELL") return false;
+  if (x.method !== "LIMIT" && x.method !== "MARKET") return false;
+  if (!Number.isSafeInteger(x.attempt) || x.attempt < 0) return false;
+  if (![x.notional, x.executableEdgeBps, x.quantity, x.price].every((v) => typeof v === "number" && Number.isFinite(v) && v > 0)) return false;
+  if (typeof x.marketStateVersion !== "bigint" || typeof x.accountStateVersion !== "bigint") return false;
+  if (typeof x.filledQuantity !== "number" || !Number.isFinite(x.filledQuantity) || x.filledQuantity < 0 || x.filledQuantity > x.quantity) return false;
+  if (x.averagePrice !== undefined && (typeof x.averagePrice !== "number" || !Number.isFinite(x.averagePrice) || x.averagePrice <= 0)) return false;
+  if (x.filledQuantity > 0 && x.averagePrice === undefined) return false;
+  if (!ORDER_OUTCOMES.includes(x.outcome) || !["ACKNOWLEDGED", "REJECTED", "FAILED", "TIMEOUT"].includes(x.acceptanceProvenance) || !["NONE", "REQUESTED", "UNKNOWN", "CANCELLED"].includes(x.cancelState)) return false;
+  if (typeof x.filledNotional !== "number" || !Number.isFinite(x.filledNotional) || x.filledNotional < 0 || (x.filledQuantity === 0 && x.filledNotional !== 0)) return false;
+  if (typeof x.intentFingerprint !== "string" || !validIntent(x.intent)) return false;
+  if (x.clientOrderId !== OrderWriter.clientOrderId(x.intent, x.attempt) || x.intentFingerprint !== intentFingerprint(x.intent)) return false;
+  if (x.mandateId !== x.intent.mandateId || x.workflowId !== x.intent.workflowId || x.symbol !== x.intent.symbol || x.side !== x.intent.side || x.method !== x.intent.method || x.price !== x.intent.price || x.notional !== x.intent.notional || x.executableEdgeBps !== x.intent.executableEdgeBps || x.marketStateVersion !== x.intent.marketStateVersion || x.accountStateVersion !== x.intent.accountStateVersion || x.accountId !== x.intent.accountId) return false;
+  if (!canonicalFrozenStringArray(x.fillEventIds) || !canonicalFrozenStringArray(x.events) || x.fillEventIds.length !== x.events.length || !x.fillEventIds.every((id: string, i: number) => id === x.events[i])) return false;
+  if (x.outcome === "FILLED" && x.filledQuantity < x.quantity) return false;
+  if (x.outcome === "PARTIALLY_FILLED" && (x.filledQuantity <= 0 || x.filledQuantity >= x.quantity)) return false;
+  if ((x.outcome === "CANCELLED") !== (x.cancelState === "CANCELLED") || (x.cancelState === "REQUESTED" && (x.outcome === "FILLED" || x.outcome === "CANCELLED")) || (x.cancelState === "UNKNOWN" && x.outcome !== "UNKNOWN")) return false;
+  if ((x.outcome === "REJECTED" || x.outcome === "FAILED") && x.cancelState !== "NONE") return false;
+  return true;
+}
 function quantityOf(intent: BoundedIntent): number { return intent.quantity ?? intent.notional / intent.price; }
 function intentFingerprint(intent: BoundedIntent): string { return JSON.stringify(INTENT_KEYS.map((key) => [key, key in intent ? (typeof intent[key] === "bigint" ? `${intent[key]}n` : intent[key]) : "__ABSENT__"])); }
 function outcomeAfter(current: OrderOutcome, next: OrderOutcome): OrderOutcome { const rank: Record<OrderOutcome, number> = { FAILED: 0, REJECTED: 0, UNKNOWN: 1, ACKNOWLEDGED: 2, PARTIALLY_FILLED: 3, FILLED: 4, CANCELLED: 4 }; if (current === "FILLED" || current === "CANCELLED") return current; return rank[next] >= rank[current] ? next : current; }
@@ -74,7 +110,7 @@ export class OrderWriter {
   private async submitOnce(intent: BoundedIntent, attempt: number): Promise<OrderReceipt> {
     if (!validIntent(intent)) fail("intent is invalid, untrusted, or mutable");
     const clientOrderId = OrderWriter.clientOrderId(intent, attempt); const prior = this.persistence.load(clientOrderId); const fingerprint = intentFingerprint(intent);
-    if (prior) { if ((prior as StoredOrder & { intentFingerprint?: string }).intentFingerprint !== fingerprint && intentFingerprint(prior.intent) !== fingerprint) fail("conflicting clientOrderId binding"); if (prior.outcome === "UNKNOWN") fail("unknown submission cannot be blindly retried"); return freeze(clone(prior)); }
+    if (prior) { if (!validStoredOrder(prior)) fail("persisted receipt is invalid"); if (prior.intentFingerprint !== fingerprint) fail("conflicting clientOrderId binding"); if (prior.outcome === "UNKNOWN") fail("unknown submission cannot be blindly retried"); return freeze(clone(prior)); }
     const quantity = quantityOf(intent); if (quantity * intent.price > intent.notional + 1e-9 || quantity <= 0) fail("quantity/price expands intent");
     const records = "history" in this.mandates && typeof (this.mandates as MandateStore).history === "function" ? (this.mandates as MandateStore).history() : [];
     const bound = records.find((record) => record.mandate.mandateId === intent.mandateId);
@@ -87,7 +123,7 @@ export class OrderWriter {
   }
   reconcile(clientOrderId: string, event: FillEvent): Promise<OrderReceipt> { return this.serial(() => this.reconcileOnce(clientOrderId, event)); }
   private async reconcileOnce(clientOrderId: string, event: FillEvent): Promise<OrderReceipt> {
-    const prior = this.persistence.load(clientOrderId); if (!prior) fail("unknown writer-owned clientOrderId");
+    const prior = this.persistence.load(clientOrderId); if (!prior) fail("unknown writer-owned clientOrderId"); if (!validStoredOrder(prior)) fail("persisted receipt is invalid");
     if (!validEvent(event)) fail("invalid reconciliation event");
     if (prior.events.includes(event.eventId)) return freeze(clone(prior));
     if (prior.cancelState === "CANCELLED") fail("terminal cancellation cannot accept fills");
@@ -104,7 +140,7 @@ export class OrderWriter {
   cancel(clientOrderId: string): Promise<OrderReceipt> { return this.serial(() => this.cancelOnce(clientOrderId)); }
   private async cancelOnce(clientOrderId: string): Promise<OrderReceipt> {
     const prior = this.persistence.load(clientOrderId);
-    if (!prior || !this.writerOwns(prior, clientOrderId)) fail("can only cancel writer-owned clientOrderId");
+    if (!prior || !validStoredOrder(prior) || !this.writerOwns(prior, clientOrderId)) fail("can only cancel writer-owned clientOrderId");
     if (prior.cancelState === "UNKNOWN") fail("unknown cancellation cannot be retried");
     if (prior.cancelState === "REQUESTED") fail("pending cancellation cannot be retried");
     if (prior.outcome === "FILLED" || prior.outcome === "CANCELLED") return freeze(clone(prior));

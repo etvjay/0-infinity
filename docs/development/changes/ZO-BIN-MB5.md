@@ -16,24 +16,25 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 - Same-client retries compare a complete canonical intent fingerprint, including method, quantity, account, notional, executable edge, and both state versions. Receipts bind account, method, attempt, economics, state versions, adapter acceptance provenance, and fill-event provenance.
 - Persistence precedes every adapter call. Adapter timeout or thrown call becomes `UNKNOWN`; the writer refuses blind retry. ACKNOWLEDGED does not imply a fill.
 - Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, rejects `FILLED` without a cumulative quantity reaching the requested quantity, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation durably records `REQUESTED` before the adapter, refuses `REJECTED`/`FAILED` terminal submissions before adapter invocation, maps adapter uncertainty to durable local `UNKNOWN`, refuses blind retry, and requires deterministic client-ID/mandate/workflow/attempt/intent-fingerprint ownership.
-- Reconciliation refuses fills after terminal `REJECTED`/`FAILED` submission outcomes, `CANCELLED`, or uncertain (`UNKNOWN`) cancellation, preserving the terminal/uncertain receipt without fill or outcome mutation. Duplicate event IDs remain idempotent before terminal rejection checks.
+- Reconciliation refuses fills after terminal `REJECTED`/`FAILED` submission outcomes, `CANCELLED`, or uncertain (`UNKNOWN`) cancellation, preserving the terminal/uncertain receipt without fill or outcome mutation. Duplicate event IDs remain idempotent before terminal rejection checks. Every submit retry, reconciliation, and cancellation path validates the complete frozen persisted receipt schema, including deterministic identity, intent bindings, enums, quantities/prices, provenance, event-array descriptors, immutability, and status/cancellation consistency; partial-fill events require positive cumulative quantity and valid fill price.
 - `MemoryOrderPersistence.failNextSave()` and writer hooks model local persistence/crash windows and replay boundaries; no production crash-safety claim is made.
 
 ## TDD and verification receipts
 
 - RED: focused rejected/failed fill regressions failed before implementation with missing expected rejections.
 - RED: focused rejected/failed cancellation regression failed before implementation with missing expected rejections.
-- GREEN: focused execution tests `13/13 PASS`.
-- Full `npm test`: `413/413 PASS`.
+- RED: new forged-persisted-receipt and partial-fill regressions failed before implementation (`2` focused failures; prior suite `413/413 PASS`).
+- GREEN: focused execution tests `15/15 PASS`.
+- Full `npm test`: `415/415 PASS`.
 - `npm run check`: PASS.
 - `npm run build`: PASS.
 - `git diff --check`: PASS.
 
 ## review and evidence ceiling
 
-- remediation_code_head: `49463c465a62383437470a5b8a952ed6973f82bb`
+- remediation_code_head: `PENDING_CODE_COMMIT`
 - review verdict: `REVISE` (provisional pending fresh review of the remediation head)
-- focused: `13/13`; full: `413/413`
+- focused: `15/15`; full: `415/415`
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.
 
 ## exclusions and risks

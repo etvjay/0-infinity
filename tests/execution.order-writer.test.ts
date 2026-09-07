@@ -180,3 +180,46 @@ test("cancel refuses a persisted record without deterministic writer ownership",
   const writer = new OrderWriter(store(), persistence, adapter());
   await assert.rejects(() => writer.cancel("forged-id"), /writer-owned/);
 });
+
+test("all writer operations reject forged persisted receipts before side effects", async () => {
+  const seed = new MemoryOrderPersistence();
+  const seedWriter = new OrderWriter(store(), seed, adapter());
+  const receipt = await seedWriter.submit(intent, 14);
+  const persisted = seed.replay()[0];
+  const mutations = [
+    (value: any) => ({ ...value, outcome: "NOT_AN_OUTCOME" }),
+    (value: any) => ({ ...value, quantity: 0 }),
+    (value: any) => ({ ...value, filledQuantity: 3 }),
+    (value: any) => ({ ...value, acceptanceProvenance: "FORGED" }),
+    (value: any) => ({ ...value, cancelState: "CANCELLED" }),
+    (value: any) => ({ ...value, unsupported: true }),
+    (value: any) => { const forged = { ...value }; Object.defineProperty(forged, "unsupported", { value: true, enumerable: false }); return Object.freeze(forged); },
+    (value: any) => { const forged = { ...value }; Object.defineProperty(forged, "outcome", { get: () => "ACKNOWLEDGED", enumerable: true }); return Object.freeze(forged); },
+    (value: any) => Object.freeze({ ...value, [Symbol("unsupported")]: true }),
+    (value: any) => Object.freeze(Object.create({ unsupported: true, ...value })),
+  ];
+  for (const mutate of mutations) {
+    const forged = mutate(persisted);
+    let cancelCalls = 0;
+    const persistence = { load: () => forged, save: async () => undefined } as any;
+    const writer = new OrderWriter(store(), persistence, { submit: async () => ({ kind: "ACKNOWLEDGED" }), cancel: async () => { cancelCalls++; } });
+    await assert.rejects(() => writer.submit(intent, 14), /persisted receipt|invalid|conflicting/);
+    await assert.rejects(() => writer.cancel(receipt.clientOrderId), /persisted receipt|invalid|writer-owned/);
+    await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "forged-receipt-fill", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 101 })), /persisted receipt|invalid|writer-owned/);
+    assert.equal(cancelCalls, 0);
+  }
+});
+
+test("PARTIALLY_FILLED events require positive cumulative quantity and valid fill price", async () => {
+  const writer = new OrderWriter(store(), new MemoryOrderPersistence(), adapter());
+  const receipt = await writer.submit(intent, 15);
+  for (const invalid of [
+    { eventId: "partial-missing-quantity", status: "PARTIALLY_FILLED", fillPrice: 101 },
+    { eventId: "partial-zero-quantity", status: "PARTIALLY_FILLED", fillQuantity: 0, fillPrice: 101 },
+    { eventId: "partial-missing-price", status: "PARTIALLY_FILLED", fillQuantity: 1 },
+    { eventId: "partial-zero-price", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 0 },
+  ]) await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event(invalid as FillEvent)), /invalid reconciliation event/);
+  const valid = await writer.reconcile(receipt.clientOrderId, event({ eventId: "partial-valid", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 101 }));
+  assert.equal(valid.outcome, "PARTIALLY_FILLED");
+  assert.equal(valid.filledQuantity, 1);
+});

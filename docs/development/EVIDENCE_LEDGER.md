@@ -20,7 +20,7 @@ Current:
 | Claim | State |
 |---|---|
 | Canonical Binance architecture | UNVERIFIED runtime / canonical docs |
-||| Mandate kernel | UNVERIFIED — M-B1-A, B, and C are LOCAL_PASS slices; full kernel is not evidenced |
+| Mandate kernel | UNVERIFIED — M-B1-A, B, C, and D are LOCAL_PASS slices; full kernel is not evidenced |
 | Binance live market state | UNVERIFIED |
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |

@@ -4,7 +4,7 @@ Branch target: `agent/mb1-evaluator`.
 
 ## Status
 
-`REVIEWED / APPROVED` — final independent review found no execution-logic defect. The previously required ratification follow-up is closed by Jason’s explicit decisions: midpoint-relative spread and same-stream market-anchor version policy.
+`IMPLEMENTED / INTEGRATED / LOCAL_PASS` — final independent review APPROVE on exact candidate `9e31d1c`; integrated into canonical main as commit range `026977d..d0046d0` (final integration HEAD `d0046d0`).
 
 This remediation adds focused RED/GREEN coverage and closes each listed evaluator finding without changing the authority store, runtime transition implementation, or external integrations.
 

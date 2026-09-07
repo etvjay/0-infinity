@@ -26,6 +26,12 @@ test("rejects unsupported reasoning keys before authority projection", () => {
   assert.throws(() => compileMandate(input(), { ...thesis, reasoning: widenedReasoning } as TradeThesis, policy, anchor, 2_000), /reasoning.*authority|unsupported.*reasoning/i);
 });
 
+test("rejects inherited enumerable reasoning keys before authority projection", () => {
+  const inherited = { hiddenPolicy: "UNAUTHORIZED" };
+  const widenedReasoning = Object.assign(Object.create(inherited), thesis.reasoning);
+  assert.throws(() => compileMandate(input(), { ...thesis, reasoning: widenedReasoning } as TradeThesis, policy, anchor, 2_000), /reasoning.*authority|unsupported.*reasoning/i);
+});
+
 test("rejects authority widening, invalid thesis, and non-finite input", () => {
   assert.throws(() => compileMandate(input(), { ...thesis, venue: "OTHER" as never }, policy, anchor, 2_000), /BINANCE/);
   assert.throws(() => compileMandate(input(), { ...thesis, direction: "FLAT" }, policy, anchor, 2_000), /FLAT/);

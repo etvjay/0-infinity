@@ -75,6 +75,17 @@ function nonNegative(value: unknown, name: string): number {
   if (number < 0) throw new RangeError(`${name} must not be negative`);
   return number;
 }
+function enumerableKeysIncludingPrototype(value: object): Set<string> {
+  const keys = new Set<string>();
+  const seen = new Set<object>();
+  let current: object | null = value;
+  while (current !== null && !seen.has(current)) {
+    seen.add(current);
+    for (const key of Object.keys(current)) keys.add(key);
+    current = Object.getPrototypeOf(current);
+  }
+  return keys;
+}
 
 export function compileMandate(
   workflow: { readonly workflowId: string }, thesis: TradeThesis, policy: CompilerPolicy, anchor: AnchorState, now?: number,
@@ -105,7 +116,7 @@ export function compileMandate(
   nonNegative(thesis.createdAt, "createdAt"); nonNegative(thesis.expiresAt, "expiresAt");
   if (thesis.expiresAt <= thesis.createdAt) throw new RangeError("thesis validity is incoherent");
   const reasoningKeys = new Set(["method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash"]);
-  for (const key of Object.keys(thesis.reasoning)) if (!reasoningKeys.has(key)) throw new RangeError(`reasoning field ${key} would expand authority`);
+  for (const key of enumerableKeysIncludingPrototype(thesis.reasoning)) if (!reasoningKeys.has(key)) throw new RangeError(`reasoning field ${key} would expand authority`);
   for (const [key, value] of Object.entries(thesis.reasoning)) requiredString(value, `reasoning.${key}`);
   requiredString(policy.accountId, "accountId");
   for (const [key, value] of Object.entries(policy)) if (key !== "accountId" && key !== "execution" && key !== "allowedSymbols" && key !== "entryTrigger") finite(value as unknown, `policy.${key}`);

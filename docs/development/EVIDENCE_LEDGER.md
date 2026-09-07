@@ -28,7 +28,7 @@ Current:
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
-| M-B5 local OrderWriter + reconciliation | LOCAL_PASS — focused execution `3/3`, full `403/403`, check/build/diff-check PASS; local/replay adapter and injected persistence/failure hooks only |
+| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / LOCAL_PASS — focused execution `7/7`, full `407/407`, check/build/diff-check PASS; local/replay adapter and injected persistence/failure hooks only |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
 
@@ -108,5 +108,6 @@ M-B4 proof receipt:
 M-B5 proof receipt:
 
 - objective: bounded local/replay OrderWriter around existing mandate consumption plus explicit submission/reconciliation outcomes.
-- receipt: deterministic IDs, frozen intent/receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, monotonic duplicate-safe fills, cumulative quantity/VWAP, and writer-owned cancel.
+- receipt: deterministic IDs, canonical own-data intent/event validation, complete intent fingerprint idempotency, immutable audit-bound receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, monotonic duplicate-safe cumulative fills with out-of-order handling and weighted VWAP, and writer-owned cancel.
+- TDD/verification: hostile regressions RED before implementation; focused execution `7/7`, full `407/407`, check/build/diff-check `PASS`.
 - evidence ceiling: `LOCAL_PASS` only; no live, testnet, production durability, exchange write, network, MCP, or credential claim.

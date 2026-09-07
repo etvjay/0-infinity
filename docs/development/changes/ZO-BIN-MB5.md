@@ -2,7 +2,7 @@
 
 ## status
 
-`LOCAL_PASS`
+`REMEDIATION_COMPLETE / LOCAL_PASS`
 
 M-B5 is a local/replay-only execution boundary. It is not exchange, live, testnet, production durability, or profitability evidence.
 
@@ -10,20 +10,21 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 
 - `src/execution/index.ts` adds one serialized `OrderWriter` around the existing `MandateStore.consumeForSubmission` semantic.
 - Client IDs are deterministic SHA-256 derivations of `(mandateId, workflowId, attempt)`.
-- Intent validation requires a frozen, deeply immutable `EXECUTION_INTENT`; quantity and price are narrowed only, and persisted mandate bindings enforce workflow, symbol, side, method, account (when supplied), and entry price bounds.
+- Intent and fill-event validation requires frozen canonical own-data objects with the exact Object prototype, enumerable data descriptors, and no unsupported inherited, hidden, symbol, or accessor keys; persisted mandate bindings enforce workflow, symbol, side, method, account (when supplied), and entry price bounds.
+- Same-client retries compare a complete canonical intent fingerprint, including method, quantity, account, notional, executable edge, and both state versions. Receipts bind account, method, attempt, economics, state versions, adapter acceptance provenance, and fill-event provenance.
 - Persistence precedes every adapter call. Adapter timeout or thrown call becomes `UNKNOWN`; the writer refuses blind retry. ACKNOWLEDGED does not imply a fill.
-- Reconciliation is idempotent by event ID, monotonic, cumulative, and computes weighted average fill price. Cancellation is limited to writer-owned IDs.
+- Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation is limited to writer-owned IDs.
 - `MemoryOrderPersistence.failNextSave()` and writer hooks model local persistence/crash windows and replay boundaries; no production crash-safety claim is made.
 
 ## TDD and verification receipts
 
-- RED: the new execution tests initially failed because `src/execution/index.ts` did not exist.
-- GREEN: focused execution tests `3/3 PASS`.
-- Full `npm test`: `403/403 PASS`.
+- RED: focused hostile regressions failed against the candidate with missing receipt audit fields/type errors before implementation.
+- GREEN: focused execution tests `7/7 PASS`.
+- Full `npm test`: `407/407 PASS`.
 - `npm run check`: PASS.
 - `npm run build`: PASS.
 - `git diff --check`: PASS.
 
 ## exclusions and risks
 
-No network, credentials, MCP, evaluator/reasoning changes, Binance order/cancel writes, live evidence, testnet evidence, production durability, or crash-recovery guarantee. M-B1 keeps UNKNOWN terminal; M-B5 reconciliation is intentionally isolated in this local writer.
+No network, credentials, MCP, evaluator/reasoning changes, Binance order/cancel writes, live evidence, testnet evidence, production durability, or crash-recovery guarantee. M-B1 keeps UNKNOWN terminal; M-B5 reconciliation is intentionally isolated in this local writer. Legacy persisted orders without the new internal fill-notional field fall back to their stored average and filled quantity; no production migration is claimed.

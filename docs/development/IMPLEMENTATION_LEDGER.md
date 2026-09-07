@@ -7,7 +7,7 @@
 | M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A, M-B2-B, M-B2-C, M-B2-D, M-B2-F, and M-B2-H `LOCAL_PASS` read-only market/state slices integrated; M-B2-E bounded public `LIVE_READ_PASS`; M-B2-G public depth bootstrap `BLOCKED_EXTERNAL`; integrated M-B2 closure gate still pending |
 | M-B3 | Execution Economics | LOCAL_PASS — exact reviewed code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; nested book containers/quotes reject unsupported own/inherited enumerable/non-enumerable string/symbol keys plus polluted Array.prototype keys; focused `12/12`, full `370/370`, check/build/diff-check PASS; no live economics claimed |
 | M-B4 | Reasoning Workflow | PROVISIONAL_LOCAL_PASS — exact candidate `8335040183cf4d01e1c1765c9de9267f707a4c5f`; independent review found no code blockers; focused handoff `15/15`, economics `15/15`, reasoning `12/12`, combined `42/42`, full `400/400`, check/build/diff-check PASS; receipt reconciliation pending; no live evidence claimed |
-| M-B5 | OrderWriter + Reconciliation | LOCAL_PASS — bounded local/replay OrderWriter and reconciliation kernel; focused `3/3`, full `403/403`, check/build/diff-check PASS; no live execution or production durability claimed |
+| M-B5 | OrderWriter + Reconciliation | REMEDIATION_COMPLETE / LOCAL_PASS — exact candidate pending commit; hostile canonical-boundary, complete-idempotency, audit-receipt, cumulative/out-of-order reconciliation regressions; focused `7/7`, full `407/407`, check/build/diff-check PASS; no live execution or production durability claimed |
 | M-B6 | Full Runtime | NOT STARTED |
 | M-B7 | Shadow Evidence | NOT STARTED |
 | M-B8 | Controlled Live Evidence + submission freeze | NOT STARTED |
@@ -44,6 +44,6 @@ M-B4 remediation receipt:
 
 M-B5 local receipt:
 
-- status: `LOCAL_PASS`; candidate implements deterministic client identity, consume/persist-before-adapter ordering, immutable bounded receipts, injected local/replay adapter, timeout-to-`UNKNOWN` with no blind retry, monotonic duplicate-safe reconciliation, cumulative quantity/VWAP, and writer-owned cancellation.
-- tests: focused execution `3/3`; full suite `403/403`; typecheck/build/diff-check `PASS`.
+- status: `REMEDIATION_COMPLETE / LOCAL_PASS`; candidate implements canonical own-data validation for intents/events, complete intent fingerprint idempotency, consume/persist-before-adapter ordering, immutable audit-bound receipts, injected local/replay adapter, timeout-to-`UNKNOWN` with no blind retry, monotonic duplicate-safe cumulative reconciliation with out-of-order protection and weighted average price, and writer-owned cancellation.
+- TDD: hostile regressions RED against the candidate, then GREEN after remediation; focused execution `7/7`; full suite `407/407`; typecheck/build/diff-check `PASS`.
 - evidence ceiling: local supplied/replay only; no network, credentials, MCP, live exchange writes, production crash safety, or profitability claim.

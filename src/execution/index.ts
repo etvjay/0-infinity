@@ -34,7 +34,9 @@ function fail(message: string): never { throw new TypeError(message); }
 const INTENT_KEYS = ["kind", "mandateId", "workflowId", "symbol", "side", "method", "price", "notional", "executableEdgeBps", "marketStateVersion", "accountStateVersion", "quantity", "accountId"] as const;
 const EVENT_KEYS = ["eventId", "status", "fillQuantity", "fillPrice"] as const;
 const ADAPTER_RESULT_KEYS = ["kind", "message"] as const;
-const ARRAY_PROTO_DESCRIPTORS = new Map(Reflect.ownKeys(Array.prototype).map((key) => [key, Object.getOwnPropertyDescriptor(Array.prototype, key)!]));
+const CANONICAL_ARRAY_PROTO_KEYS = new Set<PropertyKey>([
+  "length", "constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex", "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf", "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce", "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toLocaleString", "toString", Symbol.iterator, Symbol.unscopables,
+]);
 function canonicalOwnData(value: object, allowed: readonly string[], required: readonly string[]): boolean {
   if (Object.getPrototypeOf(value) !== Object.prototype) return false;
   const keys = Reflect.ownKeys(value);
@@ -47,11 +49,7 @@ function canonicalOwnData(value: object, allowed: readonly string[], required: r
 }
 function canonicalFrozenStringArray(value: unknown): value is readonly string[] {
   if (!Array.isArray(value) || !Object.isFrozen(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
-  const protoKeys = Reflect.ownKeys(Array.prototype);
-  if (protoKeys.length !== ARRAY_PROTO_DESCRIPTORS.size || protoKeys.some((key) => {
-    const expected = ARRAY_PROTO_DESCRIPTORS.get(key); const actual = Object.getOwnPropertyDescriptor(Array.prototype, key);
-    return !expected || !actual || expected.enumerable !== actual.enumerable || expected.configurable !== actual.configurable || expected.writable !== actual.writable || expected.value !== actual.value || expected.get !== actual.get || expected.set !== actual.set;
-  })) return false;
+  if (Reflect.ownKeys(Array.prototype).some((key) => !CANONICAL_ARRAY_PROTO_KEYS.has(key))) return false;
   const keys = Reflect.ownKeys(value);
   if (keys.some((key) => key !== "length" && (typeof key !== "string" || !/^\d+$/.test(key)))) return false;
   if (keys.filter((key) => key !== "length").length !== value.length) return false;
@@ -92,6 +90,7 @@ function validEvent(value: unknown): value is FillEvent {
   if (x.fillPrice !== undefined && (typeof x.fillPrice !== "number" || !Number.isFinite(x.fillPrice) || x.fillPrice <= 0)) return false;
   if (x.status === "PARTIALLY_FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0 || x.fillPrice === undefined)) return false;
   if (x.status === "FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0)) return false;
+  if (["CANCELLED", "REJECTED", "FAILED"].includes(x.status as string) && (x.fillQuantity !== undefined && x.fillQuantity !== 0 || x.fillPrice !== undefined)) return false;
   return x.fillQuantity === undefined || x.fillQuantity === 0 || x.fillPrice !== undefined;
 }
 function deepFrozen(value: unknown, seen = new Set<object>()): boolean { if (!value || typeof value !== "object") return true; if (seen.has(value)) return true; seen.add(value); return Object.isFrozen(value) && Reflect.ownKeys(value).every((key) => { const descriptor = Object.getOwnPropertyDescriptor(value, key); return !!descriptor && "value" in descriptor && deepFrozen(descriptor.value, seen); }); }
@@ -163,12 +162,13 @@ export class OrderWriter {
     if (prior.cancelState === "CANCELLED") fail("terminal cancellation cannot accept fills");
     if (prior.cancelState === "UNKNOWN") fail("uncertain cancellation cannot accept fills");
     if (prior.outcome === "REJECTED" || prior.outcome === "FAILED") fail("terminal submission outcome cannot accept fills");
+    if (["CANCELLED", "REJECTED", "FAILED"].includes(event.status) && (prior.outcome !== "ACKNOWLEDGED" || prior.filledQuantity !== 0 || prior.cancelState !== "NONE")) fail("terminal reconciliation event is incoherent");
     const q = event.fillQuantity ?? 0; const p = event.fillPrice; if (q > prior.quantity || (event.status === "FILLED" && q < prior.quantity)) fail("invalid fill");
     let filled = prior.filledQuantity; let filledNotional = prior.filledNotional || (prior.averagePrice ?? 0) * prior.filledQuantity;
     if (q > filled) { filled = q; if (!p) fail("invalid fill"); filledNotional += (q - prior.filledQuantity) * p; }
     const average = filled ? filledNotional / filled : prior.averagePrice;
     const requested: OrderOutcome = filled >= prior.quantity ? "FILLED" : event.status === "PARTIALLY_FILLED" || filled > 0 ? "PARTIALLY_FILLED" : event.status;
-    const next: StoredOrder = freeze({ ...prior, outcome: outcomeAfter(prior.outcome, requested), filledQuantity: filled, ...(average === undefined ? {} : { averagePrice: average }), fillEventIds: [...prior.fillEventIds, event.eventId], events: [...prior.events, event.eventId], filledNotional });
+    const next: StoredOrder = freeze({ ...prior, outcome: outcomeAfter(prior.outcome, requested), acceptanceProvenance: event.status === "REJECTED" || event.status === "FAILED" ? event.status : prior.acceptanceProvenance, cancelState: event.status === "CANCELLED" ? "CANCELLED" : prior.cancelState, filledQuantity: filled, ...(average === undefined ? {} : { averagePrice: average }), fillEventIds: [...prior.fillEventIds, event.eventId], events: [...prior.events, event.eventId], filledNotional });
     await this.persistence.save(next); return freeze(clone(next));
   }
   cancel(clientOrderId: string): Promise<OrderReceipt> { return this.serial(() => this.cancelOnce(clientOrderId)); }

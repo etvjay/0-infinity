@@ -1,4 +1,5 @@
 import { serialize } from "node:v8";
+import { execFileSync } from "node:child_process";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { OrderWriter, MemoryOrderPersistence, type ExchangeAdapter, type ExecutionIntent, type FillEvent } from "../src/execution/index.js";
@@ -88,6 +89,28 @@ test("FILLED requires a cumulative fill quantity that reaches the requested quan
   const receipt = await writer.submit(intent, 7);
   await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "missing-filled", status: "FILLED", fillPrice: 101 })), /invalid/);
   await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "short-filled", status: "FILLED", fillQuantity: 1, fillPrice: 101 })), /invalid/);
+});
+
+test("terminal reconciliation events must be coherent and preserve the receipt on rejection", async () => {
+  for (const status of ["CANCELLED", "REJECTED", "FAILED"] as const) {
+    const persistence = new MemoryOrderPersistence();
+    const writer = new OrderWriter(store(), persistence, adapter());
+    const receipt = await writer.submit(intent, 20);
+    const before = persistence.replay()[0];
+    await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: `${status}-fill`, status, fillQuantity: 1, fillPrice: 101 })), /invalid reconciliation event/);
+    await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: `${status}-price`, status, fillPrice: 101 })), /invalid reconciliation event/);
+    assert.deepEqual(persistence.replay()[0], before);
+  }
+});
+
+test("a coherent CANCELLED event persists cancellation state", async () => {
+  const persistence = new MemoryOrderPersistence();
+  const writer = new OrderWriter(store(), persistence, adapter());
+  const receipt = await writer.submit(intent, 21);
+  const cancelled = await writer.reconcile(receipt.clientOrderId, event({ eventId: "cancelled-stream", status: "CANCELLED" }));
+  assert.equal(cancelled.outcome, "CANCELLED");
+  assert.equal(cancelled.cancelState, "CANCELLED");
+  assert.deepEqual(persistence.replay()[0].fillEventIds, ["cancelled-stream"]);
 });
 
 test("REJECTED submission refuses later fills without mutating its receipt", async () => {
@@ -259,6 +282,20 @@ test("canonical frozen receipt arrays reject Array.prototype pollution", async (
     const poisonedWriter = new OrderWriter(store(), poisoned, adapter());
     await assert.rejects(() => poisonedWriter.submit(intent, 17), /persisted receipt/);
   } finally { delete (Array.prototype as any).pollutedReceiptKey; }
+});
+
+test("receipt validation is independent of Array.prototype state at module import", () => {
+  const source = `
+    Object.defineProperty(Array.prototype, "preImportReceiptPollution", { value: true, configurable: true });
+    const { OrderWriter, MemoryOrderPersistence } = await import(${JSON.stringify(new URL("../src/execution/index.js", import.meta.url).href)});
+    const intent = Object.freeze({ kind: "EXECUTION_INTENT", mandateId: "m-child", workflowId: "w-child", symbol: "BTCUSDT", side: "BUY", method: "LIMIT", price: 100, quantity: 2, notional: 200, executableEdgeBps: 10, marketStateVersion: 1n, accountStateVersion: 1n });
+    const persistence = new MemoryOrderPersistence();
+    const writer = new OrderWriter({ consumeForSubmission: async () => undefined }, persistence, { submit: async () => ({ kind: "ACKNOWLEDGED" }) });
+    await writer.submit(intent, 0);
+    try { await writer.submit(intent, 0); process.stdout.write("REJECTED"); } catch (error) { process.stdout.write(String(error.message)); }
+  `;
+  const output = execFileSync(process.execPath, ["--input-type=module", "-e", source], { encoding: "utf8" });
+  assert.match(output, /persisted receipt is invalid/);
 });
 
 test("adapter results are validated before a bogus result can be persisted", async () => {

@@ -108,6 +108,7 @@ export class OrderWriter {
     if (prior.cancelState === "UNKNOWN") fail("unknown cancellation cannot be retried");
     if (prior.cancelState === "REQUESTED") fail("pending cancellation cannot be retried");
     if (prior.outcome === "FILLED" || prior.outcome === "CANCELLED") return freeze(clone(prior));
+    if (prior.outcome === "REJECTED" || prior.outcome === "FAILED") fail("terminal submission outcome cannot be cancelled");
     if (!this.adapter.cancel) fail("adapter does not support cancellation");
     const requested = freeze({ ...prior, cancelState: "REQUESTED" as const });
     await this.persistence.save(requested);

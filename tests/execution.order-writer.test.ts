@@ -111,6 +111,27 @@ test("FAILED submission refuses later fills without mutating its receipt", async
   assert.deepEqual(await writer.submit(intent, 11), before);
 });
 
+test("REJECTED and FAILED submissions refuse cancellation before adapter invocation without mutating receipt or persistence", async () => {
+  for (const [attempt, result] of [[12, { kind: "REJECTED", message: "not allowed" }], [13, { kind: "FAILED", message: "exchange error" }] ] as const) {
+    const persistence = new MemoryOrderPersistence();
+    let cancelCalls = 0;
+    const writer = new OrderWriter(store(), persistence, {
+      submit: async () => result,
+      cancel: async () => { cancelCalls++; },
+    });
+    const receipt = await writer.submit(intent, attempt);
+    const before = persistence.replay()[0];
+    const receiptBytes = structuredClone(receipt);
+    const beforeBytes = structuredClone(before);
+    await assert.rejects(() => writer.cancel(receipt.clientOrderId), /terminal submission outcome cannot be cancelled/);
+    assert.deepEqual(receipt, receiptBytes);
+    assert.deepEqual(persistence.replay()[0], beforeBytes);
+    assert.equal(receipt.cancelState, "NONE");
+    assert.equal(persistence.replay()[0].cancelState, "NONE");
+    assert.equal(cancelCalls, 0);
+  }
+});
+
 test("cancel durably records a request before the adapter and UNKNOWN after an uncertain call", async () => {
   const persistence = new MemoryOrderPersistence();
   let seen: any;

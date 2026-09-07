@@ -63,3 +63,11 @@ M-B2-D proof receipt:
 - typecheck/build/diff_check: `PASS`.
 - independent exact-head review: `APPROVE`.
 - evidence exclusions: no live Binance connection, TLS/proxy/server timing, production reconnect behavior, private user-data, credentials, exchange writes, or production readiness.
+
+M-B2-F proof receipt:
+
+- status: `LOCAL_PASS`, integrated on canonical main at `ae67cf2` after independent exact-head `APPROVE`.
+- objective: injected public USDⓈ-M depth snapshot normalization, lifecycle bridge/rebootstrap, connector routing, and generation isolation.
+- tests: focused depth/connectivity `26/26`, full `353/353`.
+- typecheck/build/diff_check: `PASS`.
+- evidence exclusions: no live Binance REST/depth probe, live depth continuity, production reconnect timing, account/private state, exchange writes, or production readiness.

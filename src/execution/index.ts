@@ -33,6 +33,8 @@ function freeze<T>(value: T): T { if (value && typeof value === "object" && !Obj
 function fail(message: string): never { throw new TypeError(message); }
 const INTENT_KEYS = ["kind", "mandateId", "workflowId", "symbol", "side", "method", "price", "notional", "executableEdgeBps", "marketStateVersion", "accountStateVersion", "quantity", "accountId"] as const;
 const EVENT_KEYS = ["eventId", "status", "fillQuantity", "fillPrice"] as const;
+const ADAPTER_RESULT_KEYS = ["kind", "message"] as const;
+const ARRAY_PROTO_DESCRIPTORS = new Map(Reflect.ownKeys(Array.prototype).map((key) => [key, Object.getOwnPropertyDescriptor(Array.prototype, key)!]));
 function canonicalOwnData(value: object, allowed: readonly string[], required: readonly string[]): boolean {
   if (Object.getPrototypeOf(value) !== Object.prototype) return false;
   const keys = Reflect.ownKeys(value);
@@ -44,11 +46,34 @@ function canonicalOwnData(value: object, allowed: readonly string[], required: r
   return required.every((key) => Object.prototype.hasOwnProperty.call(value, key));
 }
 function canonicalFrozenStringArray(value: unknown): value is readonly string[] {
-  if (!Array.isArray(value) || !Object.isFrozen(value)) return false;
+  if (!Array.isArray(value) || !Object.isFrozen(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
+  const protoKeys = Reflect.ownKeys(Array.prototype);
+  if (protoKeys.length !== ARRAY_PROTO_DESCRIPTORS.size || protoKeys.some((key) => {
+    const expected = ARRAY_PROTO_DESCRIPTORS.get(key); const actual = Object.getOwnPropertyDescriptor(Array.prototype, key);
+    return !expected || !actual || expected.enumerable !== actual.enumerable || expected.configurable !== actual.configurable || expected.writable !== actual.writable || expected.value !== actual.value || expected.get !== actual.get || expected.set !== actual.set;
+  })) return false;
   const keys = Reflect.ownKeys(value);
   if (keys.some((key) => key !== "length" && (typeof key !== "string" || !/^\d+$/.test(key)))) return false;
   if (keys.filter((key) => key !== "length").length !== value.length) return false;
-  return [...value].every((entry, index) => typeof entry === "string" && entry.length > 0 && Object.getOwnPropertyDescriptor(value, String(index))?.enumerable === true && "value" in Object.getOwnPropertyDescriptor(value, String(index))!);
+  const length = Object.getOwnPropertyDescriptor(value, "length");
+  if (!length || length.value !== value.length || length.enumerable || length.configurable || length.writable) return false;
+  return [...value].every((entry, index) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+    return typeof entry === "string" && entry.length > 0 && !!descriptor && descriptor.enumerable === true && descriptor.configurable === false && descriptor.writable === false && "value" in descriptor;
+  });
+}
+function validAdapterResult(value: unknown): value is AdapterResult {
+  if (!value || typeof value !== "object" || !canonicalOwnData(value, ADAPTER_RESULT_KEYS, ["kind"])) return false;
+  const result = value as Record<string, unknown>;
+  return ["ACKNOWLEDGED", "REJECTED", "FAILED", "TIMEOUT"].includes(result.kind as string) && (result.message === undefined || typeof result.message === "string");
+}
+function decimalParts(value: number): [bigint, number] {
+  const text = value.toString().toLowerCase(); const [coefficient, exponentText] = text.split("e"); const exponent = exponentText ? Number(exponentText) : 0;
+  const [whole, fraction = ""] = coefficient.split("."); return [BigInt(`${whole}${fraction}`), fraction.length - exponent];
+}
+function exactProductEquals(left: number, right: number, product: number): boolean {
+  const [a, as] = decimalParts(left); const [b, bs] = decimalParts(right); const [c, cs] = decimalParts(product);
+  const scale = Math.max(as + bs, cs); return a * b * 10n ** BigInt(scale - as - bs) === c * 10n ** BigInt(scale - cs);
 }
 function validIntent(value: unknown): value is BoundedIntent {
   if (!value || typeof value !== "object" || !Object.isFrozen(value) || !canonicalOwnData(value, INTENT_KEYS, INTENT_KEYS.slice(0, 11))) return false;
@@ -88,14 +113,21 @@ function validStoredOrder(value: unknown): value is StoredOrder {
   if (x.filledQuantity > 0 && x.averagePrice === undefined) return false;
   if (!ORDER_OUTCOMES.includes(x.outcome) || !["ACKNOWLEDGED", "REJECTED", "FAILED", "TIMEOUT"].includes(x.acceptanceProvenance) || !["NONE", "REQUESTED", "UNKNOWN", "CANCELLED"].includes(x.cancelState)) return false;
   if (typeof x.filledNotional !== "number" || !Number.isFinite(x.filledNotional) || x.filledNotional < 0 || (x.filledQuantity === 0 && x.filledNotional !== 0)) return false;
+  if (x.filledQuantity === 0 && x.averagePrice !== undefined) return false;
+  if (x.filledQuantity > 0 && x.averagePrice === undefined) return false;
+  if (x.filledQuantity > 0 && !exactProductEquals(x.averagePrice, x.filledQuantity, x.filledNotional)) return false;
   if (typeof x.intentFingerprint !== "string" || !validIntent(x.intent)) return false;
+  if (x.quantity !== quantityOf(x.intent)) return false;
   if (x.clientOrderId !== OrderWriter.clientOrderId(x.intent, x.attempt) || x.intentFingerprint !== intentFingerprint(x.intent)) return false;
   if (x.mandateId !== x.intent.mandateId || x.workflowId !== x.intent.workflowId || x.symbol !== x.intent.symbol || x.side !== x.intent.side || x.method !== x.intent.method || x.price !== x.intent.price || x.notional !== x.intent.notional || x.executableEdgeBps !== x.intent.executableEdgeBps || x.marketStateVersion !== x.intent.marketStateVersion || x.accountStateVersion !== x.intent.accountStateVersion || x.accountId !== x.intent.accountId) return false;
   if (!canonicalFrozenStringArray(x.fillEventIds) || !canonicalFrozenStringArray(x.events) || x.fillEventIds.length !== x.events.length || !x.fillEventIds.every((id: string, i: number) => id === x.events[i])) return false;
-  if (x.outcome === "FILLED" && x.filledQuantity < x.quantity) return false;
-  if (x.outcome === "PARTIALLY_FILLED" && (x.filledQuantity <= 0 || x.filledQuantity >= x.quantity)) return false;
+  if (x.outcome === "ACKNOWLEDGED" && (x.acceptanceProvenance !== "ACKNOWLEDGED" || x.filledQuantity !== 0)) return false;
+  if (x.outcome === "UNKNOWN" && (x.acceptanceProvenance !== "TIMEOUT" || x.filledQuantity !== 0 || x.cancelState === "CANCELLED")) return false;
+  if (x.outcome === "FILLED" && (x.acceptanceProvenance !== "ACKNOWLEDGED" || x.filledQuantity < x.quantity)) return false;
+  if (x.outcome === "PARTIALLY_FILLED" && (x.acceptanceProvenance !== "ACKNOWLEDGED" || x.filledQuantity <= 0 || x.filledQuantity >= x.quantity)) return false;
+  if ((x.outcome === "REJECTED" || x.outcome === "FAILED") && (x.acceptanceProvenance !== x.outcome || x.filledQuantity !== 0 || x.cancelState !== "NONE")) return false;
+  if (x.outcome === "CANCELLED" && (x.cancelState !== "CANCELLED" || x.filledQuantity !== 0)) return false;
   if ((x.outcome === "CANCELLED") !== (x.cancelState === "CANCELLED") || (x.cancelState === "REQUESTED" && (x.outcome === "FILLED" || x.outcome === "CANCELLED")) || (x.cancelState === "UNKNOWN" && x.outcome !== "UNKNOWN")) return false;
-  if ((x.outcome === "REJECTED" || x.outcome === "FAILED") && x.cancelState !== "NONE") return false;
   return true;
 }
 function quantityOf(intent: BoundedIntent): number { return intent.quantity ?? intent.notional / intent.price; }
@@ -119,7 +151,9 @@ export class OrderWriter {
     let order: StoredOrder = freeze({ clientOrderId, mandateId: intent.mandateId, workflowId: intent.workflowId, symbol: intent.symbol, side: intent.side, accountId: intent.accountId, method: intent.method, attempt, notional: intent.notional, executableEdgeBps: intent.executableEdgeBps, marketStateVersion: intent.marketStateVersion, accountStateVersion: intent.accountStateVersion, quantity, price: intent.price, outcome: "UNKNOWN", filledQuantity: 0, acceptanceProvenance: "TIMEOUT", cancelState: "NONE", fillEventIds: [], intent: clone(intent), intentFingerprint: fingerprint, events: [], filledNotional: 0 });
     await this.persistence.save(order); await this.hooks.beforeAdapterCall?.();
     let result: AdapterResult; try { result = await this.adapter.submit(intent, clientOrderId); } catch { result = { kind: "TIMEOUT" }; }
-    await this.hooks.afterAdapterCall?.(); order = { ...order, outcome: result.kind === "TIMEOUT" ? "UNKNOWN" : result.kind, acceptanceProvenance: result.kind, events: [] }; await this.persistence.save(freeze(order)); return freeze(clone(order));
+    await this.hooks.afterAdapterCall?.();
+    if (!validAdapterResult(result)) fail("adapter result is invalid");
+    order = { ...order, outcome: result.kind === "TIMEOUT" ? "UNKNOWN" : result.kind, acceptanceProvenance: result.kind, events: [] }; await this.persistence.save(freeze(order)); return freeze(clone(order));
   }
   reconcile(clientOrderId: string, event: FillEvent): Promise<OrderReceipt> { return this.serial(() => this.reconcileOnce(clientOrderId, event)); }
   private async reconcileOnce(clientOrderId: string, event: FillEvent): Promise<OrderReceipt> {
@@ -144,6 +178,7 @@ export class OrderWriter {
     if (prior.cancelState === "UNKNOWN") fail("unknown cancellation cannot be retried");
     if (prior.cancelState === "REQUESTED") fail("pending cancellation cannot be retried");
     if (prior.outcome === "FILLED" || prior.outcome === "CANCELLED") return freeze(clone(prior));
+    if (prior.filledQuantity > 0) fail("filled order cannot be cancelled");
     if (prior.outcome === "REJECTED" || prior.outcome === "FAILED") fail("terminal submission outcome cannot be cancelled");
     if (!this.adapter.cancel) fail("adapter does not support cancellation");
     const requested = freeze({ ...prior, cancelState: "REQUESTED" as const });
@@ -151,7 +186,7 @@ export class OrderWriter {
     try {
       await this.adapter.cancel(clientOrderId);
     } catch {
-      const unknown = freeze({ ...requested, outcome: "UNKNOWN" as const, cancelState: "UNKNOWN" as const });
+      const unknown = freeze({ ...requested, outcome: "UNKNOWN" as const, acceptanceProvenance: "TIMEOUT" as const, cancelState: "UNKNOWN" as const });
       await this.persistence.save(unknown);
       return freeze(clone(unknown));
     }

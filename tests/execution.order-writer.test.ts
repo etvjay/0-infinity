@@ -223,3 +223,54 @@ test("PARTIALLY_FILLED events require positive cumulative quantity and valid fil
   assert.equal(valid.outcome, "PARTIALLY_FILLED");
   assert.equal(valid.filledQuantity, 1);
 });
+
+test("persisted receipts bind quantity and enforce status provenance and fill arithmetic", async () => {
+  const seed = new MemoryOrderPersistence();
+  const writer = new OrderWriter(store(), seed, adapter());
+  const receipt = await writer.submit(intent, 16);
+  const base = seed.replay()[0];
+  const mutations = [
+    { ...base, quantity: 1 },
+    { ...base, outcome: "ACKNOWLEDGED", acceptanceProvenance: "TIMEOUT" },
+    { ...base, outcome: "ACKNOWLEDGED", filledQuantity: 1, averagePrice: 100, filledNotional: 100 },
+    { ...base, outcome: "FILLED", filledQuantity: 2, averagePrice: 100, filledNotional: 200, acceptanceProvenance: "TIMEOUT" },
+    { ...base, outcome: "UNKNOWN", acceptanceProvenance: "TIMEOUT", filledQuantity: 1, averagePrice: 100, filledNotional: 100 },
+    { ...base, outcome: "CANCELLED", cancelState: "CANCELLED", filledQuantity: 1, averagePrice: 100, filledNotional: 100 },
+    { ...base, outcome: "PARTIALLY_FILLED", filledQuantity: 1, averagePrice: 100, filledNotional: 99 },
+  ];
+  for (const forged of mutations) {
+    const persistence = { load: () => Object.freeze(structuredClone(forged)), save: async () => undefined } as any;
+    const forgedWriter = new OrderWriter(store(), persistence, adapter());
+    await assert.rejects(() => forgedWriter.submit(intent, 16), /persisted receipt|invalid|conflicting/);
+    await assert.rejects(() => forgedWriter.cancel(receipt.clientOrderId), /persisted receipt|writer-owned/);
+    await assert.rejects(() => forgedWriter.reconcile(receipt.clientOrderId, event({ eventId: "coherence", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 100 })), /persisted receipt|writer-owned/);
+  }
+});
+
+test("canonical frozen receipt arrays reject Array.prototype pollution", async () => {
+  const persistence = new MemoryOrderPersistence();
+  const writer = new OrderWriter(store(), persistence, adapter());
+  const receipt = await writer.submit(intent, 17);
+  const persisted = persistence.replay()[0];
+  try {
+    Object.defineProperty(Array.prototype, "pollutedReceiptKey", { value: true, configurable: true });
+    const polluted = { ...persisted, fillEventIds: Object.freeze([]), events: Object.freeze([]) };
+    const poisoned = { load: () => Object.freeze(polluted), save: async () => undefined } as any;
+    const poisonedWriter = new OrderWriter(store(), poisoned, adapter());
+    await assert.rejects(() => poisonedWriter.submit(intent, 17), /persisted receipt/);
+  } finally { delete (Array.prototype as any).pollutedReceiptKey; }
+});
+
+test("adapter results are validated before a bogus result can be persisted", async () => {
+  const persistence = new MemoryOrderPersistence();
+  const writer = new OrderWriter(store(), persistence, { submit: async () => ({ kind: "BOGUS" } as any) });
+  await assert.rejects(() => writer.submit(intent, 18), /adapter result/);
+  assert.equal(persistence.replay()[0].outcome, "UNKNOWN");
+});
+
+test("partially filled orders cannot become invalid positive-fill cancellations", async () => {
+  const writer = new OrderWriter(store(), new MemoryOrderPersistence(), adapter());
+  const receipt = await writer.submit(intent, 19);
+  await writer.reconcile(receipt.clientOrderId, event({ eventId: "partial-before-cancel", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 101 }));
+  await assert.rejects(() => writer.cancel(receipt.clientOrderId), /filled order cannot be cancelled/);
+});

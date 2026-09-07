@@ -28,16 +28,16 @@ source_url: https://developers.binance.com/en/docs/catalog/core-trading-derivati
 source_url_2: https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Live-Subscribing-Unsubscribing-to-streams
 source_class: S1 official Binance Developer Docs
 verified_at: 2026-09-07T07:57:48Z
-claim_supported: official public UM market streams use wss://fstream.binance.com; bookTicker and diff-depth expose the documented event fields; stream control uses SUBSCRIBE/UNSUBSCRIBE with params and an unsigned integer id.
+claim_supported: the official public UM market-stream control page (source_url_2) documents SUBSCRIBE/UNSUBSCRIBE with params and a numeric unsigned-integer id; that stream-control id is distinct from the general WebSocket API's string request-id convention, which this public market-stream adapter does not implement.
 ```
 
 ## implementation and receipts
 
 - implementation: `src/market/connectivity.ts`
 - tests: `tests/market.connectivity.test.ts`
-- strict TDD RED: focused regression run failed `5/12` before remediation: unsubscribe still routed/reconnected, reconnect attempts were not reset, broad depth grammar accepted unsupported forms, invalid ACKs hung in `SUBSCRIBING`, and UM metadata was forwarded.
-- focused GREEN: `13/13 PASS` (`npm run build && node --test dist/tests/market.connectivity.test.js`).
-- full receipt: `340/340 PASS` (`npm test`).
+- strict TDD RED: the two new focused regressions failed before remediation: unsubscribe during `BACKOFF` restarted a connection, and caller-owned stream/backoff arrays changed later payload/timing.
+- focused GREEN: `15/15 PASS` (`npm run build && node --test dist/tests/market.connectivity.test.js`).
+- full receipt: `342/342 PASS` (`npm test`).
 - typecheck: `PASS` (`npm run check`).
 - build: `PASS` (`npm run build`).
 - diff check: `PASS` (`git diff --check`).

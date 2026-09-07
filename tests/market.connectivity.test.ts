@@ -102,6 +102,26 @@ test("unsubscribe invalidates and closes the connection without reconnecting or 
   assert.equal(events.length, 0); assert.deepEqual(scheduler.delays, []);
 });
 
+test("unsubscribe during backoff invalidates the pending reconnect and returns to idle", () => {
+  const transport = new FakeTransport(); const scheduler = new FakeScheduler();
+  const adapter = new UsdMFuturesMarketConnectivity(transport, config, { scheduler });
+  adapter.start(); transport.connections[0].close("network");
+  assert.equal(adapter.status, "BACKOFF");
+  adapter.unsubscribe(); scheduler.runNext();
+  assert.equal(adapter.status, "IDLE"); assert.equal(transport.connections.length, 1);
+});
+
+test("snapshots caller-owned stream and backoff arrays at construction", () => {
+  const transport = new FakeTransport(); const scheduler = new FakeScheduler();
+  const mutableConfig = { symbols: ["BTCUSDT"] as const, streams: ["btcusdt@bookTicker"], maxReconnectAttempts: 1, backoffMs: [100] };
+  const adapter = new UsdMFuturesMarketConnectivity(transport, mutableConfig, { scheduler });
+  mutableConfig.streams[0] = "btcusdt@depth";
+  mutableConfig.backoffMs[0] = 999;
+  adapter.start();
+  assert.deepEqual(JSON.parse(transport.connections[0].sent[0]).params, ["btcusdt@bookTicker"]);
+  transport.connections[0].close("network"); assert.deepEqual(scheduler.delays, [100]);
+});
+
 test("stop invalidates a pending reconnect task", () => {
   const transport = new FakeTransport(); const scheduler = new FakeScheduler();
   const adapter = new UsdMFuturesMarketConnectivity(transport, config, { scheduler });

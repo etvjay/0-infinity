@@ -67,12 +67,19 @@ export class UsdMFuturesMarketConnectivity {
   private readonly receivedAt?: () => number;
   private readonly marketState?: UsdMFuturesMarketState;
   private readonly orderBook?: UsdMFuturesOrderBook;
+  private readonly config: UsdMFuturesMarketConnectivityConfig;
   private lifecycleToken = 0;
 
-  constructor(private readonly transport: UsdMFuturesMarketTransport, private readonly config: UsdMFuturesMarketConnectivityConfig, options: UsdMFuturesMarketConnectivityOptions = {}) {
+  constructor(private readonly transport: UsdMFuturesMarketTransport, config: UsdMFuturesMarketConnectivityConfig, options: UsdMFuturesMarketConnectivityOptions = {}) {
     validateConfig(config);
+    this.config = {
+      symbols: [...config.symbols],
+      streams: [...config.streams],
+      maxReconnectAttempts: config.maxReconnectAttempts,
+      backoffMs: config.backoffMs === undefined ? undefined : [...config.backoffMs],
+    };
     this.maxReconnectAttempts = config.maxReconnectAttempts ?? DEFAULT_BACKOFF.length;
-    this.backoffMs = config.backoffMs ?? DEFAULT_BACKOFF;
+    this.backoffMs = config.backoffMs === undefined ? [...DEFAULT_BACKOFF] : [...config.backoffMs];
     this.scheduler = options.scheduler ?? new ImmediateScheduler();
     this.onMarketEvent = options.onMarketEvent;
     this.receivedAt = options.receivedAt;
@@ -92,13 +99,14 @@ export class UsdMFuturesMarketConnectivity {
   }
 
   unsubscribe(): void {
-    if (!this.connection || (this.status !== "SUBSCRIBED" && this.status !== "SUBSCRIBING")) return;
-    this.send("UNSUBSCRIBE");
-    const connection = this.connection;
-    this.connection = undefined;
+    if (this.status === "STOPPED") return;
     this.lifecycleToken++;
+    const connection = this.connection;
+    const active = this.status === "SUBSCRIBED" || this.status === "SUBSCRIBING";
+    if (connection && active) this.send("UNSUBSCRIBE");
+    this.connection = undefined;
     this.status = "IDLE";
-    connection.close();
+    if (connection && active) connection.close();
   }
 
   private connect(): void {

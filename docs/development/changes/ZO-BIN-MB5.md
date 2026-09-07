@@ -15,24 +15,25 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 - Intent and fill-event validation requires frozen canonical own-data objects with the exact Object prototype, enumerable data descriptors, and no unsupported inherited, hidden, symbol, or accessor keys; persisted mandate bindings enforce workflow, symbol, side, method, account (when supplied), and entry price bounds.
 - Same-client retries compare a complete canonical intent fingerprint, including method, quantity, account, notional, executable edge, and both state versions. Receipts bind account, method, attempt, economics, state versions, adapter acceptance provenance, and fill-event provenance.
 - Persistence precedes every adapter call. Adapter timeout or thrown call becomes `UNKNOWN`; the writer refuses blind retry. ACKNOWLEDGED does not imply a fill.
-- Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, rejects `FILLED` without a cumulative quantity reaching the requested quantity, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation durably records `REQUESTED` before the adapter, maps adapter uncertainty to durable local `UNKNOWN`, refuses blind retry, and requires deterministic client-ID/mandate/workflow/attempt/intent-fingerprint ownership.
+- Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, rejects `FILLED` without a cumulative quantity reaching the requested quantity, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation durably records `REQUESTED` before the adapter, refuses `REJECTED`/`FAILED` terminal submissions before adapter invocation, maps adapter uncertainty to durable local `UNKNOWN`, refuses blind retry, and requires deterministic client-ID/mandate/workflow/attempt/intent-fingerprint ownership.
 - Reconciliation refuses fills after terminal `REJECTED`/`FAILED` submission outcomes, `CANCELLED`, or uncertain (`UNKNOWN`) cancellation, preserving the terminal/uncertain receipt without fill or outcome mutation. Duplicate event IDs remain idempotent before terminal rejection checks.
 - `MemoryOrderPersistence.failNextSave()` and writer hooks model local persistence/crash windows and replay boundaries; no production crash-safety claim is made.
 
 ## TDD and verification receipts
 
 - RED: focused rejected/failed fill regressions failed before implementation with missing expected rejections.
-- GREEN: focused execution tests `12/12 PASS`.
-- Full `npm test`: `412/412 PASS`.
+- RED: focused rejected/failed cancellation regression failed before implementation with missing expected rejections.
+- GREEN: focused execution tests `13/13 PASS`.
+- Full `npm test`: `413/413 PASS`.
 - `npm run check`: PASS.
 - `npm run build`: PASS.
 - `git diff --check`: PASS.
 
 ## review and evidence ceiling
 
-- remediation_code_head: `3d986c15ad6baab4230c848ac7dbb605a25ee4fe`
+- remediation_code_head: `12f5e8f42239d0d53e720eae09704be522e1f7ab`
 - review verdict: `REVISE` (provisional pending fresh review of the remediation head)
-- focused: `12/12`; full: `412/412`
+- focused: `13/13`; full: `413/413`
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.
 
 ## exclusions and risks

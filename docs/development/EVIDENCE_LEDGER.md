@@ -100,9 +100,9 @@ M-B3 proof receipt:
 
 M-B4 proof receipt:
 
-- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact-head independent review remains pending.
+- status: `PROVISIONAL_LOCAL_PASS`; exact candidate `e883dabc6b07ca7fde6ba1c47fc8a8dc7af86137`; independent review found no implementation blockers; receipt-only reconciliation remains pending.
 - objective: deterministic local advocate/oppose/market-account evidence council producing immutable `TradeThesis` or typed refusal, with full prototype-chain and canonical economics validation.
-- tests: focused economics `14/14`, focused reasoning council `10/10`; full suite `382/382`.
-- TDD RED: sparse/non-canonical fills regressions failed before remediation; GREEN focused economics `14/14`.
-- implementation: `src/economics/index.ts`; regressions in `tests/economics.test.ts`; no arithmetic recomputation, mandate, or authority operation.
-- evidence ceiling: local supplied/replay evidence only; no live or production claim; final review/approval not obtained.
+- tests: focused economics `15/15`, focused reasoning council `12/12`; full suite `385/385`.
+- TDD RED/GREEN: import-time Array.prototype pollution was identified and rejected after explicit canonical allowlists; fresh-process economics/reasoning probes pass.
+- implementation: `src/reasoning/index.ts`, `src/economics/index.ts`; no arithmetic recomputation, mandate, or authority operation.
+- evidence ceiling: local supplied/replay evidence only; no live or production claim.

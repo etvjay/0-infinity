@@ -23,9 +23,9 @@ Final independent review is still required; this status is not an approval.
 ## TDD and verification receipts
 
 - RED: newly added economics fills regressions initially failed before remediation (sparse and non-enumerable numeric array entries were accepted); existing prototype-pollution regressions remained covered.
-- GREEN: focused economics `14/14 PASS`; focused reasoning council `10/10 PASS`.
-- Full `npm test` — `382/382 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
-- Remediation is provisional pending exact-head independent review; no `LOCAL_PASS` promotion or final review approval is claimed.
+- GREEN: focused economics `15/15 PASS`; focused reasoning council `12/12 PASS`.
+- Full `npm test` — `385/385 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
+- Candidate: `e883dabc6b07ca7fde6ba1c47fc8a8dc7af86137`; independent review found no implementation blockers, but receipt-only reconciliation remains pending.
 
 ## exclusions and unresolved evidence
 

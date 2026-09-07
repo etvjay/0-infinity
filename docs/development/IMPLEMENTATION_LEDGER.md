@@ -36,8 +36,8 @@ M-B3 remediation receipt:
 
 M-B4 remediation receipt:
 
-- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact-head independent review remains pending.
-- scope: full prototype-chain validation including `Object.prototype`; non-empty string optional thesis identifiers; non-negative chronological timestamps; canonical deeply frozen economics assessment validation including dense fills arrays, canonical frozen/non-configurable/non-writable fill objects, and clean `Array.prototype`.
-- TDD: council fills and import-time prototype-pollution regressions RED before remediation; focused economics `15/15`; focused reasoning `12/12`; combined focused `27/27`; full `385/385`.
+- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact remediation head `6087fba5ec7c80561b34dafa90c2cf45a786191f`; exact-head independent review remains pending.
+- scope: full prototype-chain validation including `Object.prototype`; explicit local/replay provenance and frozen SYNCED/trusted order-book assertion; canonical deeply frozen economics assessment validation including exact decimal fields and dense fills; exact boolean approval; compile request/policy/anchor and replay state-envelope shape validation.
+- TDD: hostile handoff regressions RED before remediation; focused handoff `11/11`; focused economics `15/15`; focused reasoning `12/12`; combined focused `38/38`; full `396/396`.
 - typecheck: `PASS`; build: `PASS`; diff_check: `PASS`.
 - evidence ceiling: local supplied/replay evidence only; no live, production, profitability, authority, network, MCP, credential, or order-path claim.

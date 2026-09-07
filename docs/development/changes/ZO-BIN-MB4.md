@@ -17,17 +17,18 @@
 
 - `src/reasoning/index.ts` exports immutable input types, `conveneEvidenceCouncil`, `CouncilResult`, and typed refusal codes.
 - `src/reasoning/handoff.ts` adds a pure local/replay handoff: default `PROPOSAL`/`REFUSAL`, explicit `APPROVAL_REQUIRED` then `MANDATE_COMPILED`, and separate `EVALUATED_INTENT`/refusal boundary.
-- Caller-supplied compiler policy, anchor/time, replay market/account envelopes, and bound frozen M-B3 economics are revalidated; no authority is issued or consumed by council output.
+- Caller-supplied compiler policy, anchor/time, replay market/account envelopes, and bound frozen M-B3 economics are revalidated; economics requires explicit `LOCAL`/`REPLAY` provenance plus a frozen `SYNCED`/trusted order-book assertion; no authority is issued or consumed by council output.
 - Canonical own-data string-key validation now inspects the complete prototype chain, including `Object.prototype`, and rejects unsupported own/inherited enumerable, non-enumerable, and symbol keys.
 - Optional `thesisId` and `thesisHash` are accepted only as non-empty strings; all evidence timestamps are finite, non-negative, chronological, and fresh.
-- Supplied economics is accepted only as the canonical deeply frozen `ASSESSMENT` shape (including frozen fills); unsupported or mutable economics refuses. `REFUSAL` economics remains an explicit council refusal.
+- Supplied economics is accepted only as the canonical deeply frozen `ASSESSMENT` shape (including exact decimal fields and dense frozen fills); unsupported or mutable economics refuses. Approval is accepted only when `request.approve === true`; compile request/policy/anchor shapes are validated before compilation.
 
 ## TDD and verification receipts
 
 - RED: newly added economics fills regressions initially failed before remediation (sparse and non-enumerable numeric array entries were accepted); existing prototype-pollution regressions remained covered.
-- GREEN: focused economics `15/15 PASS`; focused reasoning council `12/12 PASS`.
-- Full `npm test` — `385/385 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
-- Candidate: `e883dabc6b07ca7fde6ba1c47fc8a8dc7af86137`; independent review found no implementation blockers, but receipt-only reconciliation remains pending.
+- RED: new handoff tests failed against shallow assessment acceptance, missing provenance, truthy approval, and mutable replay state acceptance.
+- GREEN: focused handoff `11/11 PASS`; focused economics `15/15 PASS`; focused reasoning `12/12 PASS`.
+- Full `npm test` — `396/396 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
+- Candidate: `6087fba5ec7c80561b34dafa90c2cf45a786191f`; independent review remains pending.
 
 ## exclusions and unresolved evidence
 

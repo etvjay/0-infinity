@@ -1,4 +1,4 @@
-import type { ExecutionEconomicsResult } from "../economics/index.js";
+import type { ExecutionAssessment, ExecutionEconomicsResult } from "../economics/index.js";
 import { compileMandate, type AnchorState, type CompilerPolicy, type ExecutionMandate, type TradeThesis } from "../domain/index.js";
 import { evaluateMandate, type EvaluationPolicy, type EvaluationWorkflow, type ExecutionIntent, type ExecutionRefusal, type LiveAccountState, type LiveMarketState, type StateEnvelope } from "../evaluator/index.js";
 import type { MandateRuntime } from "../runtime/mandateRuntime.js";
@@ -9,6 +9,8 @@ export interface CompilerEconomicsEnvelope {
   readonly evidenceHash: string;
   readonly observedAt: number;
   readonly receivedAt: number;
+  readonly source: "LOCAL" | "REPLAY";
+  readonly orderBook: { readonly status: "SYNCED"; readonly trusted: true };
   readonly result: ExecutionEconomicsResult;
 }
 export interface CouncilHandoffInput {
@@ -70,10 +72,61 @@ const freeze = <T>(value: T): T => {
 };
 const refusal = (code: HandoffRefusalCode, message: string): HandoffRefusal => Object.freeze({ kind: "REFUSAL", code, message });
 
+const DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
+const CANONICAL_ARRAY_KEYS = Reflect.ownKeys(Array.prototype);
+const assessmentKeys = ["kind", "side", "requestedQuantity", "executableQuantity", "bestExecutableReference", "vwap", "worstExecutionPrice", "limitPrice", "totalCost", "spreadBps", "slippageBps", "feeBps", "fundingCostBps", "executableEdgeBps", "fills"] as const;
+const fillKeys = ["price", "quantity", "notional"] as const;
+const canonicalData = (value: unknown, keys: readonly string[], required = keys): boolean => {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype || !canonicalObjectPrototype()) return false;
+  const allowed = new Set(keys);
+  for (const key of Reflect.ownKeys(value)) {
+    if (typeof key !== "string" || !allowed.has(key)) return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !descriptor.enumerable || !("value" in descriptor) || descriptor.get || descriptor.set) return false;
+  }
+  return required.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+};
+const canonicalArray = (value: unknown): value is readonly unknown[] => {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !Object.isFrozen(value) || Reflect.ownKeys(Array.prototype).length !== CANONICAL_ARRAY_KEYS.length || !CANONICAL_ARRAY_KEYS.every((key) => Reflect.ownKeys(Array.prototype).includes(key))) return false;
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== value.length + 1 || !keys.includes("length")) return false;
+  for (let i = 0; i < value.length; i++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
+    if (!descriptor || !descriptor.enumerable || descriptor.writable || descriptor.configurable || !("value" in descriptor)) return false;
+  }
+  return Object.getOwnPropertyDescriptor(value, "length")?.writable === false;
+};
+const decimal = (value: unknown): value is string => typeof value === "string" && DECIMAL.test(value);
+function validAssessment(value: unknown): value is ExecutionAssessment {
+  if (!canonicalData(value, assessmentKeys) || !Object.isFrozen(value)) return false;
+  const assessment = value as ExecutionAssessment;
+  if (assessment.kind !== "ASSESSMENT" || (assessment.side !== "BUY" && assessment.side !== "SELL") || assessmentKeys.slice(2, -1).some((key) => !decimal(assessment[key]))) return false;
+  if (!canonicalArray(assessment.fills) || !assessment.fills.length || !assessment.fills.every((fill) => canonicalData(fill, fillKeys) && Object.isFrozen(fill) && fillKeys.every((key) => decimal((fill as unknown as Record<string, unknown>)[key])))) return false;
+  return frozenTree(assessment);
+}
+const validAnchor = (value: unknown): value is AnchorState => canonicalData(value, ["stateVersion", "observedAt", "receivedAt", "markPrice"]) && typeof (value as AnchorState).stateVersion === "bigint" && (value as AnchorState).stateVersion >= 0n && finite((value as AnchorState).observedAt) && finite((value as AnchorState).receivedAt) && finite((value as AnchorState).markPrice) && (value as AnchorState).observedAt >= 0 && (value as AnchorState).receivedAt >= (value as AnchorState).observedAt && (value as AnchorState).markPrice > 0;
+const validPolicy = (value: unknown): value is CompilerPolicy => {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype || !canonicalObjectPrototype()) return false;
+  const keys = ["accountId", "validityMs", "minExecutableEdgeBps", "maxSpreadBps", "maxSlippageBps", "maxFeeBps", "maxFundingCostBps", "maxNotional", "maxLossBps", "execution", "minEntryPrice", "maxEntryPrice", "entryTrigger", "allowedSymbols"];
+  if (!canonicalData(value, keys, keys.slice(0, -1)) || !text((value as CompilerPolicy).accountId)) return false;
+  const symbols = (value as CompilerPolicy).allowedSymbols;
+  if (symbols !== undefined && (!Array.isArray(symbols) || Object.getPrototypeOf(symbols) !== Array.prototype || Reflect.ownKeys(symbols).length !== symbols.length + 1 || !symbols.every(text))) return false;
+  return Object.entries(value as Record<string, unknown>).every(([key, item]) => key === "accountId" || key === "execution" || key === "entryTrigger" || key === "allowedSymbols" || finite(item));
+};
+const validCompileRequest = (value: unknown): value is CompileRequest => canonicalData(value, ["workflowId", "policy", "anchor", "now", "approve"]) && text((value as CompileRequest).workflowId) && validPolicy((value as CompileRequest).policy) && validAnchor((value as CompileRequest).anchor) && finite((value as CompileRequest).now) && (value as CompileRequest).now >= 0;
+const marketStateKeys = ["venue", "instrument", "symbol", "bidPrice", "askPrice", "markPrice", "expectedMoveBps", "spreadBps", "slippageBps", "feeBps", "fundingCostBps"];
+const accountStateKeys = ["accountId", "availableNotional", "currentNotional", "currentLossBps"];
+const validStateEnvelope = (value: unknown, stateKeys: readonly string[]): boolean => {
+  if (!canonicalData(value, ["version", "observedAt", "receivedAt", "value"]) || !Object.isFrozen(value)) return false;
+  const envelope = value as StateEnvelope<Record<string, unknown>>;
+  if (typeof envelope.version !== "bigint" || envelope.version < 0n || !finite(envelope.observedAt) || !finite(envelope.receivedAt) || envelope.observedAt < 0 || envelope.receivedAt < envelope.observedAt || !canonicalData(envelope.value, stateKeys) || !Object.isFrozen(envelope.value)) return false;
+  return stateKeys.every((key) => { const item = (envelope.value as Record<string, unknown>)[key]; return key === "venue" || key === "instrument" || key === "symbol" || key === "accountId" ? text(item) : finite(item); }) && frozenTree(envelope);
+};
+
 function validEconomicsEnvelope(value: unknown): value is CompilerEconomicsEnvelope {
-  if (!ownKeys(value as object, ["kind", "evidenceHash", "observedAt", "receivedAt", "result"]) || !Object.isFrozen(value) || !text((value as CompilerEconomicsEnvelope).evidenceHash)) return false;
+  if (!ownKeys(value as object, ["kind", "evidenceHash", "observedAt", "receivedAt", "source", "orderBook", "result"]) || !Object.isFrozen(value) || !text((value as CompilerEconomicsEnvelope).evidenceHash)) return false;
   const envelope = value as CompilerEconomicsEnvelope;
-  return envelope.kind === "ECONOMICS" && finite(envelope.observedAt) && finite(envelope.receivedAt) && envelope.observedAt >= 0 && envelope.receivedAt >= envelope.observedAt && frozenTree(envelope.result) && envelope.result.kind === "ASSESSMENT";
+  return envelope.kind === "ECONOMICS" && (envelope.source === "LOCAL" || envelope.source === "REPLAY") && canonicalData(envelope.orderBook, ["status", "trusted"]) && envelope.orderBook.status === "SYNCED" && envelope.orderBook.trusted === true && finite(envelope.observedAt) && finite(envelope.receivedAt) && envelope.observedAt >= 0 && envelope.receivedAt >= envelope.observedAt && validAssessment(envelope.result);
 }
 
 /** Default boundary: council reasoning becomes only a proposal or refusal. */
@@ -93,7 +146,8 @@ export function createCouncilHandoff(input: CouncilHandoffInput): CouncilHandoff
 export function compileCouncilHandoff(proposal: CouncilHandoff, request: CompileRequest): CompileResult {
   try {
     if (proposal.kind === "REFUSAL") return proposal;
-    if (proposal.kind !== "PROPOSAL" || !request.approve) return Object.freeze({ kind: "APPROVAL_REQUIRED", workflowId: proposal.workflowId, thesisId: proposal.thesis.thesisId, message: "explicit caller approval is required before mandate compilation" });
+    if (proposal.kind !== "PROPOSAL" || !validCompileRequest(request)) return refusal("COMPILER_REFUSED", "compile request is not canonical");
+    if (request.approve !== true) return Object.freeze({ kind: "APPROVAL_REQUIRED", workflowId: proposal.workflowId, thesisId: proposal.thesis.thesisId, message: "explicit caller approval is required before mandate compilation" });
     if (request.workflowId !== proposal.workflowId) return refusal("IDENTITY_MISMATCH", "workflow identity does not match proposal");
     const mandate = compileMandate({ workflowId: request.workflowId }, proposal.thesis, request.policy, request.anchor, request.now);
     return freeze({ kind: "MANDATE_COMPILED" as const, workflowId: request.workflowId, thesis: proposal.thesis, mandate });
@@ -103,6 +157,7 @@ export function compileCouncilHandoff(proposal: CouncilHandoff, request: Compile
 /** Explicit evaluator boundary. It consumes only caller-supplied replay envelopes. */
 export function evaluateCouncilHandoff(compiled: CompileResult, workflow: EvaluationWorkflow, runtime: MandateRuntime, market: StateEnvelope<LiveMarketState>, account: StateEnvelope<LiveAccountState>, policy: EvaluationPolicy, now: number): EvaluationResult {
   if (compiled.kind !== "MANDATE_COMPILED") return compiled.kind === "REFUSAL" ? compiled : refusal("EVALUATOR_REFUSED", "a compiled mandate is required");
+  if (!validStateEnvelope(market, marketStateKeys) || !validStateEnvelope(account, accountStateKeys)) return refusal("EVALUATOR_REFUSED", "replay state envelopes must be canonical and deeply immutable");
   const result = evaluateMandate(workflow, compiled.mandate, runtime, market, account, policy, now);
   return result.kind === "EXECUTION_INTENT" ? freeze({ kind: "EVALUATED_INTENT" as const, intent: result }) : refusal("EVALUATOR_REFUSED", result.message);
 }

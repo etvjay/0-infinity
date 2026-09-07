@@ -11,10 +11,10 @@ const councilInput = (): CouncilInput => ({ advocate: { kind: "ADVOCATE", ref: "
 const compilerPolicy: CompilerPolicy = { accountId: "acct", validityMs: 5_000, minExecutableEdgeBps: 1, maxSpreadBps: 10, maxSlippageBps: 10, maxFeeBps: 10, maxFundingCostBps: 10, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_000, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
 const anchor: AnchorState = { stateVersion: 3n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 };
 const economics = Object.freeze({ kind: "ASSESSMENT" as const, side: "BUY" as const, requestedQuantity: "1", executableQuantity: "1", bestExecutableReference: "100000", vwap: "100000", worstExecutionPrice: "100000", limitPrice: "100000", totalCost: "100000", spreadBps: "1", slippageBps: "0", feeBps: "0", fundingCostBps: "0", executableEdgeBps: "10", fills: Object.freeze([Object.freeze({ price: "100000", quantity: "1", notional: "100000" })]) });
-const economicsEnvelope = (): CompilerEconomicsEnvelope => Object.freeze({ kind: "ECONOMICS", evidenceHash: "evidence-hash", observedAt: 1_000, receivedAt: 1_001, result: economics });
+const economicsEnvelope = (): CompilerEconomicsEnvelope => Object.freeze({ kind: "ECONOMICS", evidenceHash: "evidence-hash", observedAt: 1_000, receivedAt: 1_001, source: "LOCAL" as const, orderBook: Object.freeze({ status: "SYNCED" as const, trusted: true }), result: economics });
 const handoffInput = () => ({ council: conveneEvidenceCouncil(councilInput()), workflowId: "wf-1", compilerPolicy, anchor, now: 1_500, economics: economicsEnvelope() });
-const market: StateEnvelope<LiveMarketState> = { version: 3n, observedAt: 1_500, receivedAt: 1_501, value: { venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: "BTCUSDT", bidPrice: 99_000, askPrice: 99_000, markPrice: 99_000, expectedMoveBps: 50, spreadBps: 0, slippageBps: 0, feeBps: 0, fundingCostBps: 0 } };
-const account: StateEnvelope<LiveAccountState> = { version: 1n, observedAt: 1_500, receivedAt: 1_501, value: { accountId: "acct", availableNotional: 2_000, currentNotional: 0, currentLossBps: 0 } };
+const market: StateEnvelope<LiveMarketState> = Object.freeze({ version: 3n, observedAt: 1_500, receivedAt: 1_501, value: Object.freeze({ venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: "BTCUSDT", bidPrice: 99_000, askPrice: 99_000, markPrice: 99_000, expectedMoveBps: 50, spreadBps: 0, slippageBps: 0, feeBps: 0, fundingCostBps: 0 }) });
+const account: StateEnvelope<LiveAccountState> = Object.freeze({ version: 1n, observedAt: 1_500, receivedAt: 1_501, value: Object.freeze({ accountId: "acct", availableNotional: 2_000, currentNotional: 0, currentLossBps: 0 }) });
 const evalPolicy: EvaluationPolicy = { maxMarketAgeMs: 1_000, maxAccountAgeMs: 1_000, maxAnchorVersionLag: 0n };
 
 test("default handoff is immutable proposal and never compiles or consumes authority", () => {
@@ -59,6 +59,40 @@ test("rejects prototype pollution, remains deterministic, and does not mutate in
   assert.deepEqual(first, second); assert.equal(JSON.stringify(input, (_k, value) => typeof value === "bigint" ? `${value}n` : value), before);
   Object.defineProperty(Object.prototype, "poison", { value: true, configurable: true });
   try { assert.equal(createCouncilHandoff(input).kind, "REFUSAL"); } finally { delete (Object.prototype as Record<string, unknown>).poison; }
+});
+
+test("rejects shallow assessment envelopes with junk or malformed decimal fields", () => {
+  const input = handoffInput();
+  const junk = Object.freeze({ ...economicsEnvelope(), result: Object.freeze({ kind: "ASSESSMENT", side: "BUY", junk: true }) });
+  assert.equal(createCouncilHandoff({ ...input, economics: junk as never }).kind, "REFUSAL");
+  const badDecimal = Object.freeze({ ...economicsEnvelope(), result: Object.freeze({ ...economics, totalCost: "1e3" }) });
+  assert.equal(createCouncilHandoff({ ...input, economics: badDecimal as never }).kind, "REFUSAL");
+});
+
+test("requires trusted local or replay provenance and synced order book", () => {
+  const input = handoffInput();
+  assert.equal(createCouncilHandoff({ ...input, economics: Object.freeze({ ...input.economics, source: undefined }) as never }).kind, "REFUSAL");
+  assert.equal(createCouncilHandoff({ ...input, economics: Object.freeze({ ...input.economics, orderBook: Object.freeze({ status: "SYNCED", trusted: false }) }) as never }).kind, "REFUSAL");
+  assert.equal(createCouncilHandoff({ ...input, economics: Object.freeze({ ...input.economics, orderBook: Object.freeze({ status: "DESYNCED", trusted: true }) }) as never }).kind, "REFUSAL");
+});
+
+test("requires exact true approval and canonical compile request shapes", () => {
+  const proposal = createCouncilHandoff(handoffInput());
+  assert.equal(compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor, now: 1_500, approve: 1 as never }).kind, "APPROVAL_REQUIRED");
+  const malformedRequest = compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor, now: 1_500, approve: true, extra: true } as never);
+  assert.equal(malformedRequest.kind, "REFUSAL"); if (malformedRequest.kind === "REFUSAL") assert.equal(malformedRequest.code, "COMPILER_REFUSED");
+  const malformedAnchor = compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor: { ...anchor, stateVersion: 1 }, now: 1_500, approve: true } as never);
+  assert.equal(malformedAnchor.kind, "REFUSAL"); if (malformedAnchor.kind === "REFUSAL") assert.equal(malformedAnchor.code, "COMPILER_REFUSED");
+});
+
+test("evaluator rejects mutable or non-canonical replay state envelopes", () => {
+  const compiled = compileCouncilHandoff(createCouncilHandoff(handoffInput()), { workflowId: "wf-1", policy: compilerPolicy, anchor, now: 1_500, approve: true });
+  assert.equal(compiled.kind, "MANDATE_COMPILED"); if (compiled.kind !== "MANDATE_COMPILED") return;
+  const runtime = createMandateRuntime({ expiresAt: compiled.mandate.expiresAt });
+  const result = evaluateCouncilHandoff(compiled, { workflowId: "wf-1", authorityStatus: "ACTIVE" }, runtime, market, account, evalPolicy, 1_600);
+  assert.equal(result.kind, "EVALUATED_INTENT");
+  const polluted = Object.assign(Object.create({ poison: true }), market);
+  assert.equal(evaluateCouncilHandoff(compiled, { workflowId: "wf-1", authorityStatus: "ACTIVE" }, runtime, Object.freeze(polluted) as never, account, evalPolicy, 1_600).kind, "REFUSAL");
 });
 
 test("forbidden side-effect scan finds no network, order, MCP, credential, or LLM path", () => {

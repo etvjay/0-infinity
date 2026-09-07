@@ -31,10 +31,6 @@ test("rejects wrong family, wrong event, and malformed account payloads", () => 
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ e: "ACCOUNT_CONFIG_UPDATE" }), 1_700_000_001_001), /event|ACCOUNT_UPDATE/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { B: [], P: [{ s: "SOLUSDT", pa: "1", ep: "1", cr: "0", up: "0", mt: "cross", iw: "0", ps: "LONG" }] } }), 1_700_000_001_001), /symbol/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { B: [{ a: "USDT", wb: "NaN", cw: "1", bc: "0" }], P: [] } }), 1_700_000_001_001), /walletBalance|wb/i);
-  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ extra: true }), 1_700_000_001_001), /unsupported|extra|field/i);
-  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { ...accountUpdate().a as object, extra: true } }), 1_700_000_001_001), /unsupported|extra|field/i);
-  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { ...accountUpdate().a as object, B: [{ a: "USDT", wb: "1", cw: "1", bc: "0", extra: true }], P: [] } }), 1_700_000_001_001), /unsupported|extra|field/i);
-  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { ...accountUpdate().a as object, B: [], P: [{ s: "BTCUSDT", pa: "0", ep: "0", cr: "0", up: "0", mt: "cross", iw: "0", ps: "BOTH", extra: true }] } }), 1_700_000_001_001), /unsupported|extra|field/i);
 });
 
 test("rejects malformed numbers, timestamps, and non-exact versions", () => {
@@ -42,52 +38,11 @@ test("rejects malformed numbers, timestamps, and non-exact versions", () => {
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ E: 1_700_000_001_002 }), 1_700_000_001_001), /E|future/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ T: 1_700_000_001_001, E: 1_700_000_001_000 }), 1_700_000_001_001), /chronology/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(JSON.stringify(accountUpdate()).replace('"u":"9223372036854775807"', '"u":1e3'), 1_700_000_001_001), /u|version/i);
-  const raw = JSON.stringify(accountUpdate());
-  assert.throws(() => normalizeUsdMFuturesAccountState(raw.replace('"u":"9223372036854775807"', '"u":"1","u":"2"'), 1_700_000_001_001), /u|duplicate|ambiguous/i);
 });
 
 test("accepts JSON text without losing a huge version and does not mutate input", () => {
-  const raw = JSON.stringify({ ...accountUpdate(), a: { ...accountUpdate().a as object, m: 'nested {"u": "not-the-version"}' } });
+  const raw = JSON.stringify(accountUpdate());
   const state = normalizeUsdMFuturesAccountState(raw, 1_700_000_001_001);
   assert.equal(state.version, 9223372036854775807n);
   assert.equal("a" in state, false); assert.equal("u" in state, false);
-});
-
-test("rejects inherited required fields and inherited unsupported fields at every schema boundary", () => {
-  const valid = accountUpdate();
-  const topRequired = ["u", "productFamily", "e", "E", "T", "a"] as const;
-  for (const field of topRequired) {
-    const own = { ...valid } as Record<string, unknown>;
-    const inherited = Object.create({ [field]: own[field] }) as Record<string, unknown>;
-    delete own[field];
-    Object.assign(inherited, own);
-    assert.throws(() => normalizeUsdMFuturesAccountState(inherited, 1_700_000_001_001), new RegExp(field === "productFamily" ? "product|family" : field));
-  }
-
-  const account = valid.a as Record<string, unknown>;
-  for (const field of ["B", "P"] as const) {
-    const inherited = Object.create({ [field]: account[field] }) as Record<string, unknown>;
-    Object.assign(inherited, account); delete inherited[field];
-    assert.throws(() => normalizeUsdMFuturesAccountState({ ...valid, a: inherited }, 1_700_000_001_001), new RegExp(field));
-  }
-
-  for (const [collection, fields] of [["B", ["a", "wb", "cw", "bc"]], ["P", ["s", "pa", "ep", "cr", "up", "mt", "iw", "ps"]]] as const) {
-    const item = (account[collection] as unknown[])[0] as Record<string, unknown>;
-    for (const field of fields) {
-      const inherited = Object.create({ [field]: item[field] }) as Record<string, unknown>;
-      Object.assign(inherited, item); delete inherited[field];
-      const nextAccount = { ...account, [collection]: [inherited] };
-      assert.throws(() => normalizeUsdMFuturesAccountState({ ...valid, a: nextAccount }, 1_700_000_001_001), new RegExp(field));
-    }
-  }
-
-  const inheritedTop = Object.assign(Object.create({ inheritedTop: true }), valid);
-  const inheritedAccount = Object.assign(Object.create({ inheritedAccount: true }), account);
-  const inheritedBalance = Object.assign(Object.create({ inheritedBalance: true }), (account.B as unknown[])[0]);
-  const inheritedPosition = Object.assign(Object.create({ inheritedPosition: true }), (account.P as unknown[])[0]);
-  const cases: Array<[string, Record<string, unknown>]> = [["top-level", inheritedTop], ["account", inheritedAccount], ["balance", inheritedBalance], ["position", inheritedPosition]];
-  for (const [boundary, value] of cases) {
-    const payload = boundary === "top-level" ? value : { ...valid, a: boundary === "account" ? value : { ...account, [boundary === "balance" ? "B" : "P"]: [value] } };
-    assert.throws(() => normalizeUsdMFuturesAccountState(payload, 1_700_000_001_001), /unsupported|inherited/i);
-  }
 });

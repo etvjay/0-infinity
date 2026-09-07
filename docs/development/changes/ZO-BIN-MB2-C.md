@@ -24,12 +24,11 @@ No network, WebSocket, REST, listenKey, credentials, account login, account writ
 
 ## verification receipts
 
-- strict TDD: focused inherited-property regressions were written first; the focused run failed 1/5 because inherited required fields were accepted, then passed after own-property enforcement.
-- focused account normalizer: `5/5 PASS`
+- strict TDD: focused tests were written before production implementation; the first focused run failed because `src/account/index.ts` did not exist.
+- focused account normalizer: `4/4 PASS`
 - typecheck: `PASS`
 - build: `PASS`
-- full suite: `327/327 PASS`
-- diff check: `PASS`
+- full suite: to be recorded after final run
 - evidence ceiling: `LOCAL_PASS` only; no live connectivity, credential, authenticated account, evaluator, or execution evidence.
 
 ## unresolved source questions

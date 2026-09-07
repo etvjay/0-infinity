@@ -21,6 +21,11 @@ test("compiles a bounded immutable mandate deterministically", () => {
   assert.equal(a.entry.minPrice, 99_000); assert.equal(a.entry.maxPrice, 101_000); assert.equal(a.entry.trigger, "BELOW");
 });
 
+test("rejects unsupported reasoning keys before authority projection", () => {
+  const widenedReasoning = { ...thesis.reasoning, hiddenPolicy: "UNAUTHORIZED" };
+  assert.throws(() => compileMandate(input(), { ...thesis, reasoning: widenedReasoning } as TradeThesis, policy, anchor, 2_000), /reasoning.*authority|unsupported.*reasoning/i);
+});
+
 test("rejects authority widening, invalid thesis, and non-finite input", () => {
   assert.throws(() => compileMandate(input(), { ...thesis, venue: "OTHER" as never }, policy, anchor, 2_000), /BINANCE/);
   assert.throws(() => compileMandate(input(), { ...thesis, direction: "FLAT" }, policy, anchor, 2_000), /FLAT/);

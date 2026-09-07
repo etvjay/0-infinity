@@ -104,6 +104,8 @@ export function compileMandate(
   if (thesis.thesisHash !== undefined) requiredString(thesis.thesisHash, "thesisHash");
   nonNegative(thesis.createdAt, "createdAt"); nonNegative(thesis.expiresAt, "expiresAt");
   if (thesis.expiresAt <= thesis.createdAt) throw new RangeError("thesis validity is incoherent");
+  const reasoningKeys = new Set(["method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash"]);
+  for (const key of Object.keys(thesis.reasoning)) if (!reasoningKeys.has(key)) throw new RangeError(`reasoning field ${key} would expand authority`);
   for (const [key, value] of Object.entries(thesis.reasoning)) requiredString(value, `reasoning.${key}`);
   requiredString(policy.accountId, "accountId");
   for (const [key, value] of Object.entries(policy)) if (key !== "accountId" && key !== "execution" && key !== "allowedSymbols" && key !== "entryTrigger") finite(value as unknown, `policy.${key}`);

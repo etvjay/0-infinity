@@ -83,9 +83,10 @@ test("enforces quantity, price, cost, fee, funding and malformed decimal bounds"
     { ...input("BUY"), requestedQuantity: "0", expected: "MALFORMED_INPUT" },
     { ...input("BUY"), requestedQuantity: "1e3", expected: "MALFORMED_INPUT" },
   ]) {
-    const result = assessExecutionEconomics(variant as ExecutionEconomicsInput);
+    const { expected, ...candidate } = variant;
+    const result = assessExecutionEconomics(candidate as ExecutionEconomicsInput);
     assert.equal(result.kind, "REFUSAL");
-    if (result.kind === "REFUSAL") assert.equal(result.code, variant.expected);
+    if (result.kind === "REFUSAL") assert.equal(result.code, expected);
   }
 });
 
@@ -125,4 +126,23 @@ test("rejects inherited structural fields on frozen levels and frozen books", ()
   const bookResult = assessExecutionEconomics({ ...input("BUY"), book: inheritedBook as UsdMFuturesOrderBookView });
   assert.equal(bookResult.kind, "REFUSAL");
   if (bookResult.kind === "REFUSAL") assert.equal(bookResult.code, "MALFORMED_INPUT");
+});
+
+test("rejects inherited fields at every economics input boundary", () => {
+  const base = input("BUY");
+  const without = (value: Record<string, unknown>, key: string, prototype: Record<string, unknown>) =>
+    Object.freeze(Object.assign(Object.create(prototype), Object.fromEntries(Object.entries(value).filter(([name]) => name !== key))));
+  const cases: ExecutionEconomicsInput[] = [
+    without(base as unknown as Record<string, unknown>, "side", { side: "BUY" }) as unknown as ExecutionEconomicsInput,
+    { ...base, policy: without(policy as unknown as Record<string, unknown>, "maxNotional", { maxNotional: "100000" }) as EconomicPolicy },
+    { ...base, fee: without(base.fee as unknown as Record<string, unknown>, "bps", { bps: "5" }) as ExecutionEconomicsInput["fee"] },
+    { ...base, funding: without(base.funding as unknown as Record<string, unknown>, "status", { status: "ASSESSED" }) as ExecutionEconomicsInput["funding"] },
+    { ...base, funding: without(base.funding as unknown as Record<string, unknown>, "costBps", { costBps: "2" }) as ExecutionEconomicsInput["funding"] },
+    { ...base, funding: without(base.funding as unknown as Record<string, unknown>, "horizon", { horizon: "8h" }) as ExecutionEconomicsInput["funding"] },
+  ];
+  for (const candidate of cases) {
+    const result = assessExecutionEconomics(candidate);
+    assert.equal(result.kind, "REFUSAL");
+    if (result.kind === "REFUSAL") assert.equal(result.code, "MALFORMED_INPUT");
+  }
 });

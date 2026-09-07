@@ -96,16 +96,28 @@ function frozenTree(value: unknown, seen = new Set<object>()): boolean {
   return Object.isFrozen(value) && Object.values(value as Record<string, unknown>).every((child) => frozenTree(child, seen));
 }
 const own = (value: object, key: string): boolean => Object.prototype.hasOwnProperty.call(value, key);
+function shape(value: unknown, allowed: readonly string[], required: readonly string[] = []): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const object = value as object;
+  const allowedKeys = new Set(allowed);
+  for (const key of Object.keys(object)) if (!allowedKeys.has(key)) return false;
+  for (let prototype = Object.getPrototypeOf(object); prototype && prototype !== Object.prototype; prototype = Object.getPrototypeOf(prototype)) {
+    for (const key of Object.keys(prototype)) if (!allowedKeys.has(key) || !own(object, key)) return false;
+  }
+  return required.every((key) => own(object, key));
+}
 function validLevel(level: unknown): level is { readonly price: string; readonly quantity: string } {
-  if (!level || typeof level !== "object" || !own(level, "price") || !own(level, "quantity")) return false;
+  if (!shape(level, ["price", "quantity"], ["price", "quantity"])) return false;
   try { const x = level as { price: unknown; quantity: unknown }; return positive(parse(x.price)) && positive(parse(x.quantity)); } catch { return false; }
 }
 
 /** Pure local economics assessment. It does not validate/consume a mandate or submit an order. */
 export function assessExecutionEconomics(input: ExecutionEconomicsInput): ExecutionEconomicsResult {
   try {
-    if (!input || typeof input !== "object" || (input.side !== "BUY" && input.side !== "SELL")) return refusal("MALFORMED_INPUT", "side/input is malformed");
-    const requested = parse(input.requestedQuantity), expected = parseSigned(input.expectedMoveBps), fee = parse(input.fee?.bps);
+    if (!shape(input, ["book", "side", "requestedQuantity", "expectedMoveBps", "fee", "funding", "policy", "partialFill"], ["book", "side", "requestedQuantity", "expectedMoveBps", "fee", "funding", "policy", "partialFill"]) || (input.side !== "BUY" && input.side !== "SELL")) return refusal("MALFORMED_INPUT", "side/input is malformed");
+    if (!shape(input.fee, ["bps"], ["bps"]) || !shape(input.policy, ["maxAuthorizedQuantity", "maxNotional", "minPrice", "maxPrice", "maxSpreadBps", "maxSlippageBps", "maxFeeBps", "maxFundingCostBps", "minExecutableEdgeBps"], ["maxAuthorizedQuantity", "maxNotional", "minPrice", "maxPrice", "maxSpreadBps", "maxSlippageBps", "maxFeeBps", "maxFundingCostBps", "minExecutableEdgeBps"])) return refusal("MALFORMED_INPUT", "economics structure is malformed");
+    if (!shape(input.funding, ["status", "costBps", "horizon", "reason"], ["status"])) return refusal("MALFORMED_INPUT", "funding structure is malformed");
+    const requested = parse(input.requestedQuantity), expected = parseSigned(input.expectedMoveBps), fee = parse(input.fee.bps);
     if (!positive(requested) || !positive(parse(input.requestedQuantity)) || !positive(parse(input.policy.maxAuthorizedQuantity))) return refusal("MALFORMED_INPUT", "quantity must be positive");
     if (!zero(fee) && !positive(fee)) return refusal("MALFORMED_INPUT", "fee is malformed");
     if (input.partialFill !== "REJECT" && input.partialFill !== "ALLOW") return refusal("MALFORMED_INPUT", "partialFill is malformed");
@@ -120,7 +132,7 @@ export function assessExecutionEconomics(input: ExecutionEconomicsInput): Execut
     if ([maxQty, maxNotional, minPrice, maxPrice].some((x) => !positive(x)) || [maxSpread, maxSlip, maxFee, maxFunding, minEdge].some((x) => !positive(x) && !zero(x)) || cmp(minPrice, maxPrice) > 0) return refusal("MALFORMED_INPUT", "policy bounds are malformed");
     if (cmp(requested, maxQty) > 0) return refusal("UNAUTHORIZED_QUANTITY", "requested quantity exceeds authorized maximum");
     const book = input.book;
-    if (!book || typeof book !== "object" || !["version", "symbol", "status", "lastUpdateId", "bids", "asks"].every((key) => own(book, key))) return refusal("MALFORMED_INPUT", "book structure is malformed");
+    if (!shape(book, ["version", "symbol", "status", "lastUpdateId", "bids", "asks", "bestAsk", "bestBid"], ["version", "symbol", "status", "lastUpdateId", "bids", "asks"])) return refusal("MALFORMED_INPUT", "book structure is malformed");
     if (!frozenTree(book)) return refusal("MALFORMED_INPUT", "trusted book view must be deeply immutable");
     if (!book || book.status !== "SYNCED") return refusal("BOOK_NOT_SYNCED", "book must be SYNCED");
     if (book.version !== 1 || (book.symbol !== "BTCUSDT" && book.symbol !== "ETHUSDT") || typeof book.lastUpdateId !== "bigint" || book.lastUpdateId < 0n) return refusal("MALFORMED_INPUT", "book identity/version is malformed");

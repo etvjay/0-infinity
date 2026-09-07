@@ -28,7 +28,7 @@
 - GREEN: focused handoff `15/15 PASS`; focused economics `15/15 PASS`; focused reasoning `12/12 PASS`.
 - RED: replacing the explicit canonical Array.prototype allowlist with an unconditional acceptance mutant made both fresh-process pollution regressions fail (`PROPOSAL` instead of `REFUSAL`); restored implementation passes.
 - Full `npm test` — `400/400 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
-- Candidate code head: remediation commit pending; exact-head independent review remains pending.
+- Candidate code head: `8335040183cf4d01e1c1765c9de9267f707a4c5f`; exact-head independent review remains pending.
 
 ## exclusions and unresolved evidence
 

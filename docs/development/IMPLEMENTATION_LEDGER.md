@@ -36,7 +36,7 @@ M-B3 remediation receipt:
 
 M-B4 remediation receipt:
 
-- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact remediation code head: pending commit; exact-head independent review remains pending.
+- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact remediation code head: `8335040183cf4d01e1c1765c9de9267f707a4c5f`; exact-head independent review remains pending.
 - scope: immutable proposal binding snapshots compiler policy and anchor, compile revalidates exact bindings; approval requires own boolean; economics requires complete recursive own-data freezing including nested order book; compiler `allowedSymbols` and nested economics fills require an explicit immutable canonical Array.prototype key/descriptor allowlist, independent of import-time runtime snapshots.
 - TDD: fresh-process pre-import pollution regressions cover `allowedSymbols` and nested economics fills; focused handoff `15/15`; focused economics `15/15`; focused reasoning `12/12`; combined focused `42/42`; full `400/400`.
 - typecheck: `PASS`; build: `PASS`; diff_check: `PASS`.

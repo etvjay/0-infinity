@@ -5,7 +5,7 @@
 | M-B0 | Canonical packet + skills | COMPLETE |
 | M-B1 | Mandate Kernel | LOCAL_PASS — A, B, C, D, and E integrated locally; independent integrated-kernel review APPROVED at `db1d0df`; evidence ceiling remains local X2 |
 | M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A, M-B2-B, M-B2-C, M-B2-D, M-B2-F, and M-B2-H `LOCAL_PASS` read-only market/state slices integrated; M-B2-E bounded public `LIVE_READ_PASS`; M-B2-G public depth bootstrap `BLOCKED_EXTERNAL`; integrated M-B2 closure gate still pending |
-| M-B3 | Execution Economics | LOCAL_PASS — remediated candidate `2a8561bd2d2cd3d6cd898540c37829e6db7a73bf` after independent `REVISE`; nested bids/asks array containers and bestBid/bestAsk quote objects now reject unsupported own/inherited enumerable and non-enumerable string/symbol keys plus polluted Array.prototype keys; focused `12/12`, full `370/370`, check/build/diff-check PASS; no live economics claimed |
+| M-B3 | Execution Economics | LOCAL_PASS — exact reviewed code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; nested book containers/quotes reject unsupported own/inherited enumerable/non-enumerable string/symbol keys plus polluted Array.prototype keys; focused `12/12`, full `370/370`, check/build/diff-check PASS; no live economics claimed |
 | M-B4 | Reasoning Workflow | NOT STARTED |
 | M-B5 | OrderWriter + Reconciliation | NOT STARTED |
 | M-B6 | Full Runtime | NOT STARTED |
@@ -29,7 +29,7 @@ M-B1 proof receipt:
 
 M-B3 remediation receipt:
 
-- candidate/review: `2a8561bd2d2cd3d6cd898540c37829e6db7a73bf` / `REVISE`; remediation covers nested book-side array containers, best quote objects, and Array.prototype pollution.
+- candidate/review: `5e539db02ed2259d4d4a665abfc515021b7cfa41` / independent review `REVISE` for stale/misattributed receipt hashes only; code findings were clear. Receipt-only reconciliation is recorded at the subsequent ledger commit.
 - focused economics: `12/12`; full suite: `370/370`.
 - typecheck: `PASS`; build: `PASS`; diff_check: `PASS`.
 - evidence ceiling: `LOCAL_PASS` only; no live economics, exchange execution, or profitability claim.

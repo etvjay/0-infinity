@@ -26,7 +26,7 @@
 - typecheck: `npm run check` — PASS.
 - build: `npm run build` — PASS.
 - diff check: `git diff --check` — PASS.
-- review status: `LOCAL_PASS`; no live or external evidence claimed.
+- review status: exact code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; prior independent review was `REVISE` for stale/misattributed receipt hashes only, with no implementation findings. Receipt-only reconciliation is recorded in the ledgers; no live or external evidence claimed.
 
 ## exclusions and unresolved external evidence
 

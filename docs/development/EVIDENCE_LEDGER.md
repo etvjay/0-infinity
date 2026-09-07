@@ -95,5 +95,5 @@ M-B3 proof receipt:
 - objective: deterministic execution economics with complete key-shape validation across top-level input, fee, policy, funding, order book, nested bid/ask arrays, best quote objects, and book-level boundaries; own and inherited enumerable and non-enumerable string and symbol keys are rejected, while allowed canonical fields remain own data properties.
 - tests: focused economics `12/12`, full suite `370/370`.
 - typecheck/build/diff_check: `PASS`.
-- review status: local remediation complete after candidate `2a8561bd2d2cd3d6cd898540c37829e6db7a73bf` independent `REVISE`; no independent approval or live evidence claimed.
+- review status: exact code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; prior independent review `REVISE` was limited to receipt attribution, with no implementation findings. Receipt-only reconciliation is recorded here; no live evidence claimed.
 - evidence exclusions: no network, credentials, MCP, exchange read/write, mandate authority operation, order submission, cancellation, live execution, production readiness, or profitability claim.

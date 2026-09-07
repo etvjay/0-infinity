@@ -7,26 +7,29 @@
 
 ## Prior review findings and corrections
 
-The independent E review returned `REVISE` for harness false positives/gaps, not a production defect:
+The independent E review returned `APPROVE_WITH_REQUIRED_FOLLOWUPS` with `safe_to_integrate: false` for harness issues only, not a production defect:
 
 1. Binding swaps and malformed cases used mutable top-level spreads. Evaluator frozen-tree validation short-circuited before field-specific validation. The harness now uses `altered()`, which structured-clones, applies the mutation, and deeply freezes the complete altered object before evaluation.
 2. Freshness cases coupled `observedAt` and `receivedAt`. Market and account observedAt and receivedAt boundaries are now four independent loops; the other timestamp is held fixed and valid, with `receivedAt >= observedAt` maintained for valid cases.
 3. The spread loop varied a local number but never compiled or evaluated mandates with the candidate `maxSpreadBps`. It now compiles below/equal/above mandates against the computed midpoint spread and distinguishes `COST_CEILING` from deliberately inconsistent quote data (`STATE_BINDING`).
-4. The JSON lock test only installed an ambiguous lock; it did not exercise an active timeout or replacement-lock protection. It now holds a real active transaction for bounded contention and uses the existing `beforeReleaseRename` hook to replace the lock, asserting the replacement owner remains active and untouched.
+4. The JSON lock test only installed an ambiguous lock; it did not exercise an active timeout or replacement-lock protection. It now holds a real active transaction for bounded contention, waits for `owner.json` with deterministic 1ms polling capped at 100 attempts, and fails with an explicit assertion if acquisition is not observed. The replacement-lock path now reads the exact replacement `owner.json` and deep-asserts both token and status remain unchanged after the original lease attempts release.
 5. The subprocess test threw inside a callback whose `finally` released the lock, so it was not crash evidence. It now runs a child process that fails with status 17 after leaving an active lock, then asserts lock retention and fail-closed `LOCK_CONTENTION`.
 6. The UNKNOWN test only checked direct transition terminality. It now passes the terminal UNKNOWN runtime to `evaluateMandate` and asserts structured `RUNTIME_NOT_EXECUTABLE`, while retaining the direct `TERMINAL_NO_OUTGOING` assertion.
+
+The follow-up review specifically required two further harness corrections: (a) replace the unbounded `setImmediate` owner-file wait with bounded deterministic polling and an explicit acquisition assertion; and (b) replace the replacement-lock status-only check with an exact `owner.json` deep assertion covering the replacement payload/token. Both are implemented here.
 
 ## Coverage and evidence
 
 There are 10 focused E subtests, preserving all prior E areas: strict expiry/non-rearm; authority and live-state bindings; deeply frozen malformed/non-finite inputs; independent freshness and version boundaries; midpoint spread, BUY/SELL symmetry, cost, edge, risk, and exposure limits; store idempotency/conflict/serialization; supersede/revoke/terminal history; ambiguous, active-contention, and replacement-lock filesystem behavior; child-process failure/lock retention plus separate durable reload; frozen deterministic outputs; and terminal UNKNOWN refusal.
 
-TDD evidence: the first remediation run was RED at 8/10, with the new assertions failing on the intended binding-path and freshness-path gaps. After correcting the test fixtures to preserve real invariants, the focused run was GREEN at 10/10.
+TDD evidence: the remediation assertion was first run RED at 9/10: the replacement payload deep assertion correctly rejected the intentionally mismatched expected status (`REPLACED` vs actual `ACTIVE`). After correcting the expected replacement payload, the focused run was GREEN at 10/10.
 
-- Focused: `npm run build && node --test dist/tests/integrated.adversarial.test.js` — 10/10 passing.
-- Full: `npm run check` — required final verification.
-- Full: `npm test` — required final verification; expected repository total is 290 tests including 10 E tests.
-- Full: `npm run build` — required final verification.
-- Hygiene: `git diff --check` — required final verification.
+- Focused GREEN: `npm run build && node --test dist/tests/integrated.adversarial.test.js` — 10/10 passing.
+- Focused repeat: the same build and test command repeated 3 times — 10/10 passing each run (30/30 subtests).
+- Full: `npm run check` — passed (`tsc -p tsconfig.json --noEmit`).
+- Full: `npm test` — 290/290 passing, including 10 E tests.
+- Full: `npm run build` — passed (`tsc -p tsconfig.json`).
+- Hygiene: `git diff --check` — passed with no output.
 
 Evidence ceiling is `LOCAL_PASS`. This record does not claim full M-B1 promotion, live execution, external integration evidence, or a general crash-recovery protocol. The child-process scenario uses deterministic nonzero `process.exit(17)` after creating an active lock rather than SIGKILL: a safe deterministic kill point would require timing/synchronization machinery that could make this bounded harness flaky. It proves child failure plus lock retention and fail-closed refusal only; it does not prove recovery or orphan reclamation. Ambiguous locks are never deleted or reclaimed by the harness.
 

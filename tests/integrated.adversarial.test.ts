@@ -25,6 +25,19 @@ const evaluate = (m = mandate(), overrides: { workflow?: unknown; market?: unkno
 function deepFreeze<T>(value: T): T { if (value && typeof value === "object" && !Object.isFrozen(value)) { Object.freeze(value); for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child); } return value; }
 function altered<T>(value: T, change: (copy: any) => void): T { const copy = structuredClone(value); change(copy); return deepFreeze(copy); }
 
+const OWNER_POLL_INTERVAL_MS = 1;
+const OWNER_POLL_ATTEMPTS = 100;
+async function waitForOwnerJson(lock: string): Promise<string> {
+  const ownerPath = join(lock, "owner.json");
+  for (let attempt = 0; attempt < OWNER_POLL_ATTEMPTS; attempt++) {
+    try { return readFileSync(ownerPath, "utf8"); } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      await new Promise((resolve) => setTimeout(resolve, OWNER_POLL_INTERVAL_MS));
+    }
+  }
+  assert.fail(`owner.json acquisition did not occur within ${OWNER_POLL_ATTEMPTS * OWNER_POLL_INTERVAL_MS}ms: ${ownerPath}`);
+}
+
 function refusal(result: ReturnType<typeof evaluate>, code: string): void { assert.equal(result.kind, "EXECUTION_REFUSAL"); if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, code); }
 
  test("integrated expiry is strict at the boundary and never rearms", async () => {
@@ -101,9 +114,9 @@ test("JSON persistence fails closed on ambiguous/orphan locks, bounds contention
     assert.equal(result.filter((x) => x.status === "rejected" && x.reason instanceof StoreError && x.reason.code === "RECOVERY_BLOCKED").length, 2); assert.equal(readFileSync(join(lock, "owner.json"), "utf8"), owner);
     rmSync(lock, { recursive: true });
     let release!: () => void; const held = new Promise<void>((resolve) => { release = resolve; }); const first = new JsonFilePersistence(path, { maxWaitMs: 25 }).transact(async (s) => { await held; return s; });
-    while (!existsSync(join(lock, "owner.json"))) await new Promise((resolve) => setImmediate(resolve));
+    await waitForOwnerJson(lock);
     await assert.rejects(() => new JsonFilePersistence(path, { maxWaitMs: 25 }).transact((s) => s), (error: unknown) => error instanceof StoreError && error.code === "LOCK_CONTENTION"); release(); await first;
-    rmSync(lock, { recursive: true }); let replaced = false; const protectedPersistence = new JsonFilePersistence(path, { maxWaitMs: 25, beforeReleaseRename: () => { if (replaced) return; replaced = true; const moved = `${lock}.old`; renameSync(lock, moved); mkdirSync(lock); writeFileSync(join(lock, "owner.json"), JSON.stringify({ token: "replacement", status: "ACTIVE" })); } }); await protectedPersistence.transact((s) => s); assert.equal(JSON.parse(readFileSync(join(lock, "owner.json"), "utf8")).status, "ACTIVE");
+    rmSync(lock, { recursive: true }); let replaced = false; const replacementOwner = { token: "replacement", status: "ACTIVE" }; const protectedPersistence = new JsonFilePersistence(path, { maxWaitMs: 25, beforeReleaseRename: () => { if (replaced) return; replaced = true; const moved = `${lock}.old`; renameSync(lock, moved); mkdirSync(lock); writeFileSync(join(lock, "owner.json"), JSON.stringify(replacementOwner)); } }); await protectedPersistence.transact((s) => s); assert.deepEqual(JSON.parse(readFileSync(join(lock, "owner.json"), "utf8")), replacementOwner);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 

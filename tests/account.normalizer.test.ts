@@ -52,3 +52,42 @@ test("accepts JSON text without losing a huge version and does not mutate input"
   assert.equal(state.version, 9223372036854775807n);
   assert.equal("a" in state, false); assert.equal("u" in state, false);
 });
+
+test("rejects inherited required fields and inherited unsupported fields at every schema boundary", () => {
+  const valid = accountUpdate();
+  const topRequired = ["u", "productFamily", "e", "E", "T", "a"] as const;
+  for (const field of topRequired) {
+    const own = { ...valid } as Record<string, unknown>;
+    const inherited = Object.create({ [field]: own[field] }) as Record<string, unknown>;
+    delete own[field];
+    Object.assign(inherited, own);
+    assert.throws(() => normalizeUsdMFuturesAccountState(inherited, 1_700_000_001_001), new RegExp(field === "productFamily" ? "product|family" : field));
+  }
+
+  const account = valid.a as Record<string, unknown>;
+  for (const field of ["B", "P"] as const) {
+    const inherited = Object.create({ [field]: account[field] }) as Record<string, unknown>;
+    Object.assign(inherited, account); delete inherited[field];
+    assert.throws(() => normalizeUsdMFuturesAccountState({ ...valid, a: inherited }, 1_700_000_001_001), new RegExp(field));
+  }
+
+  for (const [collection, fields] of [["B", ["a", "wb", "cw", "bc"]], ["P", ["s", "pa", "ep", "cr", "up", "mt", "iw", "ps"]]] as const) {
+    const item = (account[collection] as unknown[])[0] as Record<string, unknown>;
+    for (const field of fields) {
+      const inherited = Object.create({ [field]: item[field] }) as Record<string, unknown>;
+      Object.assign(inherited, item); delete inherited[field];
+      const nextAccount = { ...account, [collection]: [inherited] };
+      assert.throws(() => normalizeUsdMFuturesAccountState({ ...valid, a: nextAccount }, 1_700_000_001_001), new RegExp(field));
+    }
+  }
+
+  const inheritedTop = Object.assign(Object.create({ inheritedTop: true }), valid);
+  const inheritedAccount = Object.assign(Object.create({ inheritedAccount: true }), account);
+  const inheritedBalance = Object.assign(Object.create({ inheritedBalance: true }), (account.B as unknown[])[0]);
+  const inheritedPosition = Object.assign(Object.create({ inheritedPosition: true }), (account.P as unknown[])[0]);
+  const cases: Array<[string, Record<string, unknown>]> = [["top-level", inheritedTop], ["account", inheritedAccount], ["balance", inheritedBalance], ["position", inheritedPosition]];
+  for (const [boundary, value] of cases) {
+    const payload = boundary === "top-level" ? value : { ...valid, a: boundary === "account" ? value : { ...account, [boundary === "balance" ? "B" : "P"]: [value] } };
+    assert.throws(() => normalizeUsdMFuturesAccountState(payload, 1_700_000_001_001), /unsupported|inherited/i);
+  }
+});

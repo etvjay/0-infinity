@@ -4,7 +4,7 @@
 |---|---|---|
 | M-B0 | Canonical packet + skills | COMPLETE |
 | M-B1 | Mandate Kernel | LOCAL_PASS — A, B, C, D, and E integrated locally; independent integrated-kernel review APPROVED at `db1d0df`; evidence ceiling remains local X2 |
-| M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A `LOCAL_PASS` read-only market adapter integrated; M-B2-B next |
+| M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A and M-B2-B `LOCAL_PASS` read-only market/state slices integrated; M-B2-C next |
 | M-B3 | Execution Economics | NOT STARTED |
 | M-B4 | Reasoning Workflow | NOT STARTED |
 | M-B5 | OrderWriter + Reconciliation | NOT STARTED |

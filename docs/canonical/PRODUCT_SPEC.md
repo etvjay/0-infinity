@@ -12,7 +12,7 @@
 
 Initial symbols: `BTCUSDT`, `ETHUSDT`.
 Decision: `LONG | SHORT | NO_TRADE`.
-One explicitly selected Binance product family.
+One explicitly selected Binance product family: `USD_M_FUTURES_UM` (Binance USDⓈ-M Futures).
 
 Must be real before submission: Agent OS-connected state, structured reasoning/council output, mandate compilation, deterministic hot-path validation, explicit refusal, bounded execution/proposal, provenance.
 

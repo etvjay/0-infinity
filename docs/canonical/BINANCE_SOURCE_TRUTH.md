@@ -39,3 +39,11 @@ claim_supported:
 If official source access is unavailable, use `SOURCE_UNVERIFIED` or `BLOCKED_SOURCE`, not guesses.
 
 If Binance docs conflict with architecture, emit `SOURCE_CONFLICT` for orchestrator/reviewer resolution.
+
+## Frozen M-B2 product-family decision
+
+- MVP family: `USD_M_FUTURES_UM` (Binance USDⓈ-M Futures).
+- Public market transport: official USDⓈ-M WebSocket Market Streams at `wss://fstream.binance.com`.
+- Private read transport: official USDⓈ-M WebSocket API user-data streams at `wss://ws-fapi.binance.com/ws-fapi/v1`.
+- Decision record: `docs/development/changes/ZO-BIN-MB2-A.md`.
+- Scope: live read / no write; no order, cancellation, transfer, withdrawal, or security method is authorized by M-B2.

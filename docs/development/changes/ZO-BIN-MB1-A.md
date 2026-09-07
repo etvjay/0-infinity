@@ -94,7 +94,7 @@ The exported domain types must represent the canonical `TradeThesis`, `Execution
 ## evidence_produced
 
 - `npm run check` — PASS on this remediation candidate.
-- `npm test` — PASS: 293 tests, 0 failures on this remediation candidate.
+- `npm test` — PASS: 295 tests, 0 failures on this remediation candidate.
 - `npm run build` — PASS on this remediation candidate.
 - `git diff --check` — PASS.
 - Explicit compiler negative tests cover provenance, expiry shape, entry authority, negative ceilings, and caller mutation isolation.

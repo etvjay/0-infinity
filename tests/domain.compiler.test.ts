@@ -32,6 +32,17 @@ test("rejects inherited enumerable reasoning keys before authority projection", 
   assert.throws(() => compileMandate(input(), { ...thesis, reasoning: widenedReasoning } as TradeThesis, policy, anchor, 2_000), /reasoning.*authority|unsupported.*reasoning/i);
 });
 
+test("rejects canonical reasoning fields supplied only through the prototype", () => {
+  const inheritedReasoning = Object.create({ method: thesis.reasoning.method });
+  Object.assign(inheritedReasoning, { advocateRef: thesis.reasoning.advocateRef, opposeRef: thesis.reasoning.opposeRef, marketAnalysisRef: thesis.reasoning.marketAnalysisRef, evidenceBundleHash: thesis.reasoning.evidenceBundleHash, councilDecisionHash: thesis.reasoning.councilDecisionHash });
+  assert.throws(() => compileMandate(input(), { ...thesis, reasoning: inheritedReasoning } as TradeThesis, policy, anchor, 2_000), /reasoning.*method|reasoning.*required|own.*enumerable/i);
+});
+
+test("rejects reasoning objects missing a canonical field", () => {
+  const { method: _method, ...missingMethod } = thesis.reasoning;
+  assert.throws(() => compileMandate(input(), { ...thesis, reasoning: missingMethod } as TradeThesis, policy, anchor, 2_000), /reasoning.*method|required|non-empty string/i);
+});
+
 test("rejects authority widening, invalid thesis, and non-finite input", () => {
   assert.throws(() => compileMandate(input(), { ...thesis, venue: "OTHER" as never }, policy, anchor, 2_000), /BINANCE/);
   assert.throws(() => compileMandate(input(), { ...thesis, direction: "FLAT" }, policy, anchor, 2_000), /FLAT/);

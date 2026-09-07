@@ -48,6 +48,8 @@ export interface ExecutionMandate {
   readonly version: 1; readonly maxUses: 1;
 }
 
+const CANONICAL_REASONING_KEYS = ["method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash"] as const;
+
 function freezeDeep<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
     Object.freeze(value);
@@ -115,9 +117,11 @@ export function compileMandate(
   if (thesis.thesisHash !== undefined) requiredString(thesis.thesisHash, "thesisHash");
   nonNegative(thesis.createdAt, "createdAt"); nonNegative(thesis.expiresAt, "expiresAt");
   if (thesis.expiresAt <= thesis.createdAt) throw new RangeError("thesis validity is incoherent");
-  const reasoningKeys = new Set(["method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash"]);
-  for (const key of enumerableKeysIncludingPrototype(thesis.reasoning)) if (!reasoningKeys.has(key)) throw new RangeError(`reasoning field ${key} would expand authority`);
-  for (const [key, value] of Object.entries(thesis.reasoning)) requiredString(value, `reasoning.${key}`);
+  for (const key of enumerableKeysIncludingPrototype(thesis.reasoning)) if (!CANONICAL_REASONING_KEYS.includes(key as typeof CANONICAL_REASONING_KEYS[number])) throw new RangeError(`reasoning field ${key} would expand authority`);
+  for (const key of CANONICAL_REASONING_KEYS) {
+    if (!Object.prototype.propertyIsEnumerable.call(thesis.reasoning, key)) throw new TypeError(`reasoning.${key} must be an own enumerable property`);
+    requiredString(thesis.reasoning[key], `reasoning.${key}`);
+  }
   requiredString(policy.accountId, "accountId");
   for (const [key, value] of Object.entries(policy)) if (key !== "accountId" && key !== "execution" && key !== "allowedSymbols" && key !== "entryTrigger") finite(value as unknown, `policy.${key}`);
   if (policy.validityMs <= 0 || policy.minEntryPrice <= 0 || policy.maxEntryPrice <= 0 || policy.minEntryPrice > policy.maxEntryPrice) throw new RangeError("policy bounds are incoherent");

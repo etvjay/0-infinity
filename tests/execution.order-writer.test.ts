@@ -1,3 +1,4 @@
+import { serialize } from "node:v8";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { OrderWriter, MemoryOrderPersistence, type ExchangeAdapter, type ExecutionIntent, type FillEvent } from "../src/execution/index.js";
@@ -125,7 +126,9 @@ test("REJECTED and FAILED submissions refuse cancellation before adapter invocat
     const beforeBytes = structuredClone(before);
     await assert.rejects(() => writer.cancel(receipt.clientOrderId), /terminal submission outcome cannot be cancelled/);
     assert.deepEqual(receipt, receiptBytes);
+    assert.deepEqual(serialize(receipt), serialize(receiptBytes));
     assert.deepEqual(persistence.replay()[0], beforeBytes);
+    assert.deepEqual(serialize(persistence.replay()[0]), serialize(beforeBytes));
     assert.equal(receipt.cancelState, "NONE");
     assert.equal(persistence.replay()[0].cancelState, "NONE");
     assert.equal(cancelCalls, 0);

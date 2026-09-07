@@ -28,7 +28,8 @@ No network, WebSocket, REST, listenKey, credentials, account login, account writ
 - focused account normalizer: `4/4 PASS`
 - typecheck: `PASS`
 - build: `PASS`
-- full suite: to be recorded after final run
+- full suite: `326/326 PASS`
+- diff check: `PASS`
 - evidence ceiling: `LOCAL_PASS` only; no live connectivity, credential, authenticated account, evaluator, or execution evidence.
 
 ## unresolved source questions

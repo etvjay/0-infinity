@@ -68,16 +68,70 @@ function version(value: unknown): bigint {
   fail("u", "must be an exact non-negative decimal integer");
   throw new RangeError("unreachable");
 }
+const topLevelFields = new Set(["e", "E", "T", "productFamily", "a", "u"]);
+const accountFields = new Set(["m", "B", "P"]);
+const balanceFields = new Set(["a", "wb", "cw", "bc"]);
+const positionFields = new Set(["s", "pa", "ep", "cr", "up", "mt", "iw", "ps"]);
+
+function allowlist(value: Record<string, unknown>, fields: Set<string>, field: string): void {
+  for (const key of Object.keys(value)) if (!fields.has(key)) fail(`${field}.${key}`, "is unsupported");
+}
+function quotedEnd(raw: string, start: number): number {
+  for (let i = start + 1; i < raw.length; i += 1) {
+    if (raw[i] === "\\") { i += 1; continue; }
+    if (raw[i] === '"') return i + 1;
+  }
+  return -1;
+}
+function valueEnd(raw: string, start: number): number {
+  let nesting = 0;
+  for (let i = start; i < raw.length; i += 1) {
+    if (raw[i] === '"') { const end = quotedEnd(raw, i); if (end < 0) return -1; i = end - 1; continue; }
+    if (raw[i] === "{" || raw[i] === "[") nesting += 1;
+    else if (raw[i] === "}" || raw[i] === "]") { if (nesting === 0) return i; nesting -= 1; }
+    else if (raw[i] === "," && nesting === 0) return i;
+  }
+  return raw.length;
+}
+function topLevelValueTokens(raw: string, wanted: string): string[] {
+  const tokens: string[] = [];
+  let i = 0;
+  while (/\s/.test(raw[i] ?? "")) i += 1;
+  if (raw[i++] !== "{") return tokens;
+  while (i < raw.length) {
+    while (/\s/.test(raw[i] ?? "")) i += 1;
+    if (raw[i] === "}") break;
+    if (raw[i] !== '"') return tokens;
+    const keyEnd = quotedEnd(raw, i); if (keyEnd < 0) return tokens;
+    let key: unknown;
+    try { key = JSON.parse(raw.slice(i, keyEnd)); } catch { return tokens; }
+    i = keyEnd;
+    while (/\s/.test(raw[i] ?? "")) i += 1;
+    if (raw[i++] !== ":") return tokens;
+    while (/\s/.test(raw[i] ?? "")) i += 1;
+    const end = valueEnd(raw, i); if (end < 0) return tokens;
+    if (key === wanted) tokens.push(raw.slice(i, end).trim());
+    i = end;
+    while (/\s/.test(raw[i] ?? "")) i += 1;
+    if (raw[i] === ",") i += 1;
+  }
+  return tokens;
+}
 function parsed(raw: unknown): Record<string, unknown> {
   if (typeof raw === "string") {
     try {
       const value = object(JSON.parse(raw), "payload");
-      const versionToken = /"u"\s*:\s*(-?(?:0|[1-9]\d*)(?:\.\d+|[eE][+-]?\d+)?)/.exec(raw)?.[1];
-      if (versionToken !== undefined) value.u = versionToken;
+      const versionTokens = topLevelValueTokens(raw, "u");
+      if (versionTokens.length !== 1) fail("u", versionTokens.length === 0 ? "is required at top level" : "is duplicated or ambiguous");
+      const token = versionTokens[0];
+      value.u = token.startsWith('"') ? JSON.parse(token) : token;
+      allowlist(value, topLevelFields, "payload");
       return value;
     } catch (error) { if (error instanceof RangeError) throw error; fail("payload", "must be valid JSON"); }
   }
-  return object(raw, "payload");
+  const value = object(raw, "payload");
+  allowlist(value, topLevelFields, "payload");
+  return value;
 }
 function asset(value: unknown): UsdMFuturesAccountAsset {
   if (value !== "USDT") fail("asset", "is not supported");
@@ -98,8 +152,9 @@ export function normalizeUsdMFuturesAccountState(raw: unknown, receivedAt: numbe
   if (E > received || T > received) fail("timestamp", "cannot be in future");
   if (T > E) fail("chronology", "is incoherent");
   const account = object(value.a, "a");
+  allowlist(account, accountFields, "account");
   if (!Array.isArray(account.B) || !Array.isArray(account.P)) fail("account", "B and P arrays are required");
-  const balances = (account.B as unknown[]).map((item: unknown) => { const b = object(item, "balance"); return { asset: asset(b.a), walletBalance: decimal(b.wb, "walletBalance"), crossWalletBalance: decimal(b.cw, "crossWalletBalance"), balanceChange: decimal(b.bc, "balanceChange", true) }; });
-  const positions = (account.P as unknown[]).map((item: unknown) => { const p = object(item, "position"); if (typeof p.s !== "string" || !symbols.has(p.s as UsdMFuturesAccountSymbol)) fail("symbol", "is not supported"); if (p.mt !== "cross" && p.mt !== "isolated") fail("margin type", "is invalid"); return { symbol: p.s as UsdMFuturesAccountSymbol, positionAmount: decimal(p.pa, "positionAmount", true), entryPrice: decimal(p.ep, "entryPrice"), realizedPnl: decimal(p.cr, "realizedPnl", true), unrealizedPnl: decimal(p.up, "unrealizedPnl", true), marginType: p.mt as "cross" | "isolated", isolatedWallet: decimal(p.iw, "isolatedWallet"), positionSide: positionSide(p.ps) }; });
+  const balances = (account.B as unknown[]).map((item: unknown) => { const b = object(item, "balance"); allowlist(b, balanceFields, "balance"); return { asset: asset(b.a), walletBalance: decimal(b.wb, "walletBalance"), crossWalletBalance: decimal(b.cw, "crossWalletBalance"), balanceChange: decimal(b.bc, "balanceChange", true) }; });
+  const positions = (account.P as unknown[]).map((item: unknown) => { const p = object(item, "position"); allowlist(p, positionFields, "position"); if (typeof p.s !== "string" || !symbols.has(p.s as UsdMFuturesAccountSymbol)) fail("symbol", "is not supported"); if (p.mt !== "cross" && p.mt !== "isolated") fail("margin type", "is invalid"); return { symbol: p.s as UsdMFuturesAccountSymbol, positionAmount: decimal(p.pa, "positionAmount", true), entryPrice: decimal(p.ep, "entryPrice"), realizedPnl: decimal(p.cr, "realizedPnl", true), unrealizedPnl: decimal(p.up, "unrealizedPnl", true), marginType: p.mt as "cross" | "isolated", isolatedWallet: decimal(p.iw, "isolatedWallet"), positionSide: positionSide(p.ps) }; });
   return freezeDeep({ version: version(value.u), venue: "BINANCE", instrument: "USD_M_FUTURES", productFamily: "USD_M_FUTURES_UM", observedAt: T, receivedAt: received, balances, positions, source: { productFamily: "USD_M_FUTURES_UM", event: "ACCOUNT_UPDATE" } });
 }

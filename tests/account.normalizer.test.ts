@@ -31,6 +31,10 @@ test("rejects wrong family, wrong event, and malformed account payloads", () => 
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ e: "ACCOUNT_CONFIG_UPDATE" }), 1_700_000_001_001), /event|ACCOUNT_UPDATE/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { B: [], P: [{ s: "SOLUSDT", pa: "1", ep: "1", cr: "0", up: "0", mt: "cross", iw: "0", ps: "LONG" }] } }), 1_700_000_001_001), /symbol/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { B: [{ a: "USDT", wb: "NaN", cw: "1", bc: "0" }], P: [] } }), 1_700_000_001_001), /walletBalance|wb/i);
+  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ extra: true }), 1_700_000_001_001), /unsupported|extra|field/i);
+  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { ...accountUpdate().a as object, extra: true } }), 1_700_000_001_001), /unsupported|extra|field/i);
+  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { ...accountUpdate().a as object, B: [{ a: "USDT", wb: "1", cw: "1", bc: "0", extra: true }], P: [] } }), 1_700_000_001_001), /unsupported|extra|field/i);
+  assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ a: { ...accountUpdate().a as object, B: [], P: [{ s: "BTCUSDT", pa: "0", ep: "0", cr: "0", up: "0", mt: "cross", iw: "0", ps: "BOTH", extra: true }] } }), 1_700_000_001_001), /unsupported|extra|field/i);
 });
 
 test("rejects malformed numbers, timestamps, and non-exact versions", () => {
@@ -38,10 +42,12 @@ test("rejects malformed numbers, timestamps, and non-exact versions", () => {
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ E: 1_700_000_001_002 }), 1_700_000_001_001), /E|future/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(accountUpdate({ T: 1_700_000_001_001, E: 1_700_000_001_000 }), 1_700_000_001_001), /chronology/i);
   assert.throws(() => normalizeUsdMFuturesAccountState(JSON.stringify(accountUpdate()).replace('"u":"9223372036854775807"', '"u":1e3'), 1_700_000_001_001), /u|version/i);
+  const raw = JSON.stringify(accountUpdate());
+  assert.throws(() => normalizeUsdMFuturesAccountState(raw.replace('"u":"9223372036854775807"', '"u":"1","u":"2"'), 1_700_000_001_001), /u|duplicate|ambiguous/i);
 });
 
 test("accepts JSON text without losing a huge version and does not mutate input", () => {
-  const raw = JSON.stringify(accountUpdate());
+  const raw = JSON.stringify({ ...accountUpdate(), a: { ...accountUpdate().a as object, m: 'nested {"u": "not-the-version"}' } });
   const state = normalizeUsdMFuturesAccountState(raw, 1_700_000_001_001);
   assert.equal(state.version, 9223372036854775807n);
   assert.equal("a" in state, false); assert.equal("u" in state, false);

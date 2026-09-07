@@ -100,9 +100,6 @@ M-B3 proof receipt:
 
 M-B4 proof receipt:
 
-- status: `PROVISIONAL_LOCAL_PASS`; exact candidate `e883dabc6b07ca7fde6ba1c47fc8a8dc7af86137`; independent review found no implementation blockers; receipt-only reconciliation remains pending.
-- objective: deterministic local advocate/oppose/market-account evidence council producing immutable `TradeThesis` or typed refusal, with full prototype-chain and canonical economics validation.
-- tests: focused economics `15/15`, focused reasoning council `12/12`; full suite `385/385`.
-- TDD RED/GREEN: import-time Array.prototype pollution was identified and rejected after explicit canonical allowlists; fresh-process economics/reasoning probes pass.
-- implementation: `src/reasoning/index.ts`, `src/economics/index.ts`; no arithmetic recomputation, mandate, or authority operation.
-- evidence ceiling: local supplied/replay evidence only; no live or production claim.
+- status: `LOCAL_PASS`; bounded council-to-workflow handoff candidate; default immutable `PROPOSAL`/typed refusal; explicit approval/compiler and evaluator boundaries yield `MANDATE_COMPILED`/`EVALUATED_INTENT` or refusal. Focused handoff `7/7`, focused economics `15/15`, focused reasoning `12/12`; full suite, typecheck, build, diff-check PASS.
+- objective: deterministic local/replay council handoff consuming supplied compiler policy/anchor/time and M-B3 economics evidence with identity/hash/freshness binding; no auto-authority and no execution side effects.
+- evidence ceiling: `LOCAL_PASS` only; no live, production, profitability, exchange, network, MCP, or credential claim.

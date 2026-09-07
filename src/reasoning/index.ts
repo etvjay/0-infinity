@@ -158,3 +158,5 @@ export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {
     return freeze({ kind: "THESIS", thesis });
   } catch { return refusal("MALFORMED_INPUT", "input is malformed"); }
 }
+
+export * from "./handoff.js";

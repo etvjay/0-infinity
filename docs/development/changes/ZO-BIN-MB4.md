@@ -2,9 +2,9 @@
 
 ## status
 
-`REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`
+`LOCAL_PASS`
 
-Final independent review is still required; this status is not an approval.
+- This is a local evidence ceiling only and is not live, production, execution, or profitability evidence.
 
 ## baseline and scope
 
@@ -16,6 +16,8 @@ Final independent review is still required; this status is not an approval.
 ## implementation
 
 - `src/reasoning/index.ts` exports immutable input types, `conveneEvidenceCouncil`, `CouncilResult`, and typed refusal codes.
+- `src/reasoning/handoff.ts` adds a pure local/replay handoff: default `PROPOSAL`/`REFUSAL`, explicit `APPROVAL_REQUIRED` then `MANDATE_COMPILED`, and separate `EVALUATED_INTENT`/refusal boundary.
+- Caller-supplied compiler policy, anchor/time, replay market/account envelopes, and bound frozen M-B3 economics are revalidated; no authority is issued or consumed by council output.
 - Canonical own-data string-key validation now inspects the complete prototype chain, including `Object.prototype`, and rejects unsupported own/inherited enumerable, non-enumerable, and symbol keys.
 - Optional `thesisId` and `thesisHash` are accepted only as non-empty strings; all evidence timestamps are finite, non-negative, chronological, and fresh.
 - Supplied economics is accepted only as the canonical deeply frozen `ASSESSMENT` shape (including frozen fills); unsupported or mutable economics refuses. `REFUSAL` economics remains an explicit council refusal.

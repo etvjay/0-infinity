@@ -103,6 +103,24 @@ test("cancel durably records a request before the adapter and UNKNOWN after an u
   assert.equal(unknown.cancelState, "UNKNOWN");
   assert.equal(persistence.replay()[0].cancelState, "UNKNOWN");
   await assert.rejects(() => writer.cancel(receipt.clientOrderId), /unknown cancellation cannot be retried/);
+  await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "uncertain-filled", status: "FILLED", fillQuantity: 2, fillPrice: 101 })), /uncertain cancellation/);
+  const unknownReplay = persistence.replay()[0];
+  assert.equal(unknownReplay.outcome, "UNKNOWN");
+  assert.equal(unknownReplay.cancelState, "UNKNOWN");
+  assert.equal(unknownReplay.filledQuantity, 0);
+  assert.deepEqual(unknownReplay.fillEventIds, []);
+
+  const cancelledPersistence = new MemoryOrderPersistence();
+  const cancelledWriter = new OrderWriter(store(), cancelledPersistence, adapter());
+  const cancellable = await cancelledWriter.submit(intent, 9);
+  const cancelled = await cancelledWriter.cancel(cancellable.clientOrderId);
+  await assert.rejects(() => cancelledWriter.reconcile(cancellable.clientOrderId, event({ eventId: "late-filled", status: "FILLED", fillQuantity: 2, fillPrice: 101 })), /terminal cancellation/);
+  const cancelledReplay = cancelledPersistence.replay()[0];
+  assert.equal(cancelled.outcome, "CANCELLED");
+  assert.equal(cancelledReplay.outcome, "CANCELLED");
+  assert.equal(cancelledReplay.cancelState, "CANCELLED");
+  assert.equal(cancelledReplay.filledQuantity, 0);
+  assert.deepEqual(cancelledReplay.fillEventIds, []);
 });
 
 test("cancel refuses a persisted record without deterministic writer ownership", async () => {

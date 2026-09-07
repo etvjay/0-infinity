@@ -90,6 +90,8 @@ export class OrderWriter {
     const prior = this.persistence.load(clientOrderId); if (!prior) fail("unknown writer-owned clientOrderId");
     if (!validEvent(event)) fail("invalid reconciliation event");
     if (prior.events.includes(event.eventId)) return freeze(clone(prior));
+    if (prior.cancelState === "CANCELLED") fail("terminal cancellation cannot accept fills");
+    if (prior.cancelState === "UNKNOWN") fail("uncertain cancellation cannot accept fills");
     const q = event.fillQuantity ?? 0; const p = event.fillPrice; if (q > prior.quantity || (event.status === "FILLED" && q < prior.quantity)) fail("invalid fill");
     let filled = prior.filledQuantity; let filledNotional = prior.filledNotional || (prior.averagePrice ?? 0) * prior.filledQuantity;
     if (q > filled) { filled = q; if (!p) fail("invalid fill"); filledNotional += (q - prior.filledQuantity) * p; }

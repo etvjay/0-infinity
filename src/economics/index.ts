@@ -95,8 +95,9 @@ function frozenTree(value: unknown, seen = new Set<object>()): boolean {
   seen.add(value);
   return Object.isFrozen(value) && Object.values(value as Record<string, unknown>).every((child) => frozenTree(child, seen));
 }
+const own = (value: object, key: string): boolean => Object.prototype.hasOwnProperty.call(value, key);
 function validLevel(level: unknown): level is { readonly price: string; readonly quantity: string } {
-  if (!level || typeof level !== "object") return false;
+  if (!level || typeof level !== "object" || !own(level, "price") || !own(level, "quantity")) return false;
   try { const x = level as { price: unknown; quantity: unknown }; return positive(parse(x.price)) && positive(parse(x.quantity)); } catch { return false; }
 }
 
@@ -119,13 +120,18 @@ export function assessExecutionEconomics(input: ExecutionEconomicsInput): Execut
     if ([maxQty, maxNotional, minPrice, maxPrice].some((x) => !positive(x)) || [maxSpread, maxSlip, maxFee, maxFunding, minEdge].some((x) => !positive(x) && !zero(x)) || cmp(minPrice, maxPrice) > 0) return refusal("MALFORMED_INPUT", "policy bounds are malformed");
     if (cmp(requested, maxQty) > 0) return refusal("UNAUTHORIZED_QUANTITY", "requested quantity exceeds authorized maximum");
     const book = input.book;
+    if (!book || typeof book !== "object" || !["version", "symbol", "status", "lastUpdateId", "bids", "asks"].every((key) => own(book, key))) return refusal("MALFORMED_INPUT", "book structure is malformed");
     if (!frozenTree(book)) return refusal("MALFORMED_INPUT", "trusted book view must be deeply immutable");
     if (!book || book.status !== "SYNCED") return refusal("BOOK_NOT_SYNCED", "book must be SYNCED");
     if (book.version !== 1 || (book.symbol !== "BTCUSDT" && book.symbol !== "ETHUSDT") || typeof book.lastUpdateId !== "bigint" || book.lastUpdateId < 0n) return refusal("MALFORMED_INPUT", "book identity/version is malformed");
     if (!Array.isArray(book.bids) || !Array.isArray(book.asks)) return refusal("MALFORMED_INPUT", "book sides are malformed");
-    const bids = book.bids.filter(validLevel).map((x) => ({ price: parse(x.price), quantity: parse(x.quantity) })).sort((a, b) => cmp(b.price, a.price));
-    const asks = book.asks.filter(validLevel).map((x) => ({ price: parse(x.price), quantity: parse(x.quantity) })).sort((a, b) => cmp(a.price, b.price));
-    if (bids.length !== book.bids.length || asks.length !== book.asks.length) return refusal("MALFORMED_INPUT", "book contains malformed levels");
+    if (!book.bids.every(validLevel) || !book.asks.every(validLevel)) return refusal("MALFORMED_INPUT", "book contains malformed levels");
+    const bidsByPrice = new Map<string, { price: R; quantity: R }>();
+    for (const level of book.bids) { const price = parse(level.price), quantity = parse(level.quantity), key = `${price.n}/${price.d}`; const prior = bidsByPrice.get(key); bidsByPrice.set(key, { price, quantity: add(prior?.quantity ?? rat(0n), quantity) }); }
+    const asksByPrice = new Map<string, { price: R; quantity: R }>();
+    for (const level of book.asks) { const price = parse(level.price), quantity = parse(level.quantity), key = `${price.n}/${price.d}`; const prior = asksByPrice.get(key); asksByPrice.set(key, { price, quantity: add(prior?.quantity ?? rat(0n), quantity) }); }
+    const bids = [...bidsByPrice.values()].sort((a, b) => cmp(b.price, a.price));
+    const asks = [...asksByPrice.values()].sort((a, b) => cmp(a.price, b.price));
     if (!bids.length || !asks.length) return refusal("EMPTY_SIDE", "both executable sides must be non-empty");
     if (cmp(bids[0].price, asks[0].price) >= 0) return refusal("CROSSED_BOOK", "book is crossed");
     const levels = input.side === "BUY" ? asks : bids;

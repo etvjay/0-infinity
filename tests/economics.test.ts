@@ -102,3 +102,27 @@ test("assessment is deeply immutable, deterministic, and handles large decimals"
     assert.throws(() => (a as { vwap: string }).vwap = "0", TypeError);
   }
 });
+
+test("duplicate-price levels are permutation invariant and aggregate quantities", () => {
+  const first = assessExecutionEconomics({ ...input("BUY", "3"), book: book([["101", "1"], ["101.00", "2"], ["103", "4"]], [["99", "2"], ["97", "4"]]) });
+  const second = assessExecutionEconomics({ ...input("BUY", "3"), book: book([["103", "4"], ["101.00", "2"], ["101", "1"]], [["97", "4"], ["99", "2"]]) });
+  assert.deepEqual(second, first);
+  assert.equal(first.kind, "ASSESSMENT");
+  if (first.kind === "ASSESSMENT") assert.deepEqual(first.fills, [{ price: "101", quantity: "3", notional: "303" }]);
+});
+
+test("rejects inherited structural fields on frozen levels and frozen books", () => {
+  const inheritedLevel = Object.freeze(Object.create({ price: "101", quantity: "2" }));
+  const levelBook = Object.freeze({ ...book([], [["99", "2"]]), asks: Object.freeze([inheritedLevel]) });
+  const levelResult = assessExecutionEconomics({ ...input("BUY"), book: levelBook as UsdMFuturesOrderBookView });
+  assert.equal(levelResult.kind, "REFUSAL");
+  if (levelResult.kind === "REFUSAL") assert.equal(levelResult.code, "MALFORMED_INPUT");
+
+  const inheritedBook = Object.create({ status: "SYNCED" });
+  Object.assign(inheritedBook, book([["101", "2"]], [["99", "2"]]));
+  delete inheritedBook.status;
+  Object.freeze(inheritedBook);
+  const bookResult = assessExecutionEconomics({ ...input("BUY"), book: inheritedBook as UsdMFuturesOrderBookView });
+  assert.equal(bookResult.kind, "REFUSAL");
+  if (bookResult.kind === "REFUSAL") assert.equal(bookResult.code, "MALFORMED_INPUT");
+});

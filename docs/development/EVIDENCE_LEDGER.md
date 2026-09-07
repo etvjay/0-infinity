@@ -102,7 +102,7 @@ M-B4 proof receipt:
 
 - status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact-head independent review remains pending.
 - objective: deterministic local advocate/oppose/market-account evidence council producing immutable `TradeThesis` or typed refusal, with full prototype-chain and canonical economics validation.
-- tests: focused reasoning council `10/10`; full suite `380/380`.
-- TDD RED: `3/9` newly added blocker regressions failed before remediation; timestamp regression was already rejected by existing stale-age logic.
-- implementation: `src/reasoning/index.ts`; hostile regressions in `tests/reasoning.council.test.ts`; no mandate or authority operation.
+- tests: focused economics `14/14`, focused reasoning council `10/10`; full suite `382/382`.
+- TDD RED: sparse/non-canonical fills regressions failed before remediation; GREEN focused economics `14/14`.
+- implementation: `src/economics/index.ts`; regressions in `tests/economics.test.ts`; no arithmetic recomputation, mandate, or authority operation.
 - evidence ceiling: local supplied/replay evidence only; no live or production claim; final review/approval not obtained.

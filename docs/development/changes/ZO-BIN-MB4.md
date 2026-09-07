@@ -22,9 +22,9 @@ Final independent review is still required; this status is not an approval.
 
 ## TDD and verification receipts
 
-- RED: newly added hostile regressions initially failed `3/9` (Object.prototype pollution, numeric thesis identifier, and unsupported economics); the timestamp regression was already caught by stale-age logic.
-- GREEN: focused `node --test dist/tests/reasoning.council.test.js` — `10/10 PASS`.
-- Full `npm test` — `380/380 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
+- RED: newly added economics fills regressions initially failed before remediation (sparse and non-enumerable numeric array entries were accepted); existing prototype-pollution regressions remained covered.
+- GREEN: focused economics `14/14 PASS`; focused reasoning council `10/10 PASS`.
+- Full `npm test` — `382/382 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
 - Remediation is provisional pending exact-head independent review; no `LOCAL_PASS` promotion or final review approval is claimed.
 
 ## exclusions and unresolved evidence

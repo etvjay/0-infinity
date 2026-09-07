@@ -215,3 +215,38 @@ test("rejects inherited fields at every economics input boundary", () => {
     if (result.kind === "REFUSAL") assert.equal(result.code, "MALFORMED_INPUT");
   }
 });
+
+test("rejects sparse and non-canonical frozen fills arrays", () => {
+  const base = input("BUY");
+  const level = Object.freeze({ price: "101", quantity: "2" });
+  const sparse = new Array(2);
+  sparse[0] = level;
+  const hiddenIndex = [level];
+  Object.defineProperty(hiddenIndex, "0", { value: level, enumerable: false, writable: false, configurable: false });
+  const accessorIndex = [level];
+  Object.defineProperty(accessorIndex, "0", { get: () => level, enumerable: true, configurable: false });
+  for (const asks of [sparse, Object.freeze(hiddenIndex), Object.freeze(accessorIndex)]) {
+    const result = assessExecutionEconomics({ ...base, book: Object.freeze({ ...base.book, asks: Object.freeze(asks) }) as UsdMFuturesOrderBookView });
+    assert.equal(result.kind, "REFUSAL");
+    if (result.kind === "REFUSAL") assert.equal(result.code, "MALFORMED_INPUT");
+  }
+});
+
+test("assessment fills are a dense frozen canonical array of frozen canonical objects", () => {
+  const result = assessExecutionEconomics(input("BUY"));
+  assert.equal(result.kind, "ASSESSMENT");
+  if (result.kind !== "ASSESSMENT") return;
+  assert.equal(Object.getPrototypeOf(result.fills), Array.prototype);
+  assert.equal(Object.isFrozen(result.fills), true);
+  assert.deepEqual(Reflect.ownKeys(result.fills), ["0", "1", "length"]);
+  for (const fill of result.fills) {
+    assert.equal(Object.isFrozen(fill), true);
+    assert.deepEqual(Reflect.ownKeys(fill), ["price", "quantity", "notional"]);
+    for (const key of ["price", "quantity", "notional"] as const) {
+      const descriptor = Object.getOwnPropertyDescriptor(fill, key);
+      assert.equal(descriptor?.enumerable, true);
+      assert.equal(descriptor?.get, undefined);
+      assert.equal(descriptor?.set, undefined);
+    }
+  }
+});

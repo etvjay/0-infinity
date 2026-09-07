@@ -141,17 +141,31 @@ function canonicalArrayPrototype(): boolean {
   return true;
 }
 function arrayShape(value: unknown): value is readonly unknown[] {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !canonicalArrayPrototype()) return false;
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !canonicalArrayPrototype() || !Object.isFrozen(value)) return false;
+  const length = value.length;
+  const numericKeys: string[] = [];
   for (const key of Reflect.ownKeys(value)) {
     if (key === "length") continue;
     if (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= 2 ** 32 - 1) return false;
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (!descriptor || !("value" in descriptor)) return false;
+    if (!descriptor || !("value" in descriptor) || !descriptor.enumerable || descriptor.writable || descriptor.configurable) return false;
+    numericKeys.push(key);
   }
-  return true;
+  if (numericKeys.length !== length) return false;
+  return numericKeys.every((key, index) => Number(key) === index);
 }
 function validLevelContainer(value: unknown): value is readonly unknown[] {
   return arrayShape(value) && value.every(validLevel);
+}
+function validFill(value: unknown): value is ExecutionFill {
+  return Object.isFrozen(value) && shape(value, ["price", "quantity", "notional"], ["price", "quantity", "notional"]) &&
+    ["price", "quantity", "notional"].every((key) => {
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      return descriptor?.enumerable === true && "value" in descriptor && !descriptor.get && !descriptor.set && typeof descriptor.value === "string";
+    });
+}
+function validFillContainer(value: unknown): value is readonly ExecutionFill[] {
+  return arrayShape(value) && value.every(validFill);
 }
 
 /** Pure local economics assessment. It does not validate/consume a mandate or submit an order. */
@@ -209,6 +223,7 @@ export function assessExecutionEconomics(input: ExecutionEconomicsInput): Execut
     if (cmp(cost, maxNotional) > 0) return refusal("NOTIONAL_LIMIT", "total cost exceeds policy notional bound");
     if (cmp(spread, maxSpread) > 0 || cmp(slippage, maxSlip) > 0 || cmp(fee, maxFee) > 0 || cmp(funding, maxFunding) > 0) return refusal("COST_LIMIT", "execution cost exceeds policy bound");
     if (cmp(edge, minEdge) < 0) return refusal("EDGE_TOO_LOW", "executable edge is below policy floor");
-    return freezeDeep({ kind: "ASSESSMENT", side: input.side, requestedQuantity: render(requested), executableQuantity: render(executable), bestExecutableReference: render(best), vwap: render(vwap), worstExecutionPrice: render(worst), limitPrice: render(worst), totalCost: render(cost), spreadBps: render(spread), slippageBps: render(slippage), feeBps: render(fee), fundingCostBps: render(funding), executableEdgeBps: render(edge), fills: Object.freeze(fills) });
+    const assessment: ExecutionAssessment = freezeDeep({ kind: "ASSESSMENT" as const, side: input.side, requestedQuantity: render(requested), executableQuantity: render(executable), bestExecutableReference: render(best), vwap: render(vwap), worstExecutionPrice: render(worst), limitPrice: render(worst), totalCost: render(cost), spreadBps: render(spread), slippageBps: render(slippage), feeBps: render(fee), fundingCostBps: render(funding), executableEdgeBps: render(edge), fills: Object.freeze(fills) });
+    return validFillContainer(assessment.fills) ? assessment : refusal("MALFORMED_INPUT", "assessment fills are malformed");
   } catch { return refusal("MALFORMED_INPUT", "economics input is malformed"); }
 }

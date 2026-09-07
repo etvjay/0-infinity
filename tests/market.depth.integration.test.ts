@@ -30,6 +30,22 @@ test("normalizes a JSON snapshot with an unquoted large lastUpdateId lexeme exac
   assert.equal(snapshot.lastUpdateId, 9223372036854775807n);
 });
 
+test("preserves top-level lastUpdateId when a nested object appears before it", () => {
+  const snapshot = normalizeUsdMFuturesDepthSnapshot(
+    '{"meta":{"lastUpdateId":7},"lastUpdateId":9223372036854775807,"bids":[["100","1"]],"asks":[["101","1"]]}',
+    "BTCUSDT",
+  );
+  assert.equal(snapshot.lastUpdateId, 9223372036854775807n);
+});
+
+test("preserves top-level lastUpdateId when a nested object appears after it", () => {
+  const snapshot = normalizeUsdMFuturesDepthSnapshot(
+    '{"lastUpdateId":9223372036854775807,"meta":{"lastUpdateId":7},"bids":[["100","1"]],"asks":[["101","1"]]}',
+    "BTCUSDT",
+  );
+  assert.equal(snapshot.lastUpdateId, 9223372036854775807n);
+});
+
 test("rejects duplicate, missing, exponent, and unsafe snapshot update IDs", () => {
   const levels = '"bids":[["100","1"]],"asks":[["101","1"]]';
   for (const raw of [

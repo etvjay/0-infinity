@@ -23,9 +23,9 @@
 
 ## TDD and receipts
 
-- RED: remediation regressions were added first. The focused run built successfully, then failed `4/24`: large unquoted JSON `lastUpdateId` was rounded/rejected, invalid-ID rejection missed a duplicate/missing case, JSON-string depth gaps left lifecycle status `SYNCED`, and omitted `receivedAt` dropped depth routing.
-- GREEN: `24/24 PASS` focused depth/connectivity tests (`npm run build && node --test dist/tests/market.depth.integration.test.js dist/tests/market.connectivity.test.js`).
-- full test receipt: `351/351 PASS` (`npm test`).
+- RED: the nested-object-before-top-level regression failed (`lastUpdateId must appear exactly once`) because the tokenizer consumed a nested object closing brace as if it closed the root object; the nested-object-after-top-level case and existing duplicate/missing/exponent/unsafe coverage remained green.
+- GREEN: `26/26 PASS` focused depth/connectivity tests (`npm run build && node --test dist/tests/market.depth.integration.test.js dist/tests/market.connectivity.test.js`).
+- full test receipt: `353/353 PASS` (`npm test`).
 - typecheck: `PASS` (`npm run check`).
 - build: `PASS` (`npm run build`).
 - diff check: `PASS` (`git diff --check`).

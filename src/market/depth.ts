@@ -54,7 +54,9 @@ function topLevelField(raw: string, wanted: string): { count: number; token?: st
       if (raw[j] === "\"") {
         end = ++j; escaped = false;
         while (end < raw.length) { const c = raw[end++]; if (escaped) escaped = false; else if (c === "\\") escaped = true; else if (c === "\"") break; }
-      } else while (end < raw.length && !/[,}\s]/.test(raw[end])) end++;
+      } else if (raw[j] !== "{" && raw[j] !== "[") {
+        while (end < raw.length && !/[,}\s]/.test(raw[end])) end++;
+      }
       let key: unknown; try { key = JSON.parse(raw.slice(start, i)); } catch { continue; }
       if (key === wanted) { count++; token = raw.slice(valueStart, end); }
       i = end; continue;

@@ -25,10 +25,10 @@ No WebSocket, fetch, HTTP, API keys, account/user-data, evaluator/EvaluationPoli
 ## verification receipts
 
 - strict TDD: focused tests were written before production implementation and initially failed because the order-book API did not exist.
-- focused order-book: `12/12 PASS`
+- focused order-book: `13/13 PASS`
 - typecheck: `PASS`
 - build: `PASS`
-- full suite: `321/321 PASS`
+- full suite: `322/322 PASS`
 - diff check: `PASS`
 - evidence ceiling: `LOCAL_PASS` only; independent review is required before integration.
 

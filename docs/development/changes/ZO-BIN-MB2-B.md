@@ -12,7 +12,7 @@
 
 ## allowed scope
 
-Deterministic local USDⓈ-M order-book reconstruction: snapshot normalization; bounded buffered `depthUpdate` reconciliation; exact bigint `U/u/pu/lastUpdateId`; supported UM product and `BTCUSDT`/`ETHUSDT` boundary; bootstrap bridge `U <= S + 1` and `u >= S`; post-sync `pu` continuity; absolute quantities; zero and missing deletion; canonical decimal keys and bid/ask ordering; best levels; immutable caller-independent views; chronology; stale/duplicate/overlap handling; fail-closed crossed books and explicit re-bootstrap; per-symbol isolation; depth metadata.
+Deterministic local USDⓈ-M order-book reconstruction: snapshot normalization; bounded buffered `depthUpdate` reconciliation; exact bigint `U/u/pu/lastUpdateId`; supported UM product and `BTCUSDT`/`ETHUSDT` boundary; bootstrap bridge `U <= S` and `u >= S`; post-sync `pu` continuity; absolute quantities; zero and missing deletion; canonical decimal keys and bid/ask ordering; best levels; immutable caller-independent views; chronology; stale/duplicate/overlap handling; fail-closed crossed books, buffer overflow, and non-bridging ranges; explicit re-bootstrap; per-symbol isolation; depth metadata.
 
 ## forbidden scope
 
@@ -25,12 +25,12 @@ No WebSocket, fetch, HTTP, API keys, account/user-data, evaluator/EvaluationPoli
 ## verification receipts
 
 - strict TDD: focused tests were written before production implementation and initially failed because the order-book API did not exist.
-- focused order-book: `7/7 PASS`
+- focused order-book: `12/12 PASS`
 - typecheck: `PASS`
 - build: `PASS`
-- full suite: `316/316 PASS`
+- full suite: `321/321 PASS`
 - diff check: `PASS`
-- evidence ceiling: `LOCAL_PASS` only.
+- evidence ceiling: `LOCAL_PASS` only; independent review is required before integration.
 
 ## unresolved connection/order-book source questions
 

@@ -89,6 +89,28 @@ test("FILLED requires a cumulative fill quantity that reaches the requested quan
   await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "short-filled", status: "FILLED", fillQuantity: 1, fillPrice: 101 })), /invalid/);
 });
 
+test("REJECTED submission refuses later fills without mutating its receipt", async () => {
+  const persistence = new MemoryOrderPersistence();
+  const writer = new OrderWriter(store(), persistence, adapter({ kind: "REJECTED", message: "not allowed" }));
+  const receipt = await writer.submit(intent, 10);
+  const before = persistence.replay()[0];
+  assert.equal(receipt.outcome, "REJECTED");
+  await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "rejected-late-fill", status: "FILLED", fillQuantity: 2, fillPrice: 101 })), /terminal submission outcome/);
+  assert.deepEqual(persistence.replay()[0], before);
+  assert.deepEqual(await writer.submit(intent, 10), before);
+});
+
+test("FAILED submission refuses later fills without mutating its receipt", async () => {
+  const persistence = new MemoryOrderPersistence();
+  const writer = new OrderWriter(store(), persistence, adapter({ kind: "FAILED", message: "exchange error" }));
+  const receipt = await writer.submit(intent, 11);
+  const before = persistence.replay()[0];
+  assert.equal(receipt.outcome, "FAILED");
+  await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "failed-late-fill", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 101 })), /terminal submission outcome/);
+  assert.deepEqual(persistence.replay()[0], before);
+  assert.deepEqual(await writer.submit(intent, 11), before);
+});
+
 test("cancel durably records a request before the adapter and UNKNOWN after an uncertain call", async () => {
   const persistence = new MemoryOrderPersistence();
   let seen: any;

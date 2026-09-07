@@ -149,6 +149,66 @@ function positionSide(value: unknown): UsdMFuturesAccountPosition["positionSide"
   return value as UsdMFuturesAccountPosition["positionSide"];
 }
 
+export interface AccountAuthConfig {
+  readonly apiKey: string;
+  readonly apiSecret: string;
+}
+
+export interface AuthenticatedAccountStateSource {
+  /** Implementations must use auth ephemerally and must not log or persist it. */
+  readAccountUpdate(auth: AccountAuthConfig): Promise<unknown>;
+}
+
+export interface LiveAccountState {
+  readonly version: 1;
+  readonly state: UsdMFuturesAccountState;
+  readonly source: {
+    readonly adapter: "AUTHENTICATED_ACCOUNT_STATE_SOURCE";
+    readonly access: "PRIVATE";
+    readonly evidence: "BLOCKED_EXTERNAL";
+  };
+}
+
+export interface AccountStateAdapter {
+  read(auth?: AccountAuthConfig): Promise<LiveAccountState>;
+}
+
+export class MissingAccountCredentialsError extends Error {
+  constructor() { super("account credentials are required; private live read is BLOCKED_EXTERNAL"); this.name = "MissingAccountCredentialsError"; }
+}
+
+function validateAccountAuth(auth: AccountAuthConfig | undefined): asserts auth is AccountAuthConfig {
+  if (!auth || typeof auth !== "object" || typeof auth.apiKey !== "string" || auth.apiKey.length === 0 || typeof auth.apiSecret !== "string" || auth.apiSecret.length === 0) {
+    throw new MissingAccountCredentialsError();
+  }
+}
+
+function freezeAccountHandoff<T>(value: T): T {
+  if (value && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value as Record<string, unknown>)) freezeAccountHandoff(child);
+  }
+  return value;
+}
+
+export function createAuthenticatedUsdMFuturesAccountAdapter(
+  source: AuthenticatedAccountStateSource,
+  receivedAt: () => number,
+): AccountStateAdapter {
+  return {
+    async read(auth?: AccountAuthConfig): Promise<LiveAccountState> {
+      validateAccountAuth(auth);
+      const raw = await source.readAccountUpdate(auth);
+      const state = normalizeUsdMFuturesAccountState(raw, receivedAt());
+      return freezeAccountHandoff({
+        version: 1 as const,
+        state,
+        source: { adapter: "AUTHENTICATED_ACCOUNT_STATE_SOURCE" as const, access: "PRIVATE" as const, evidence: "BLOCKED_EXTERNAL" as const },
+      });
+    },
+  };
+}
+
 export function normalizeUsdMFuturesAccountState(raw: unknown, receivedAt: number): UsdMFuturesAccountState {
   const value = parsed(raw);
   if (value.productFamily !== "USD_M_FUTURES_UM") fail("product family", "must be USD_M_FUTURES_UM");

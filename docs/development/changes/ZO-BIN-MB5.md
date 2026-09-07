@@ -32,7 +32,7 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 
 ## review and evidence ceiling
 
-- remediation_code_head: `PENDING_CODE_COMMIT`
+- remediation_code_head: `1426e7d72ea07bccbf9851dc4df849fcfa188a0d`
 - review verdict: `REVISE` (provisional pending fresh review of the remediation head)
 - focused: `15/15`; full: `415/415`
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.

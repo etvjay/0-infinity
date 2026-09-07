@@ -28,7 +28,7 @@ Current:
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
-| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `PENDING_CODE_COMMIT`; parent review `REVISE`; complete persisted receipt and partial-fill schema regressions; focused execution `15/15`, full `415/415`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS claim |
+| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `1426e7d72ea07bccbf9851dc4df849fcfa188a0d`; parent review `REVISE`; complete persisted receipt and partial-fill schema regressions; focused execution `15/15`, full `415/415`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS claim |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
 

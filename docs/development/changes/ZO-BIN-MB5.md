@@ -4,7 +4,7 @@
 
 `REMEDIATION_COMPLETE / PROVISIONAL`
 
-Independent review of the exact parent candidate `e1f932f1abbfb8a3f837ce30876dbb74d0364699` returned `REVISE`; this remediation remains provisional pending a fresh exact-head review. No `LOCAL_PASS` approval is claimed.
+Independent review of the exact parent candidate `2f0b3c9e28d419ddd65da58f02b3e2fd4fb8e32` returned `REVISE`; this remediation remains provisional pending a fresh exact-head review. No `LOCAL_PASS` approval is claimed.
 
 M-B5 is a local/replay-only execution boundary. It is not exchange, live, testnet, production durability, or profitability evidence.
 
@@ -17,24 +17,25 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 - Persistence precedes every adapter call. Adapter timeout or thrown call becomes `UNKNOWN`; the writer refuses blind retry. ACKNOWLEDGED does not imply a fill.
 - Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, rejects `FILLED` without a cumulative quantity reaching the requested quantity, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation durably records `REQUESTED` before the adapter, refuses `REJECTED`/`FAILED` terminal submissions before adapter invocation, maps adapter uncertainty to durable local `UNKNOWN`, refuses blind retry, and requires deterministic client-ID/mandate/workflow/attempt/intent-fingerprint ownership.
 - Reconciliation refuses fills after terminal `REJECTED`/`FAILED` submission outcomes, `CANCELLED`, or uncertain (`UNKNOWN`) cancellation, preserving the terminal/uncertain receipt without fill or outcome mutation. Duplicate event IDs remain idempotent before terminal rejection checks. Every submit retry, reconciliation, and cancellation path validates the complete frozen persisted receipt schema, including deterministic identity, intent bindings, enums, quantities/prices, provenance, event-array descriptors, immutability, and status/cancellation consistency; partial-fill events require positive cumulative quantity and valid fill price.
+- Persisted receipts bind stored quantity exactly to intent quantity, enforce outcome/provenance/fill/cancellation coherence, and verify exact decimal `averagePrice * filledQuantity = filledNotional`; partially filled orders cannot be converted into positive-fill cancellations. Frozen receipt arrays require canonical `Array.prototype` descriptors and reject prototype pollution. Adapter results are revalidated at runtime against exact own data fields/enums before final persistence; invalid injected results fail closed.
 - `MemoryOrderPersistence.failNextSave()` and writer hooks model local persistence/crash windows and replay boundaries; no production crash-safety claim is made.
 
 ## TDD and verification receipts
 
 - RED: focused rejected/failed fill regressions failed before implementation with missing expected rejections.
 - RED: focused rejected/failed cancellation regression failed before implementation with missing expected rejections.
-- RED: new forged-persisted-receipt and partial-fill regressions failed before implementation (`2` focused failures; prior suite `413/413 PASS`).
-- GREEN: focused execution tests `15/15 PASS`.
-- Full `npm test`: `415/415 PASS`.
+- RED: new forged-persisted-receipt, array-pollution, adapter-result, and partial-cancellation regressions failed before implementation (`3` focused failures across the two RED runs; prior suite `413/413 PASS`).
+- GREEN: focused execution tests `19/19 PASS`.
+- Full `npm test`: `419/419 PASS`.
 - `npm run check`: PASS.
 - `npm run build`: PASS.
 - `git diff --check`: PASS.
 
 ## review and evidence ceiling
 
-- remediation_code_head: `1426e7d72ea07bccbf9851dc4df849fcfa188a0d`
+- remediation_code_head: `a7dbafbebc119cd951b116484746818cdd9efcc5`
 - review verdict: `REVISE` (provisional pending fresh review of the remediation head)
-- focused: `15/15`; full: `415/415`
+- focused: `19/19`; full: `419/419`
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.
 
 ## exclusions and risks

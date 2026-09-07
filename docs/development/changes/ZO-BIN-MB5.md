@@ -25,17 +25,17 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 - RED: focused rejected/failed fill regressions failed before implementation with missing expected rejections.
 - RED: focused rejected/failed cancellation regression failed before implementation with missing expected rejections.
 - RED: new forged-persisted-receipt, array-pollution, adapter-result, and partial-cancellation regressions failed before implementation (`3` focused failures across the two RED runs; prior suite `413/413 PASS`).
-- GREEN: focused execution tests `19/19 PASS`.
-- Full `npm test`: `419/419 PASS`.
+- GREEN: focused execution tests `22/22 PASS`.
+- Full `npm test`: `422/422 PASS`.
 - `npm run check`: PASS.
 - `npm run build`: PASS.
 - `git diff --check`: PASS.
 
 ## review and evidence ceiling
 
-- remediation_code_head: `a7dbafbebc119cd951b116484746818cdd9efcc5`
+- remediation_code_head: `3abf64e056b0a9160df75fa877829b7be9fe9d9c`
 - review verdict: `REVISE` (provisional pending fresh review of the remediation head)
-- focused: `19/19`; full: `419/419`
+- focused: `22/22`; full: `422/422`
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.
 
 ## exclusions and risks

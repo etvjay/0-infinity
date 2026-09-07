@@ -7,7 +7,7 @@
 | M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A, M-B2-B, M-B2-C, M-B2-D, M-B2-F, and M-B2-H `LOCAL_PASS` read-only market/state slices integrated; M-B2-E bounded public `LIVE_READ_PASS`; M-B2-G public depth bootstrap `BLOCKED_EXTERNAL`; integrated M-B2 closure gate still pending |
 | M-B3 | Execution Economics | LOCAL_PASS — exact reviewed code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; nested book containers/quotes reject unsupported own/inherited enumerable/non-enumerable string/symbol keys plus polluted Array.prototype keys; focused `12/12`, full `370/370`, check/build/diff-check PASS; no live economics claimed |
 | M-B4 | Reasoning Workflow | PROVISIONAL_LOCAL_PASS — exact candidate `8335040183cf4d01e1c1765c9de9267f707a4c5f`; independent review found no code blockers; focused handoff `15/15`, economics `15/15`, reasoning `12/12`, combined `42/42`, full `400/400`, check/build/diff-check PASS; receipt reconciliation pending; no live evidence claimed |
-| M-B5 | OrderWriter + Reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `a7dbafbebc119cd951b116484746818cdd9efcc5`; parent review `REVISE`; persisted receipt quantity/provenance/fill arithmetic/status/cancellation coherence, canonical array pollution defense, and adapter-result revalidation added across submit/reconcile/cancel; focused `19/19`, full `419/419`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS, live execution, or production durability claimed |
+| M-B5 | OrderWriter + Reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `3abf64e056b0a9160df75fa877829b7be9fe9d9c`; parent review `REVISE`; persisted receipt quantity/provenance/fill arithmetic/status/cancellation coherence, canonical array pollution defense, and adapter-result revalidation added across submit/reconcile/cancel; focused `22/22`, full `422/422`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS, live execution, or production durability claimed |
 | M-B6 | Full Runtime | NOT STARTED |
 | M-B7 | Shadow Evidence | NOT STARTED |
 | M-B8 | Controlled Live Evidence + submission freeze | NOT STARTED |
@@ -44,7 +44,7 @@ M-B4 remediation receipt:
 
 M-B5 local receipt:
 
-- status: `REMEDIATION_COMPLETE / PROVISIONAL`; exact remediation code head: `a7dbafbebc119cd951b116484746818cdd9efcc5`; parent independent review verdict: `REVISE`; fresh exact-head review pending.
-- TDD: persisted receipt coherence, canonical array pollution, adapter-result, and partial-cancellation regressions were RED before implementation, then GREEN; focused execution `19/19`; full suite `419/419`; typecheck/build/diff-check `PASS`.
+- status: `REMEDIATION_COMPLETE / PROVISIONAL`; exact remediation code head: `3abf64e056b0a9160df75fa877829b7be9fe9d9c`; parent independent review verdict: `REVISE`; fresh exact-head review pending.
+- TDD: persisted receipt coherence, canonical array pollution, adapter-result, and partial-cancellation regressions were RED before implementation, then GREEN; focused execution `22/22`; full suite `422/422`; typecheck/build/diff-check `PASS`.
 - scope: cancellation of `REJECTED`/`FAILED` submissions is refused before adapter invocation, while fills after `REJECTED`/`FAILED` submission, `CANCELLED`, or cancellation `UNKNOWN` are refused without mutating outcome, cancel state, quantity, or fill-event provenance; duplicate event IDs remain idempotent.
 - evidence ceiling: local supplied/replay only; no LOCAL_PASS approval, network, credentials, MCP, live exchange writes, production crash safety, or profitability claim.

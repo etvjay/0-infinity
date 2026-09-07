@@ -28,7 +28,7 @@ Current:
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
-| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `a7dbafbebc119cd951b116484746818cdd9efcc5`; parent review `REVISE`; persisted receipt coherence, canonical array pollution, adapter-result, and partial-cancellation regressions; focused execution `19/19`, full `419/419`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS claim |
+| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `3abf64e056b0a9160df75fa877829b7be9fe9d9c`; parent review `REVISE`; persisted receipt coherence, canonical array pollution, adapter-result, and partial-cancellation regressions; focused execution `22/22`, full `422/422`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS claim |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
 
@@ -108,7 +108,7 @@ M-B4 proof receipt:
 M-B5 proof receipt:
 
 - objective: bounded local/replay OrderWriter around existing mandate consumption plus explicit submission/reconciliation outcomes.
-- remediation_code_head: `a7dbafbebc119cd951b116484746818cdd9efcc5`; parent review verdict: `REVISE`; fresh exact-head review pending.
+- remediation_code_head: `3abf64e056b0a9160df75fa877829b7be9fe9d9c`; parent review verdict: `REVISE`; fresh exact-head review pending.
 - receipt: deterministic IDs, canonical own-data intent/event validation, complete intent fingerprint idempotency, immutable audit-bound receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, FILLED cumulative quantity >= requested, monotonic duplicate-safe cumulative fills with out-of-order handling and weighted VWAP, writer-owned cancel with durable REQUESTED/UNKNOWN/CANCELLED state, refusal of cancellation for REJECTED/FAILED submissions before adapter invocation, and refusal of fills after REJECTED/FAILED submission or CANCELLED/UNKNOWN cancellation without receipt mutation.
-- TDD/verification: persisted receipt coherence, canonical array pollution, adapter-result, and partial-cancellation regressions RED before implementation; focused execution `19/19`; full suite `419/419`; check/build/diff-check `PASS`.
+- TDD/verification: persisted receipt coherence, canonical array pollution, adapter-result, and partial-cancellation regressions RED before implementation; focused execution `22/22`; full suite `422/422`; check/build/diff-check `PASS`.
 - evidence ceiling: provisional local supplied/replay evidence only; no LOCAL_PASS approval, live, testnet, production durability, exchange write, network, MCP, or credential claim.

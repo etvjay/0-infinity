@@ -40,9 +40,39 @@ function levels(value: unknown, field: string): readonly (readonly [string, stri
     return Object.freeze([decimal(level[0], `${field}[${index}] price`), decimal(level[1], `${field}[${index}] quantity`)] as const);
   });
 }
+function topLevelField(raw: string, wanted: string): { count: number; token?: string } {
+  let depth = 0; let count = 0; let token: string | undefined;
+  for (let i = 0; i < raw.length;) {
+    if (raw[i] === "\"") {
+      const start = i++; let escaped = false;
+      while (i < raw.length) { const c = raw[i++]; if (escaped) escaped = false; else if (c === "\\") escaped = true; else if (c === "\"") break; }
+      if (depth !== 1) continue;
+      let j = i; while (/\s/.test(raw[j] ?? "")) j++;
+      if (raw[j] !== ":") continue;
+      j++; while (/\s/.test(raw[j] ?? "")) j++;
+      const valueStart = j; let end = j;
+      if (raw[j] === "\"") {
+        end = ++j; escaped = false;
+        while (end < raw.length) { const c = raw[end++]; if (escaped) escaped = false; else if (c === "\\") escaped = true; else if (c === "\"") break; }
+      } else while (end < raw.length && !/[,}\s]/.test(raw[end])) end++;
+      let key: unknown; try { key = JSON.parse(raw.slice(start, i)); } catch { continue; }
+      if (key === wanted) { count++; token = raw.slice(valueStart, end); }
+      i = end; continue;
+    }
+    if (raw[i] === "{" || raw[i] === "[") depth++; else if (raw[i] === "}" || raw[i] === "]") depth--; i++;
+  }
+  return { count, token };
+}
 export function normalizeUsdMFuturesDepthSnapshot(value: unknown, requested: UsdMFuturesSymbol): UsdMFuturesDepthSnapshot {
   let raw: unknown = value;
-  if (typeof raw === "string") { try { raw = JSON.parse(raw); } catch { fail("snapshot", "must be valid JSON"); } }
+  if (typeof raw === "string") {
+    const source = raw;
+    try { raw = JSON.parse(raw); } catch { fail("snapshot", "must be valid JSON"); }
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) fail("snapshot", "must be an object");
+    const field = topLevelField(source, "lastUpdateId");
+    if (field.count !== 1 || field.token === undefined) fail("lastUpdateId", "must appear exactly once");
+    (raw as Record<string, unknown>).lastUpdateId = field.token.startsWith("\"") ? JSON.parse(field.token) : field.token;
+  }
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) fail("snapshot", "must be an object");
   const v = raw as Record<string, unknown>;
   if (v.symbol !== undefined && v.symbol !== requested) fail("symbol", "must match requested symbol");
@@ -96,7 +126,9 @@ export class UsdMFuturesDepthLifecycle {
   }
   ingestDiff(raw: unknown, receivedAt = this.receivedAt()): UsdMFuturesOrderBookView | null {
     let symbol: UsdMFuturesSymbol | undefined;
-    if (raw && typeof raw === "object" && !Array.isArray(raw) && typeof (raw as Record<string, unknown>).s === "string") symbol = (raw as Record<string, unknown>).s as UsdMFuturesSymbol;
+    let payload: unknown = raw;
+    if (typeof payload === "string") { try { payload = JSON.parse(payload); } catch { payload = undefined; } }
+    if (payload && typeof payload === "object" && !Array.isArray(payload) && typeof (payload as Record<string, unknown>).s === "string") symbol = (payload as Record<string, unknown>).s as UsdMFuturesSymbol;
     try {
       const view = this.orderBook.ingestDiff(raw, receivedAt);
       if (symbol && view?.status === "DESYNCED") this.states.set(symbol, "DESYNCED");

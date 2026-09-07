@@ -67,7 +67,7 @@ export class UsdMFuturesMarketConnectivity {
   private readonly backoffMs: readonly number[];
   private readonly scheduler: UsdMFuturesConnectivityScheduler;
   private readonly onMarketEvent?: (event: Record<string, unknown>) => void;
-  private readonly receivedAt?: () => number;
+  private readonly receivedAt: () => number;
   private readonly marketState?: UsdMFuturesMarketState;
   private readonly orderBook?: UsdMFuturesOrderBook;
   private readonly depthLifecycle?: Pick<UsdMFuturesDepthLifecycle, "ingestDiff">;
@@ -87,7 +87,7 @@ export class UsdMFuturesMarketConnectivity {
     this.backoffMs = config.backoffMs === undefined ? [...DEFAULT_BACKOFF] : [...config.backoffMs];
     this.scheduler = options.scheduler ?? new ImmediateScheduler();
     this.onMarketEvent = options.onMarketEvent;
-    this.receivedAt = options.receivedAt;
+    this.receivedAt = options.receivedAt ?? (() => Date.now());
     this.marketState = options.marketState;
     this.orderBook = options.orderBook;
     this.depthLifecycle = options.depthLifecycle;
@@ -152,12 +152,10 @@ export class UsdMFuturesMarketConnectivity {
     if (message.productFamily !== undefined && message.productFamily !== "USD_M_FUTURES_UM") return;
     if (message.st !== undefined && message.st !== 1 && message.st !== "1") return;
     if (message.ps !== undefined && message.ps !== message.s) return;
-    const receivedAt = this.receivedAt?.();
-    if (receivedAt !== undefined) {
-      if (message.e === "bookTicker") this.marketState?.ingest(message, receivedAt);
-      else if (this.depthLifecycle) this.depthLifecycle.ingestDiff(message, receivedAt);
-      else this.orderBook?.ingestDiff(message, receivedAt);
-    }
+    const receivedAt = this.receivedAt();
+    if (message.e === "bookTicker") this.marketState?.ingest(message, receivedAt);
+    else if (this.depthLifecycle) this.depthLifecycle.ingestDiff(message, receivedAt);
+    else this.orderBook?.ingestDiff(message, receivedAt);
     this.onMarketEvent?.(message);
   }
 

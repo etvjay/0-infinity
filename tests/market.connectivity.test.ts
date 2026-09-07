@@ -177,6 +177,14 @@ test("forwards depth directly with the exact injected receipt clock", () => {
   assert.deepEqual(orderBook.received, [12_345]);
 });
 
+test("routes depth without an injected receipt clock using the connector default clock", () => {
+  const transport = new FakeTransport(); const orderBook = new RecordingOrderBook();
+  const adapter = new UsdMFuturesMarketConnectivity(transport, { symbols: ["BTCUSDT"], streams: ["btcusdt@depth"] }, { orderBook });
+  adapter.start(); transport.connections[0].emit({ result: null, id: 1 });
+  transport.connections[0].emit({ e: "depthUpdate", E: 1000, T: 999, s: "BTCUSDT", U: 1, u: 2, pu: 0, b: [], a: [] });
+  assert.equal(orderBook.received.length, 1);
+});
+
 test("routes depth through an injected lifecycle and ignores stale session callbacks", () => {
   const transport = new FakeTransport(); const book = new UsdMFuturesOrderBook(); const scheduler = new FakeScheduler();
   const lifecycle = new UsdMFuturesDepthLifecycle(book, { fetchSnapshot: async () => ({ symbol: "BTCUSDT", lastUpdateId: 1, bids: [["100", "1"]], asks: [["101", "1"]] }) });

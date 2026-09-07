@@ -100,6 +100,6 @@ M-B3 proof receipt:
 
 M-B4 proof receipt:
 
-- status: `LOCAL_PASS`; final remediation head is recorded in the final receipt; bounded council-to-workflow handoff candidate; default immutable `PROPOSAL`/typed refusal; explicit `approve === true`, canonical compiler request/policy/anchor, trusted local/replay economics provenance, canonical M-B3 assessment, and deeply immutable replay state boundaries yield `MANDATE_COMPILED`/`EVALUATED_INTENT` or refusal. Focused handoff `11/11`, focused economics `15/15`, focused reasoning `12/12`; full suite `396/396`, typecheck, build, diff-check PASS.
+- status: `PROVISIONAL_LOCAL_PASS`; remediation code head: `6199fa805026086478449b28fda570939a262bf2`; bounded council-to-workflow handoff candidate; default immutable `PROPOSAL`/typed refusal; immutable compiler policy/anchor binding, exact `approve === true`, canonical compiler policy arrays, complete frozen economics trees, and deeply immutable replay state boundaries yield `MANDATE_COMPILED`/`EVALUATED_INTENT` or refusal. Focused handoff `13/13`, focused economics `15/15`, focused reasoning `12/12`; full suite `398/398`; check/build/diff-check PASS; exact-head independent review pending.
 - objective: deterministic local/replay council handoff consuming supplied compiler policy/anchor/time and M-B3 economics evidence with identity/hash/freshness binding; no auto-authority and no execution side effects.
 - evidence ceiling: `LOCAL_PASS` only; no live, production, profitability, exchange, network, MCP, or credential claim.

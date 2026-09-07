@@ -92,8 +92,8 @@ M-B2-H proof receipt:
 M-B3 proof receipt:
 
 - status: `LOCAL_PASS`.
-- objective: deterministic execution economics with complete key-shape validation across top-level input, fee, policy, funding, order book, and book-level boundaries; own and inherited non-enumerable and symbol keys are rejected, while allowed canonical fields remain own data properties.
-- tests: focused economics `10/10`, full suite `368/368`.
+- objective: deterministic execution economics with complete key-shape validation across top-level input, fee, policy, funding, order book, nested bid/ask arrays, best quote objects, and book-level boundaries; own and inherited enumerable and non-enumerable string and symbol keys are rejected, while allowed canonical fields remain own data properties.
+- tests: focused economics `11/11`, full suite `369/369`.
 - typecheck/build/diff_check: `PASS`.
-- review status: local remediation complete; no independent approval or live evidence claimed.
+- review status: local remediation complete after candidate `33ff7c7` independent `REVISE`; no independent approval or live evidence claimed.
 - evidence exclusions: no network, credentials, MCP, exchange read/write, mandate authority operation, order submission, cancellation, live execution, production readiness, or profitability claim.

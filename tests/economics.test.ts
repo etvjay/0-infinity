@@ -128,6 +128,31 @@ test("rejects inherited structural fields on frozen levels and frozen books", ()
   if (bookResult.kind === "REFUSAL") assert.equal(bookResult.code, "MALFORMED_INPUT");
 });
 
+test("rejects hidden unsupported keys on nested book containers and quotes", () => {
+  const base = input("BUY");
+  const hostile = (value: object, location: "own" | "inherited", key: string | symbol, enumerable: boolean) => {
+    const target = Array.isArray(value) ? [...value] : {};
+    if (location === "inherited") Object.setPrototypeOf(target, Object.create(Object.getPrototypeOf(target)));
+    Object.assign(target, value);
+    Object.defineProperty(location === "inherited" ? Object.getPrototypeOf(target) : target, key, { value: true, enumerable });
+    return Object.freeze(target);
+  };
+  const cases: ExecutionEconomicsInput[] = [];
+  for (const location of ["own", "inherited"] as const) for (const key of ["unsupported", Symbol("unsupported")] as const) for (const enumerable of [false, true]) {
+    const bids = hostile(base.book.bids, location, key, enumerable);
+    const asks = hostile(base.book.asks, location, key, enumerable);
+    cases.push({ ...base, book: Object.freeze({ ...base.book, bids }) as UsdMFuturesOrderBookView });
+    cases.push({ ...base, book: Object.freeze({ ...base.book, asks }) as UsdMFuturesOrderBookView });
+    cases.push({ ...base, book: Object.freeze({ ...base.book, bestBid: hostile(base.book.bestBid!, location, key, enumerable) }) as UsdMFuturesOrderBookView });
+    cases.push({ ...base, book: Object.freeze({ ...base.book, bestAsk: hostile(base.book.bestAsk!, location, key, enumerable) }) as UsdMFuturesOrderBookView });
+  }
+  for (const candidate of cases) {
+    const result = assessExecutionEconomics(candidate);
+    assert.equal(result.kind, "REFUSAL");
+    if (result.kind === "REFUSAL") assert.equal(result.code, "MALFORMED_INPUT");
+  }
+});
+
 test("rejects inherited fields at every economics input boundary", () => {
   const base = input("BUY");
   const without = (value: Record<string, unknown>, key: string, prototype: Record<string, unknown>) =>

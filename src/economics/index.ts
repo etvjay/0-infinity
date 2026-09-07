@@ -117,6 +117,20 @@ function validLevel(level: unknown): level is { readonly price: string; readonly
   try { const x = level as { price: unknown; quantity: unknown }; return positive(parse(x.price)) && positive(parse(x.quantity)); } catch { return false; }
 }
 
+function arrayShape(value: unknown): value is readonly unknown[] {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
+  for (const key of Reflect.ownKeys(value)) {
+    if (key === "length") continue;
+    if (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= 2 ** 32 - 1) return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !("value" in descriptor)) return false;
+  }
+  return true;
+}
+function validLevelContainer(value: unknown): value is readonly unknown[] {
+  return arrayShape(value) && value.every(validLevel);
+}
+
 /** Pure local economics assessment. It does not validate/consume a mandate or submit an order. */
 export function assessExecutionEconomics(input: ExecutionEconomicsInput): ExecutionEconomicsResult {
   try {
@@ -142,8 +156,7 @@ export function assessExecutionEconomics(input: ExecutionEconomicsInput): Execut
     if (!frozenTree(book)) return refusal("MALFORMED_INPUT", "trusted book view must be deeply immutable");
     if (!book || book.status !== "SYNCED") return refusal("BOOK_NOT_SYNCED", "book must be SYNCED");
     if (book.version !== 1 || (book.symbol !== "BTCUSDT" && book.symbol !== "ETHUSDT") || typeof book.lastUpdateId !== "bigint" || book.lastUpdateId < 0n) return refusal("MALFORMED_INPUT", "book identity/version is malformed");
-    if (!Array.isArray(book.bids) || !Array.isArray(book.asks)) return refusal("MALFORMED_INPUT", "book sides are malformed");
-    if (!book.bids.every(validLevel) || !book.asks.every(validLevel)) return refusal("MALFORMED_INPUT", "book contains malformed levels");
+    if (!arrayShape(book.bids) || !arrayShape(book.asks) || !validLevelContainer(book.bids) || !validLevelContainer(book.asks) || (book.bestBid !== undefined && !validLevel(book.bestBid)) || (book.bestAsk !== undefined && !validLevel(book.bestAsk))) return refusal("MALFORMED_INPUT", "book sides or best quotes are malformed");
     const bidsByPrice = new Map<string, { price: R; quantity: R }>();
     for (const level of book.bids) { const price = parse(level.price), quantity = parse(level.quantity), key = `${price.n}/${price.d}`; const prior = bidsByPrice.get(key); bidsByPrice.set(key, { price, quantity: add(prior?.quantity ?? rat(0n), quantity) }); }
     const asksByPrice = new Map<string, { price: R; quantity: R }>();

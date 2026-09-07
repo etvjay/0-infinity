@@ -42,7 +42,7 @@ function validateConfig(config: UsdMFuturesMarketConnectivityConfig): void {
   const symbols = new Set(config.symbols.map(symbol => symbol.toLowerCase()));
   if (config.streams.length === 0 || config.streams.some(stream => {
     const symbol = stream.split("@")[0];
-    return !symbols.has(symbol) || !/^([a-z0-9]+)@(bookTicker|depth|depth@(100ms|500ms))$/.test(stream);
+    return !symbols.has(symbol) || !/^([a-z0-9]+)@(bookTicker|depth(?:@.*)?)$/.test(stream);
   })) throw new RangeError("stream must be a supported public USD-M market stream");
   if (config.maxReconnectAttempts !== undefined && (!Number.isSafeInteger(config.maxReconnectAttempts) || config.maxReconnectAttempts < 0))
     throw new RangeError("maxReconnectAttempts must be a non-negative safe integer");
@@ -67,19 +67,11 @@ export class UsdMFuturesMarketConnectivity {
   private readonly receivedAt?: () => number;
   private readonly marketState?: UsdMFuturesMarketState;
   private readonly orderBook?: UsdMFuturesOrderBook;
-  private readonly config: UsdMFuturesMarketConnectivityConfig;
-  private lifecycleToken = 0;
 
-  constructor(private readonly transport: UsdMFuturesMarketTransport, config: UsdMFuturesMarketConnectivityConfig, options: UsdMFuturesMarketConnectivityOptions = {}) {
+  constructor(private readonly transport: UsdMFuturesMarketTransport, private readonly config: UsdMFuturesMarketConnectivityConfig, options: UsdMFuturesMarketConnectivityOptions = {}) {
     validateConfig(config);
-    this.config = {
-      symbols: [...config.symbols],
-      streams: [...config.streams],
-      maxReconnectAttempts: config.maxReconnectAttempts,
-      backoffMs: config.backoffMs === undefined ? undefined : [...config.backoffMs],
-    };
     this.maxReconnectAttempts = config.maxReconnectAttempts ?? DEFAULT_BACKOFF.length;
-    this.backoffMs = config.backoffMs === undefined ? [...DEFAULT_BACKOFF] : [...config.backoffMs];
+    this.backoffMs = config.backoffMs ?? DEFAULT_BACKOFF;
     this.scheduler = options.scheduler ?? new ImmediateScheduler();
     this.onMarketEvent = options.onMarketEvent;
     this.receivedAt = options.receivedAt;
@@ -99,14 +91,9 @@ export class UsdMFuturesMarketConnectivity {
   }
 
   unsubscribe(): void {
-    if (this.status === "STOPPED") return;
-    this.lifecycleToken++;
-    const connection = this.connection;
-    const active = this.status === "SUBSCRIBED" || this.status === "SUBSCRIBING";
-    if (connection && active) this.send("UNSUBSCRIBE");
-    this.connection = undefined;
+    if (!this.connection || (this.status !== "SUBSCRIBED" && this.status !== "SUBSCRIBING")) return;
+    this.send("UNSUBSCRIBE");
     this.status = "IDLE";
-    if (connection && active) connection.close();
   }
 
   private connect(): void {
@@ -129,22 +116,13 @@ export class UsdMFuturesMarketConnectivity {
     if (!value || typeof value !== "object" || Array.isArray(value)) return;
     const message = value as Record<string, unknown>;
     if (own(message, "id") && message.id === this.requestId) {
-      if (own(message, "result") && message.result === null && !own(message, "error")) {
-        this.reconnectAttempts = 0;
-        this.status = "SUBSCRIBED";
-      } else {
-        this.connection = undefined;
-        connection.close();
-        this.scheduleReconnect("invalid subscription acknowledgement");
-      }
+      if (message.result === null) { this.status = "SUBSCRIBED"; }
       return;
     }
     if (message.e === "ACCOUNT_UPDATE" || message.e === "listenKeyExpired") throw new RangeError("private user-data events are not accepted by public market connectivity");
     if (typeof message.e !== "string" || !SUPPORTED_EVENTS.has(message.e) || typeof message.s !== "string") return;
     if (!this.config.symbols.includes(message.s as UsdMFuturesSymbol)) return;
     if (message.productFamily !== undefined && message.productFamily !== "USD_M_FUTURES_UM") return;
-    if (message.st !== undefined && message.st !== 1 && message.st !== "1") return;
-    if (message.ps !== undefined && message.ps !== message.s) return;
     const receivedAt = this.receivedAt?.();
     if (receivedAt !== undefined) {
       if (message.e === "bookTicker") this.marketState?.ingest(message, receivedAt);
@@ -164,7 +142,6 @@ export class UsdMFuturesMarketConnectivity {
     const attempt = this.reconnectAttempts++;
     this.status = "BACKOFF";
     const delay = this.backoffMs[attempt] ?? this.backoffMs[this.backoffMs.length - 1] ?? 0;
-    const token = this.lifecycleToken;
-    this.scheduler.schedule(() => { if (this.status === "BACKOFF" && token === this.lifecycleToken) this.connect(); }, delay);
+    this.scheduler.schedule(() => { if (this.status === "BACKOFF") this.connect(); }, delay);
   }
 }

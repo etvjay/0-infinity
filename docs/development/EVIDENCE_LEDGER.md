@@ -97,3 +97,11 @@ M-B3 proof receipt:
 - typecheck/build/diff_check: `PASS`.
 - review status: exact code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; prior independent review `REVISE` was limited to receipt attribution, with no implementation findings. Receipt-only reconciliation is recorded here; no live evidence claimed.
 - evidence exclusions: no network, credentials, MCP, exchange read/write, mandate authority operation, order submission, cancellation, live execution, production readiness, or profitability claim.
+
+M-B4 proof receipt:
+
+- status: `LOCAL_PASS`.
+- objective: deterministic local advocate/oppose/market-account evidence council producing immutable `TradeThesis` or typed refusal.
+- tests: focused reasoning council `5/5`; full suite receipt recorded in M-B4 Change Record.
+- implementation: `src/reasoning/index.ts`; no mandate or authority operation.
+- evidence ceiling: local supplied/replay evidence only; no live or production claim.

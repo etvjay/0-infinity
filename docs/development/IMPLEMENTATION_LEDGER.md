@@ -6,7 +6,7 @@
 | M-B1 | Mandate Kernel | LOCAL_PASS — A, B, C, D, and E integrated locally; independent integrated-kernel review APPROVED at `db1d0df`; evidence ceiling remains local X2 |
 | M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A, M-B2-B, M-B2-C, M-B2-D, M-B2-F, and M-B2-H `LOCAL_PASS` read-only market/state slices integrated; M-B2-E bounded public `LIVE_READ_PASS`; M-B2-G public depth bootstrap `BLOCKED_EXTERNAL`; integrated M-B2 closure gate still pending |
 | M-B3 | Execution Economics | LOCAL_PASS — exact reviewed code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; nested book containers/quotes reject unsupported own/inherited enumerable/non-enumerable string/symbol keys plus polluted Array.prototype keys; focused `12/12`, full `370/370`, check/build/diff-check PASS; no live economics claimed |
-| M-B4 | Reasoning Workflow | NOT STARTED |
+| M-B4 | Reasoning Workflow | LOCAL_PASS — bounded deterministic local evidence council at candidate HEAD; focused `5/5`; no live/production claim |
 | M-B5 | OrderWriter + Reconciliation | NOT STARTED |
 | M-B6 | Full Runtime | NOT STARTED |
 | M-B7 | Shadow Evidence | NOT STARTED |

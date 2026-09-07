@@ -70,6 +70,11 @@ function positive(value: unknown, name: string): number {
   if (number <= 0) throw new RangeError(`${name} must be positive`);
   return number;
 }
+function nonNegative(value: unknown, name: string): number {
+  const number = finite(value, name);
+  if (number < 0) throw new RangeError(`${name} must not be negative`);
+  return number;
+}
 
 export function compileMandate(
   workflow: { readonly workflowId: string }, thesis: TradeThesis, policy: CompilerPolicy, anchor: AnchorState, now?: number,
@@ -96,7 +101,8 @@ export function compileMandate(
   if (!(thesis.expectedMove.lowerBps <= thesis.expectedMove.bps && thesis.expectedMove.bps <= thesis.expectedMove.upperBps)) throw new RangeError("expectedMove interval is incoherent");
   positive(thesis.horizonMs, "horizonMs"); finite(thesis.confidence, "confidence");
   if (thesis.confidence < 0 || thesis.confidence > 1) throw new RangeError("confidence must be between 0 and 1");
-  finite(thesis.createdAt, "createdAt"); finite(thesis.expiresAt, "expiresAt");
+  if (thesis.thesisHash !== undefined) requiredString(thesis.thesisHash, "thesisHash");
+  nonNegative(thesis.createdAt, "createdAt"); nonNegative(thesis.expiresAt, "expiresAt");
   if (thesis.expiresAt <= thesis.createdAt) throw new RangeError("thesis validity is incoherent");
   for (const [key, value] of Object.entries(thesis.reasoning)) requiredString(value, `reasoning.${key}`);
   requiredString(policy.accountId, "accountId");
@@ -106,10 +112,11 @@ export function compileMandate(
   if (policy.maxNotional <= 0) throw new RangeError("maxNotional must be positive");
   if (policy.execution !== "LIMIT" && policy.execution !== "MARKET") throw new RangeError("invalid execution method");
   if (!anchor || typeof anchor.stateVersion !== "bigint") throw new TypeError("anchor.stateVersion must be bigint");
-  finite(anchor.observedAt, "anchor.observedAt"); finite(anchor.receivedAt, "anchor.receivedAt"); positive(anchor.markPrice, "anchor.markPrice");
+  if (anchor.stateVersion < 0n) throw new RangeError("anchor.stateVersion must not be negative");
+  nonNegative(anchor.observedAt, "anchor.observedAt"); nonNegative(anchor.receivedAt, "anchor.receivedAt"); positive(anchor.markPrice, "anchor.markPrice");
   if (anchor.receivedAt < anchor.observedAt) throw new RangeError("anchor chronology is incoherent");
   const issuedAt = now === undefined ? thesis.createdAt : now;
-  finite(issuedAt, "now");
+  nonNegative(issuedAt, "now");
   if (issuedAt < thesis.createdAt || issuedAt >= thesis.expiresAt) throw new RangeError("thesis is expired or not yet valid");
   const expiresAt = Math.min(thesis.expiresAt, issuedAt + policy.validityMs);
   if (expiresAt <= issuedAt) throw new RangeError("mandate validity is incoherent");

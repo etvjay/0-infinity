@@ -58,3 +58,21 @@ test("clones mutable anchor input before freezing the mandate", () => {
   assert.equal(mandate.anchor.markPrice, 100_000);
   assert.equal(mandate.anchor.receivedAt, 1_001);
 });
+
+test("rejects negative anchor state versions", () => {
+  assert.throws(() => compileMandate(input(), thesis, policy, { ...anchor, stateVersion: -1n }, 2_000), /stateVersion|non-negative/);
+});
+
+test("rejects numeric thesis hashes", () => {
+  assert.throws(() => compileMandate(input(), { ...thesis, thesisHash: 42 } as unknown as TradeThesis, policy, anchor, 2_000), /thesisHash|non-empty string/);
+});
+
+test("rejects negative timestamp fields", () => {
+  for (const [field, value] of [["createdAt", -1], ["expiresAt", -1]] as const) {
+    assert.throws(() => compileMandate(input(), { ...thesis, [field]: value }, policy, anchor, 2_000), new RegExp(field));
+  }
+  for (const field of ["observedAt", "receivedAt"] as const) {
+    assert.throws(() => compileMandate(input(), thesis, policy, { ...anchor, [field]: -1 }, 2_000), new RegExp(`anchor\\.${field}`));
+  }
+  assert.throws(() => compileMandate(input(), thesis, policy, anchor, -1), /now/);
+});

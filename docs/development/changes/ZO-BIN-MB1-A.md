@@ -18,7 +18,7 @@ Reasoning-to-authority domain/compiler boundary; no execution authority.
 
 ## status
 
-`INTEGRATED_LOCAL` — candidate `d65d231` independently re-reviewed; integrated on `main` as `f8b3901` with follow-up test commit `3d0dcf5`.
+`REMEDIATED / LOCAL_PASS / INTEGRATION_PENDING` — compiler validation defects fixed on isolated candidate worktree from canonical HEAD `626cacff4ea5843741e56ccb251fb52a18c3df87`.
 
 ## dependencies
 
@@ -85,16 +85,26 @@ The exported domain types must represent the canonical `TradeThesis`, `Execution
 - Independent review verdict.
 - Proof ceiling: `LOCAL_PASS` only.
 
+## remediation_findings
+
+- `compileMandate` previously accepted negative `anchor.stateVersion` values.
+- `compileMandate` previously copied numeric `thesisHash` values into mandate provenance.
+- `compileMandate` previously accepted negative thesis, anchor, and `now` timestamp fields despite downstream non-negative timestamp contracts.
+
 ## evidence_produced
 
-- `npm run check` — PASS on candidate and integrated main.
-- `npm test` — PASS: 230 tests, 0 failures on candidate and integrated main.
+- `npm run check` — PASS on this remediation candidate.
+- `npm test` — PASS: 293 tests, 0 failures on this remediation candidate.
+- `npm run build` — PASS on this remediation candidate.
 - `git diff --check` — PASS.
 - Explicit compiler negative tests cover provenance, expiry shape, entry authority, negative ceilings, and caller mutation isolation.
+- Remediation RED — focused compiler run failed 3 new assertions: negative state version, numeric thesis hash, and negative timestamps.
+- Remediation GREEN — focused compiler run passed 9/9 tests after minimal validation changes.
+- Full-suite and build receipts for this candidate are recorded below; evidence ceiling remains `LOCAL_PASS` and integration is pending.
 
 ## review_verdict
 
-`APPROVE_WITH_REQUIRED_FOLLOWUPS` — independent re-review of `d65d231`; follow-up assertions for `minExecutableEdgeBps` and `maxLossBps` were added in `3d0dcf5`.
+`APPROVE_WITH_REQUIRED_FOLLOWUPS` — prior independent review identified the remediation defects addressed by this candidate; parent integration and independent review remain pending.
 
 ## ground_truth_before
 

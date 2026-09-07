@@ -24,6 +24,7 @@ Current:
 | Mandate kernel | LOCAL_PASS — M-B1-A, B, C, D, and E integrated and independently reviewed at `db1d0df`; local X2 evidence only |
 | Binance public market WebSocket read | LIVE_READ_PASS — bounded `btcusdt@bookTicker` receipt in `docs/development/evidence/ZO-BIN-MB2-E-public-live-read.json`; no lifecycle integration or production claim |
 | Binance live market state | UNVERIFIED — no live depth snapshot/reconciliation, reconnect, or integrated live-state claim |
+| Binance public depth bootstrap | BLOCKED_EXTERNAL — WebSocket diff-depth events received, but REST snapshot returned HTTP 451; receipt: `docs/development/evidence/ZO-BIN-MB2-G-public-depth-bootstrap.json` |
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
@@ -71,3 +72,10 @@ M-B2-F proof receipt:
 - tests: focused depth/connectivity `26/26`, full `353/353`.
 - typecheck/build/diff_check: `PASS`.
 - evidence exclusions: no live Binance REST/depth probe, live depth continuity, production reconnect timing, account/private state, exchange writes, or production readiness.
+
+M-B2-G evidence receipt:
+
+- status: `BLOCKED_EXTERNAL`; public `btcusdt@depth@100ms` events were received, but the official USD-M REST depth endpoint returned HTTP 451.
+- receipt: `docs/development/evidence/ZO-BIN-MB2-G-public-depth-bootstrap.json`.
+- bridge: `NOT_ATTEMPTED`; no snapshot `lastUpdateId`, local `SYNCED` book, best bid/ask, or clean unsubscribe/close receipt was claimed.
+- evidence ceiling: `BLOCKED_EXTERNAL` for public depth bootstrap only; M-B2 remains incomplete.

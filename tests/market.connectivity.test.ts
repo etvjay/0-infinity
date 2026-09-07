@@ -6,6 +6,7 @@ import {
   type UsdMFuturesTransportConnection,
 } from "../src/market/connectivity.js";
 import { UsdMFuturesMarketState, UsdMFuturesOrderBook } from "../src/market/index.js";
+import { UsdMFuturesDepthLifecycle } from "../src/market/depth.js";
 
 class FakeConnection implements UsdMFuturesTransportConnection {
   readonly sent: string[] = [];
@@ -174,4 +175,14 @@ test("forwards depth directly with the exact injected receipt clock", () => {
   adapter.start(); transport.connections[0].emit({ result: null, id: 1 });
   transport.connections[0].emit({ e: "depthUpdate", E: 1000, T: 999, s: "BTCUSDT", U: 1, u: 2, b: [], a: [] });
   assert.deepEqual(orderBook.received, [12_345]);
+});
+
+test("routes depth through an injected lifecycle and ignores stale session callbacks", () => {
+  const transport = new FakeTransport(); const book = new UsdMFuturesOrderBook(); const scheduler = new FakeScheduler();
+  const lifecycle = new UsdMFuturesDepthLifecycle(book, { fetchSnapshot: async () => ({ symbol: "BTCUSDT", lastUpdateId: 1, bids: [["100", "1"]], asks: [["101", "1"]] }) });
+  const adapter = new UsdMFuturesMarketConnectivity(transport, { symbols: ["BTCUSDT"], streams: ["btcusdt@depth"] }, { scheduler, receivedAt: () => 2000, depthLifecycle: lifecycle });
+  adapter.start(); const first = transport.connections[0]; first.close("network");
+  assert.equal(adapter.status, "BACKOFF"); scheduler.runNext();
+  first.emit({ e: "depthUpdate", E: 1000, T: 999, s: "BTCUSDT", U: 1, u: 1, pu: 0, b: [], a: [] });
+  assert.equal(adapter.status, "SUBSCRIBING");
 });

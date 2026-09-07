@@ -1,4 +1,5 @@
 import { UsdMFuturesMarketState, UsdMFuturesOrderBook, type UsdMFuturesSymbol } from "./index.js";
+import type { UsdMFuturesDepthLifecycle } from "./depth.js";
 
 export type UsdMFuturesConnectivityStatus = "IDLE" | "SUBSCRIBING" | "SUBSCRIBED" | "BACKOFF" | "FAILED" | "STOPPED";
 
@@ -30,6 +31,8 @@ export interface UsdMFuturesMarketConnectivityOptions {
   readonly receivedAt?: () => number;
   readonly marketState?: UsdMFuturesMarketState;
   readonly orderBook?: UsdMFuturesOrderBook;
+  /** Optional depth lifecycle keeps snapshot/sequence semantics outside the connector. */
+  readonly depthLifecycle?: Pick<UsdMFuturesDepthLifecycle, "ingestDiff">;
 }
 
 const DEFAULT_BACKOFF = [250, 1_000, 5_000];
@@ -67,8 +70,10 @@ export class UsdMFuturesMarketConnectivity {
   private readonly receivedAt?: () => number;
   private readonly marketState?: UsdMFuturesMarketState;
   private readonly orderBook?: UsdMFuturesOrderBook;
+  private readonly depthLifecycle?: Pick<UsdMFuturesDepthLifecycle, "ingestDiff">;
   private readonly config: UsdMFuturesMarketConnectivityConfig;
   private lifecycleToken = 0;
+  private connectionGeneration = 0;
 
   constructor(private readonly transport: UsdMFuturesMarketTransport, config: UsdMFuturesMarketConnectivityConfig, options: UsdMFuturesMarketConnectivityOptions = {}) {
     validateConfig(config);
@@ -85,6 +90,7 @@ export class UsdMFuturesMarketConnectivity {
     this.receivedAt = options.receivedAt;
     this.marketState = options.marketState;
     this.orderBook = options.orderBook;
+    this.depthLifecycle = options.depthLifecycle;
   }
 
   start(): void {
@@ -114,8 +120,9 @@ export class UsdMFuturesMarketConnectivity {
     let connection: UsdMFuturesTransportConnection;
     try { connection = this.transport.connect(); } catch (error) { this.connection = undefined; this.scheduleReconnect(error instanceof Error ? error.message : "connect failed"); return; }
     this.connection = connection;
-    connection.onMessage(message => this.handleMessage(connection, message));
-    connection.onClose(reason => this.handleClose(connection, reason));
+    const generation = ++this.connectionGeneration;
+    connection.onMessage(message => this.handleMessage(connection, generation, message));
+    connection.onClose(reason => this.handleClose(connection, generation, reason));
     this.send("SUBSCRIBE");
   }
 
@@ -123,8 +130,8 @@ export class UsdMFuturesMarketConnectivity {
     this.connection?.send(JSON.stringify({ method, params: [...this.config.streams], id: ++this.requestId }));
   }
 
-  private handleMessage(connection: UsdMFuturesTransportConnection, raw: string): void {
-    if (connection !== this.connection || this.status === "STOPPED") return;
+  private handleMessage(connection: UsdMFuturesTransportConnection, generation: number, raw: string): void {
+    if (connection !== this.connection || generation !== this.connectionGeneration || this.status === "STOPPED") return;
     let value: unknown; try { value = JSON.parse(raw); } catch { return; }
     if (!value || typeof value !== "object" || Array.isArray(value)) return;
     const message = value as Record<string, unknown>;
@@ -148,13 +155,14 @@ export class UsdMFuturesMarketConnectivity {
     const receivedAt = this.receivedAt?.();
     if (receivedAt !== undefined) {
       if (message.e === "bookTicker") this.marketState?.ingest(message, receivedAt);
+      else if (this.depthLifecycle) this.depthLifecycle.ingestDiff(message, receivedAt);
       else this.orderBook?.ingestDiff(message, receivedAt);
     }
     this.onMarketEvent?.(message);
   }
 
-  private handleClose(connection: UsdMFuturesTransportConnection, reason?: string): void {
-    if (connection !== this.connection || this.status === "STOPPED") return;
+  private handleClose(connection: UsdMFuturesTransportConnection, generation: number, reason?: string): void {
+    if (connection !== this.connection || generation !== this.connectionGeneration || this.status === "STOPPED") return;
     this.connection = undefined; this.scheduleReconnect(reason ?? "closed");
   }
 

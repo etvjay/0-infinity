@@ -31,7 +31,7 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 
 ## review and evidence ceiling
 
-- remediation_code_head: `12f5e8f42239d0d53e720eae09704be522e1f7ab`
+- remediation_code_head: `49463c465a62383437470a5b8a952ed6973f82bb`
 - review verdict: `REVISE` (provisional pending fresh review of the remediation head)
 - focused: `13/13`; full: `413/413`
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.

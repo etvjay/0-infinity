@@ -55,9 +55,10 @@ test("rejects crossed books, malformed IDs, overflow, wrong products, and symbol
 test("isolates symbols, honors bounded buffering, and supports explicit rebootstrap", () => {
   const book = new UsdMFuturesOrderBook({ maxBufferedUpdates: 1 });
   book.ingestDiff(update({ s: "BTCUSDT", U: 90, u: 91 }), t);
-  book.ingestDiff(update({ s: "BTCUSDT", U: 92, u: 93 }), t);
+  assert.throws(() => book.ingestDiff(update({ s: "BTCUSDT", U: 92, u: 93 }), t), /buffer|rebootstrap|DESYNCED/i);
   book.ingestSnapshot(snap({ symbol: "ETHUSDT" }), t);
-  assert.equal(book.status("BTCUSDT"), "SYNCING"); assert.equal(book.status("ETHUSDT"), "SYNCED");
+  assert.equal(book.status("BTCUSDT"), "DESYNCED"); assert.equal(book.status("ETHUSDT"), "SYNCED");
+  book.rebootstrap("BTCUSDT");
   book.ingestSnapshot(snap({ U: undefined }), t);
   assert.equal(book.status("BTCUSDT"), "SYNCED");
   book.ingestDiff(update({ s: "ETHUSDT", U: 101, u: 101, pu: 100 }), t + 1);
@@ -67,7 +68,56 @@ test("isolates symbols, honors bounded buffering, and supports explicit rebootst
 test("accepts JSON depth IDs exactly and rejects chronology or caller mutation", () => {
   const book = new UsdMFuturesOrderBook();
   const raw = JSON.stringify(update({ U: "9223372036854775806", u: "9223372036854775807", pu: "9223372036854775805" }));
-  book.ingestDiff(raw, t); const s = JSON.stringify(snap({ lastUpdateId: "9223372036854775805" }));
+  book.ingestDiff(raw, t); const s = JSON.stringify(snap({ lastUpdateId: "9223372036854775807" }));
   const v = book.ingestSnapshot(s, t); assert.equal(v.lastUpdateId, 9223372036854775807n);
   assert.throws(() => new UsdMFuturesOrderBook().ingestSnapshot(snap({ E: 3000 }), t), /timestamp|chronology/i);
+});
+
+test("buffer overflow fails closed instead of dropping the oldest update", () => {
+  const book = new UsdMFuturesOrderBook({ maxBufferedUpdates: 1 });
+  book.ingestDiff(update({ U: 90, u: 90 }), t);
+  assert.throws(() => book.ingestDiff(update({ U: 91, u: 91 }), t), /buffer|rebootstrap|DESYNCED/i);
+  assert.equal(book.status("BTCUSDT"), "DESYNCED");
+  assert.throws(() => book.ingestSnapshot(snap(), t), /rebootstrap/i);
+  book.rebootstrap("BTCUSDT");
+  assert.equal(book.status("BTCUSDT"), "SYNCING");
+});
+
+test("requires the inclusive bootstrap bridge and desyncs non-bridging ranges", () => {
+  const book = new UsdMFuturesOrderBook();
+  book.ingestDiff(update({ U: 101, u: 102 }), t);
+  assert.throws(() => book.ingestSnapshot(snap(), t), /bridge|rebootstrap|DESYNCED/i);
+  assert.equal(book.status("BTCUSDT"), "DESYNCED");
+
+  const bridged = new UsdMFuturesOrderBook();
+  bridged.ingestDiff(update({ U: 100, u: 101, pu: 99 }), t);
+  assert.equal(bridged.ingestSnapshot(snap(), t).lastUpdateId, 101n);
+});
+
+test("DESYNCED cannot be cleared by a snapshot without explicit rebootstrap", () => {
+  const book = new UsdMFuturesOrderBook();
+  book.ingestSnapshot(snap(), t);
+  assert.throws(() => book.ingestDiff(update({ U: 103, u: 103, pu: 100 }), t + 1), /continuity/i);
+  assert.throws(() => book.ingestSnapshot(snap({ lastUpdateId: 200 }), t), /rebootstrap/i);
+  assert.equal(book.status("BTCUSDT"), "DESYNCED");
+  book.rebootstrap("BTCUSDT");
+  assert.equal(book.ingestSnapshot(snap({ lastUpdateId: 200 }), t).status, "SYNCED");
+});
+
+test("depth timestamps and receivedAt are required, safe, non-negative, and chronological", () => {
+  for (const field of ["E", "T"]) {
+    const value = update(); delete (value as unknown as Record<string, unknown>)[field];
+    assert.throws(() => new UsdMFuturesOrderBook().ingestDiff(value, t), new RegExp(field));
+  }
+  assert.throws(() => new UsdMFuturesOrderBook().ingestDiff(update(), -1), /receivedAt/i);
+  assert.throws(() => new UsdMFuturesOrderBook().ingestDiff(update({ E: -1 }), t), /E/i);
+  assert.throws(() => new UsdMFuturesOrderBook().ingestDiff(update({ T: 1001, E: 1000 }), t), /chronology/i);
+  assert.throws(() => new UsdMFuturesOrderBook().ingestDiff(update(), Number.MAX_SAFE_INTEGER + 1), /receivedAt/i);
+});
+
+test("JSON nested IDs cannot override top-level IDs", () => {
+  const raw = JSON.stringify({ ...update({ U: 100, u: 101, pu: 99 }), meta: { u: 999999999999999999999 } });
+  const book = new UsdMFuturesOrderBook();
+  assert.equal(book.ingestDiff(raw, t), null);
+  assert.equal(book.ingestSnapshot(snap(), t).lastUpdateId, 101n);
 });

@@ -46,9 +46,24 @@ function decimal(value: unknown, field: string, positive = true): string {
 function numberDecimal(v: unknown, field: string): number { const s = decimal(v, field); const n = Number(s); if (!Number.isFinite(n) || n <= 0) fail(field, "must be finite"); return n; }
 function freezeDeep<T>(v: T): T { if (v && typeof v === "object" && !Object.isFrozen(v)) { Object.freeze(v); for (const c of Object.values(v as Record<string, unknown>)) freezeDeep(c); } return v; }
 function topField(raw: string, wanted: string): unknown {
-  const re = new RegExp(`\\"${wanted}\\"\\s*:\\s*(\\"(?:\\\\.|[^\\"])*\\"|-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)`); const m = raw.match(re); if (!m) return undefined;
-  if (!m[1].startsWith('"')) return m[1];
-  try { return JSON.parse(m[1]); } catch { return undefined; }
+  let depth = 0;
+  for (let i = 0; i < raw.length;) {
+    if (raw[i] === '\"') {
+      const start = i++; let escaped = false;
+      while (i < raw.length) { const c = raw[i++]; if (escaped) escaped = false; else if (c === '\\\\') escaped = true; else if (c === '\"') break; }
+      if (depth !== 1) continue;
+      let j = i; while (/\\s/.test(raw[j] ?? '')) j++;
+      if (raw[j] !== ':') continue; j++; while (/\\s/.test(raw[j] ?? '')) j++;
+      const valueStart = j; let end = j;
+      if (raw[j] === '\"') { end = ++j; escaped = false; while (end < raw.length) { const c = raw[end++]; if (escaped) escaped = false; else if (c === '\\\\') escaped = true; else if (c === '\"') break; } }
+      else { while (end < raw.length && !/[,}\\s]/.test(raw[end])) end++; }
+      let key: unknown; try { key = JSON.parse(raw.slice(start, i)); } catch { continue; }
+      if (key === wanted) { const token = raw.slice(valueStart, end); if (token.startsWith('\"')) { try { return JSON.parse(token); } catch { return undefined; } } return token; }
+      i = end; continue;
+    }
+    if (raw[i] === '{' || raw[i] === '[') depth++; else if (raw[i] === '}' || raw[i] === ']') depth--; i++;
+  }
+  return undefined;
 }
 function parsed(raw: unknown): Record<string, unknown> {
   if (typeof raw === "string") { try { const v = JSON.parse(raw) as Record<string, unknown>; for (const k of ["U", "u", "pu", "lastUpdateId"]) { const x = topField(raw, k); if (x !== undefined) v[k] = x; } return v; } catch { fail("payload", "must be valid JSON"); } }
@@ -56,7 +71,13 @@ function parsed(raw: unknown): Record<string, unknown> {
 }
 function symbolOf(v: Record<string, unknown>): UsdMFuturesSymbol { if (v.productFamily !== undefined && v.productFamily !== "USD_M_FUTURES_UM") fail("product family", "must be USD_M_FUTURES_UM"); if (typeof v.s !== "string" || !MVP_SYMBOLS.has(v.s as UsdMFuturesSymbol)) fail("symbol", "is not supported"); return v.s as UsdMFuturesSymbol; }
 function snapshotSymbol(v: Record<string, unknown>): UsdMFuturesSymbol { if (v.productFamily !== undefined && v.productFamily !== "USD_M_FUTURES_UM") fail("product family", "must be USD_M_FUTURES_UM"); if (typeof v.symbol !== "string" || !MVP_SYMBOLS.has(v.symbol as UsdMFuturesSymbol)) fail("symbol", "is not supported"); return v.symbol as UsdMFuturesSymbol; }
-function times(v: Record<string, unknown>, receivedAt: number): { E?: number; T?: number } { const E = v.E === undefined ? undefined : integer(v.E, "E"); const T = v.T === undefined ? undefined : integer(v.T, "T"); if (E !== undefined && E > receivedAt) fail("E timestamp", "cannot be in future"); if (T !== undefined && T > receivedAt) fail("T timestamp", "cannot be in future"); if (E !== undefined && T !== undefined && T > E) fail("chronology", "is incoherent"); return { E, T }; }
+function times(v: Record<string, unknown>, receivedAt: number, required = false): { E?: number; T?: number } {
+  const received = integer(receivedAt, "receivedAt");
+  if (required && (v.E === undefined || v.T === undefined)) fail("timestamps", "E and T are required");
+  const E = v.E === undefined ? undefined : integer(v.E, "E"); const T = v.T === undefined ? undefined : integer(v.T, "T");
+  if (E !== undefined && E > received) fail("E timestamp", "cannot be in future"); if (T !== undefined && T > received) fail("T timestamp", "cannot be in future");
+  if (E !== undefined && T !== undefined && T > E) fail("chronology", "is incoherent"); return { E, T };
+}
 function levels(value: unknown, field: string, keepZero = false): Map<string, string> { if (!Array.isArray(value)) fail(field, "must be an array"); const out = new Map<string, string>(); for (const x of value) { if (!Array.isArray(x) || x.length !== 2) fail(field, "levels must be [price, quantity]"); const p = decimal(x[0], `${field} price`); const q = decimal(x[1], `${field} quantity`, false); if (q !== "0" || keepZero) out.set(p, q); else out.delete(p); } return out; }
 function compare(a: string, b: string): number { const [aw, af = ""] = a.split("."), [bw, bf = ""] = b.split("."); return aw.length !== bw.length ? aw.length - bw.length : (aw === bw ? af.padEnd(Math.max(af.length, bf.length), "0").localeCompare(bf.padEnd(Math.max(af.length, bf.length), "0")) : aw.localeCompare(bw)); }
 function crossed(bids: Map<string, string>, asks: Map<string, string>): boolean { const b = [...bids.keys()].sort(compare).at(-1); const a = [...asks.keys()].sort(compare)[0]; return b !== undefined && a !== undefined && compare(b, a) >= 0; }
@@ -69,18 +90,33 @@ export class UsdMFuturesOrderBook {
   constructor(config: UsdMFuturesOrderBookConfig = {}) { this.maxBufferedUpdates = config.maxBufferedUpdates ?? 1000; if (!Number.isSafeInteger(this.maxBufferedUpdates) || this.maxBufferedUpdates < 1) throw new RangeError("maxBufferedUpdates must be positive"); }
   private book(s: UsdMFuturesSymbol): Internal { let b = this.books.get(s); if (!b) { b = { status: "SYNCING", last: -1n, bids: new Map(), asks: [], buffered: [] } as unknown as Internal; b.asks = new Map(); this.books.set(s, b); } return b; }
   ingestDiff(raw: unknown, receivedAt: number): UsdMFuturesOrderBookView | null {
-    const v = parsed(raw); if (v.e !== "depthUpdate") fail("e", "must be depthUpdate"); const s = symbolOf(v); const b = this.book(s); const ts = times(v, receivedAt);
+    const v = parsed(raw); if (v.e !== "depthUpdate") fail("e", "must be depthUpdate"); const s = symbolOf(v); const b = this.book(s); const ts = times(v, receivedAt, true);
     const U = updateId(v.U, "U"), u = updateId(v.u, "u"); if (U > u) fail("U/u", "range is invalid"); const item = { ...v, U, u, pu: v.pu === undefined ? undefined : updateId(v.pu, "pu"), b: levels(v.b, "b", true), a: levels(v.a, "a", true) } as unknown as Record<string, unknown>;
-    if (b.status === "DESYNCED") return null; if (b.status === "SYNCING") { b.buffered.push(item); if (b.buffered.length > this.maxBufferedUpdates) b.buffered.shift(); return null; }
+    if (b.status === "DESYNCED") return null;
+    if (b.status === "SYNCING") {
+      if (b.buffered.length >= this.maxBufferedUpdates) { b.status = "DESYNCED"; b.buffered = []; fail("buffer", "overflow; rebootstrap required"); }
+      b.buffered.push(item); return null;
+    }
     if (u <= b.last) return this.view(s);
     if (item.pu !== b.last || U > b.last + 1n) { b.status = "DESYNCED"; fail("depth continuity", "gap; book is DESYNCED"); }
     this.apply(b, item); b.E = ts.E; b.T = ts.T; b.receivedAt = receivedAt; return this.view(s);
   }
   ingestSnapshot(raw: unknown, receivedAt: number): UsdMFuturesOrderBookView {
-    const v = parsed(raw), s = snapshotSymbol(v); const last = updateId(v.lastUpdateId, "lastUpdateId"); const b = this.book(s); const bids = levels(v.bids, "bids"), asks = levels(v.asks, "asks"); if (crossed(bids, asks)) { b.status = "DESYNCED"; fail("book", "is crossed; book is DESYNCED"); }
+    const v = parsed(raw), s = snapshotSymbol(v); const b = this.book(s);
+    if (b.status === "DESYNCED") fail("snapshot", "rebootstrap required");
+    const last = updateId(v.lastUpdateId, "lastUpdateId"); const bids = levels(v.bids, "bids"), asks = levels(v.asks, "asks");
+    if (crossed(bids, asks)) { b.status = "DESYNCED"; fail("book", "is crossed; book is DESYNCED"); }
     const ts = times(v, receivedAt); b.bids = bids; b.asks = asks; b.last = last; b.status = "SYNCED"; b.E = ts.E; b.T = ts.T; b.receivedAt = receivedAt;
-    const pending = b.buffered.splice(0).map(x => x).sort((x,y) => (x.U as bigint) < (y.U as bigint) ? -1 : 1); let bridged = false; for (const item of pending) { const U = item.U as bigint, u = item.u as bigint; if (u <= b.last) continue; if (!bridged ? (U > b.last + 1n || u < b.last) : item.pu !== b.last) continue; this.apply(b, item); bridged = true; b.E = item.E as number; b.T = item.T as number; b.receivedAt = receivedAt; }
-    if (crossed(b.bids, b.asks)) { b.status = "DESYNCED"; fail("book", "is crossed"); } return this.view(s);
+    const pending = b.buffered.splice(0).sort((x,y) => (x.U as bigint) < (y.U as bigint) ? -1 : 1); let bridged = false;
+    for (const item of pending) {
+      const U = item.U as bigint, u = item.u as bigint;
+      if (u <= b.last) continue;
+      const valid = !bridged ? U <= b.last && u >= b.last : item.pu === b.last;
+      if (!valid) { b.status = "DESYNCED"; fail("depth bridge", "non-bridging range; rebootstrap required"); }
+      this.apply(b, item); bridged = true; b.E = item.E as number; b.T = item.T as number; b.receivedAt = receivedAt;
+    }
+    if (crossed(b.bids, b.asks)) { b.status = "DESYNCED"; fail("book", "is crossed"); }
+    return this.view(s);
   }
   private apply(b: Internal, item: Record<string, unknown>): void { for (const [p,q] of (item.b as Map<string,string>)) q === "0" ? b.bids.delete(p) : b.bids.set(p,q); for (const [p,q] of (item.a as Map<string,string>)) q === "0" ? b.asks.delete(p) : b.asks.set(p,q); b.last = item.u as bigint; if (crossed(b.bids,b.asks)) { b.status = "DESYNCED"; } }
   status(symbol: string): UsdMFuturesBookStatus { if (!MVP_SYMBOLS.has(symbol as UsdMFuturesSymbol)) fail("symbol", "is not supported"); return this.book(symbol as UsdMFuturesSymbol).status; }

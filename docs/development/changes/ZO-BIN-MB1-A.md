@@ -102,7 +102,7 @@ The exported domain types must represent the canonical `TradeThesis`, `Execution
 - Remediation GREEN — focused compiler run passed 9/9 tests after minimal validation changes.
 - Authority-expansion remediation RED — focused compiler run failed 1 assertion: unsupported `reasoning.hiddenPolicy` was projected into authority.
 - Authority-expansion remediation GREEN — focused compiler run passed 10/10 tests after rejecting reasoning keys outside the canonical six-field allowlist.
-- Full-suite and build receipts for this candidate are recorded below; evidence ceiling remains `LOCAL_PASS`. The current canonical HEAD is `ffcc3ba7edb7345e4484d59c78d078390204e4aa`; the current kernel remediation remains pending independent review.
+- Full-suite and build receipts for this candidate are recorded below; evidence ceiling remains `LOCAL_PASS`. The current canonical HEAD is `86b09e48db24f2e6a2e821df37e49d2cadc89dc2`; the current kernel remediation remains pending independent review.
 
 ## review_verdict
 

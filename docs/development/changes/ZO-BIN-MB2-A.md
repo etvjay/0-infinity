@@ -2,7 +2,7 @@
 
 ## status
 
-`DECISION_RECORDED / IMPLEMENTATION_PENDING`
+`DECISION_RECORDED / IMPLEMENTED / LOCAL_PASS`
 
 ## baseline
 
@@ -72,3 +72,16 @@ This decision record is `LOCAL_PASS` for source selection only. It establishes n
 
 - Exact authenticated user-data credential boundary and environment remain to be established in M-B2-C; absence of credentials must not block public market and replay work.
 - Order-book snapshot source and REST/WebSocket reconciliation must be verified against the current official USDⓈ-M docs before M-B2-B.
+
+## implementation evidence — M-B2-A
+
+The read-only public market-state adapter is implemented in `src/market/index.ts`. It accepts official UM `bookTicker` objects or JSON text, requires `st` to be absent/`1` and, when present, requires `ps` to equal a supported symbol, tracks update sequence per symbol, and preserves exact non-negative decimal update IDs as `bigint` (including top-level JSON numeric lexemes). Event, transaction, and receipt times remain non-negative safe millisecond integers. No network, credential, account, evaluator, or exchange-write capability is included.
+
+- reviewed_head: `2536aee`
+- independent review: `APPROVE`
+- focused adapter: `11/11 PASS`
+- full suite: `309/309 PASS`
+- typecheck: `PASS`
+- build: `PASS`
+- diff_check: `PASS`
+- evidence ceiling: `LOCAL_PASS` only; no Binance connectivity or live-read evidence is claimed.

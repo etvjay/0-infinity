@@ -8,6 +8,7 @@ SIMULATED_PASS
 LOCAL_PASS
 SHADOW_PASS
 TESTNET_PASS
+LIVE_READ_PASS
 LIVE_PASS
 PUBLIC_EVALUATOR_PASS
 PRODUCTION_PASS
@@ -21,7 +22,8 @@ Current:
 |---|---|
 | Canonical Binance architecture | UNVERIFIED runtime / canonical docs |
 | Mandate kernel | LOCAL_PASS — M-B1-A, B, C, D, and E integrated and independently reviewed at `db1d0df`; local X2 evidence only |
-| Binance live market state | UNVERIFIED |
+| Binance public market WebSocket read | LIVE_READ_PASS — bounded `btcusdt@bookTicker` receipt in `docs/development/evidence/ZO-BIN-MB2-E-public-live-read.json`; no lifecycle integration or production claim |
+| Binance live market state | UNVERIFIED — no live depth snapshot/reconciliation, reconnect, or integrated live-state claim |
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |

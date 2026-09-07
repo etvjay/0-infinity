@@ -100,8 +100,9 @@ M-B3 proof receipt:
 
 M-B4 proof receipt:
 
-- status: `LOCAL_PASS`.
-- objective: deterministic local advocate/oppose/market-account evidence council producing immutable `TradeThesis` or typed refusal.
-- tests: focused reasoning council `5/5`; full suite receipt recorded in M-B4 Change Record.
-- implementation: `src/reasoning/index.ts`; no mandate or authority operation.
-- evidence ceiling: local supplied/replay evidence only; no live or production claim.
+- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact-head independent review remains pending.
+- objective: deterministic local advocate/oppose/market-account evidence council producing immutable `TradeThesis` or typed refusal, with full prototype-chain and canonical economics validation.
+- tests: focused reasoning council `10/10`; full suite `380/380`.
+- TDD RED: `3/9` newly added blocker regressions failed before remediation; timestamp regression was already rejected by existing stale-age logic.
+- implementation: `src/reasoning/index.ts`; hostile regressions in `tests/reasoning.council.test.ts`; no mandate or authority operation.
+- evidence ceiling: local supplied/replay evidence only; no live or production claim; final review/approval not obtained.

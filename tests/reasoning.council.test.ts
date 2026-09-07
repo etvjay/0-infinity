@@ -48,3 +48,42 @@ test("does not mutate supplied inputs and never creates authority", () => {
   const result = conveneEvidenceCouncil(input); assert.equal(JSON.stringify(input, (_k, v) => typeof v === "bigint" ? `${v}n` : v), before);
   assert.equal(result.kind, "THESIS"); if (result.kind === "THESIS") assert.equal("compileMandate" in result, false);
 });
+
+test("rejects pollution added directly to Object.prototype", () => {
+  Object.defineProperty(Object.prototype, "poison", { value: true, enumerable: false, configurable: true });
+  const symbol = Symbol("poison"); Object.defineProperty(Object.prototype, symbol, { value: true, configurable: true });
+  try { assert.equal(conveneEvidenceCouncil(base()).kind, "REFUSAL"); }
+  finally { delete (Object.prototype as Record<string, unknown>).poison; delete (Object.prototype as Record<PropertyKey, unknown>)[symbol]; }
+});
+
+test("rejects every custom prototype key regardless of enumerability or key type", () => {
+  const symbol = Symbol("poison"); const prototype = {};
+  Object.defineProperty(prototype, "hiddenPoison", { value: true }); Object.defineProperty(prototype, symbol, { value: true });
+  const inherited = Object.assign(Object.create(prototype), base().advocate);
+  assert.equal(conveneEvidenceCouncil({ ...base(), advocate: inherited } as never).kind, "REFUSAL");
+});
+
+test("rejects optional thesis identifiers unless they are non-empty strings", () => {
+  assert.equal(conveneEvidenceCouncil({ ...base(), policy: { ...base().policy, thesisId: 7 } } as never).kind, "REFUSAL");
+  assert.equal(conveneEvidenceCouncil({ ...base(), policy: { ...base().policy, thesisHash: 7 } } as never).kind, "REFUSAL");
+  assert.equal(conveneEvidenceCouncil({ ...base(), policy: { ...base().policy, thesisId: "   " } }).kind, "REFUSAL");
+});
+
+test("rejects negative or non-chronological evidence timestamps", () => {
+  for (const field of ["advocate", "oppose", "evidence"] as const) {
+    const value = { ...base()[field], observedAt: -1 };
+    assert.equal(conveneEvidenceCouncil({ ...base(), [field]: value } as never).kind, "REFUSAL");
+  }
+  assert.equal(conveneEvidenceCouncil({ ...base(), advocate: { ...base().advocate, expiresAt: -1 } }).kind, "REFUSAL");
+  assert.equal(conveneEvidenceCouncil({ ...base(), oppose: { ...base().oppose, expiresAt: 900 } }).kind, "REFUSAL");
+});
+
+test("accepts only a deeply frozen canonical economics assessment", () => {
+  const unsupported = { kind: "ASSESSMENT", junk: true };
+  assert.equal(conveneEvidenceCouncil({ ...base(), evidence: { ...base().evidence, economics: unsupported } } as never).kind, "REFUSAL");
+  const mutable = { kind: "ASSESSMENT", side: "BUY" };
+  assert.equal(conveneEvidenceCouncil({ ...base(), evidence: { ...base().evidence, economics: mutable } } as never).kind, "REFUSAL");
+  const fill = Object.freeze({ price: "100", quantity: "1", notional: "100" });
+  const assessment = Object.freeze({ kind: "ASSESSMENT", side: "BUY", requestedQuantity: "1", executableQuantity: "1", bestExecutableReference: "100", vwap: "100", worstExecutionPrice: "100", limitPrice: "100", totalCost: "100", spreadBps: "1", slippageBps: "0", feeBps: "0", fundingCostBps: "0", executableEdgeBps: "1", fills: Object.freeze([fill]) });
+  assert.equal(conveneEvidenceCouncil({ ...base(), evidence: { ...base().evidence, economics: assessment } }).kind, "THESIS");
+});

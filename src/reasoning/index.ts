@@ -29,6 +29,27 @@ export interface CouncilThesis { readonly kind: "THESIS"; readonly thesis: Trade
 export type CouncilResult = CouncilThesis | CouncilRefusal;
 
 const own = (v: object, k: string) => Object.prototype.hasOwnProperty.call(v, k);
+const objectPrototypeKeys = new Set(["constructor", "__defineGetter__", "__defineSetter__", "hasOwnProperty", "__lookupGetter__", "__lookupSetter__", "isPrototypeOf", "propertyIsEnumerable", "toString", "valueOf", "__proto__", "toLocaleString"]);
+function canonicalObjectPrototype(): boolean {
+  const keys = Reflect.ownKeys(Object.prototype);
+  if (keys.length !== objectPrototypeKeys.size || keys.some((key) => typeof key !== "string" || !objectPrototypeKeys.has(key))) return false;
+  for (const key of objectPrototypeKeys) {
+    const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, key);
+    if (!descriptor || descriptor.enumerable || !descriptor.configurable) return false;
+    if (key === "__proto__") {
+      if (typeof descriptor.get !== "function" || typeof descriptor.set !== "function") return false;
+    } else if (!("value" in descriptor) || !descriptor.writable || typeof descriptor.value !== "function") return false;
+  }
+  return true;
+}
+function canonicalPrototypeChain(object: object): boolean {
+  let valid = true;
+  for (let prototype: object | null = Object.getPrototypeOf(object); prototype; prototype = Object.getPrototypeOf(prototype)) {
+    if (prototype === Object.prototype) valid = canonicalObjectPrototype() && valid;
+    else if (Reflect.ownKeys(prototype).length > 0) valid = false;
+  }
+  return valid;
+}
 const freeze = <T>(v: T, seen = new Set<object>()): T => {
   if (v && typeof v === "object" && !seen.has(v as object)) { seen.add(v as object); Object.freeze(v); for (const x of Object.values(v as object as Record<string, unknown>)) freeze(x, seen); }
   return v;
@@ -38,6 +59,7 @@ const finite = (x: unknown) => typeof x === "number" && Number.isFinite(x);
 const allowed = (value: unknown, keys: readonly string[], required: readonly string[]): value is Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const object = value as object; const permitted = new Set(keys);
+  if (!canonicalPrototypeChain(object)) return false;
   for (const key of Reflect.ownKeys(object)) {
     if (typeof key !== "string" || !permitted.has(key)) return false;
     const descriptor = Object.getOwnPropertyDescriptor(object, key);
@@ -62,6 +84,18 @@ const analysisKeys = ["kind", "ref", "hash", "symbol", "direction", "expectedMov
 const opposeKeys = ["kind", "ref", "hash", "symbol", "direction", "recommendation", "observedAt", "expiresAt"] as const;
 const evidenceKeys = ["kind", "ref", "hash", "symbol", "market", "account", "observedAt", "expiresAt", "economics"] as const;
 const policyKeys = ["method", "now", "maxAgeMs", "minConfidence", "minExpectedMoveBps", "thesisId", "thesisHash"] as const;
+const assessmentKeys = ["kind", "side", "requestedQuantity", "executableQuantity", "bestExecutableReference", "vwap", "worstExecutionPrice", "limitPrice", "totalCost", "spreadBps", "slippageBps", "feeBps", "fundingCostBps", "executableEdgeBps", "fills"] as const;
+const fillKeys = ["price", "quantity", "notional"] as const;
+function canonicalEconomics(value: unknown): boolean {
+  if (!Object.isFrozen(value) || !allowed(value, assessmentKeys, assessmentKeys)) return false;
+  const assessment = value as Record<string, unknown>;
+  if (assessment.kind !== "ASSESSMENT" || (assessment.side !== "BUY" && assessment.side !== "SELL")) return false;
+  for (const key of assessmentKeys) if (key !== "kind" && key !== "side" && key !== "fills" && !requiredString(assessment[key])) return false;
+  const fills = assessment.fills;
+  if (!Array.isArray(fills) || Object.getPrototypeOf(fills) !== Array.prototype || !Object.isFrozen(fills)) return false;
+  for (const key of Reflect.ownKeys(fills)) if (key !== "length" && (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key))) return false;
+  return fills.every((fill) => Object.isFrozen(fill) && allowed(fill, fillKeys, fillKeys) && fillKeys.every((key) => requiredString((fill as Record<string, unknown>)[key])));
+}
 
 export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {
   try {
@@ -74,10 +108,12 @@ export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {
     if (![a.ref, a.hash, a.symbol, o.ref, o.hash, o.symbol, e.ref, e.hash, e.symbol, p.method].every(requiredString)) return refusal("MALFORMED_INPUT", "references and identifiers are required");
     if (a.symbol !== o.symbol || a.symbol !== e.symbol || a.direction !== o.direction || o.recommendation !== "AGREE") return refusal("CONTRADICTORY_EVIDENCE", "advocate and opposing analysis do not agree");
     if (![a.expectedMoveBps, a.confidence, a.observedAt, a.expiresAt, o.observedAt, o.expiresAt, e.observedAt, e.expiresAt, p.now, p.maxAgeMs, p.minConfidence, p.minExpectedMoveBps].every(finite) || p.maxAgeMs < 0 || p.now < 0) return refusal("MALFORMED_INPUT", "numeric bounds are malformed");
-    for (const [observed, expires] of [[a.observedAt, a.expiresAt], [o.observedAt, o.expiresAt], [e.observedAt, e.expiresAt]]) if (expires <= observed || observed > p.now || p.now - observed > p.maxAgeMs || p.now >= expires) return refusal("STALE_EVIDENCE", "all evidence must be fresh at policy.now");
+    if ((p.thesisId !== undefined && !requiredString(p.thesisId)) || (p.thesisHash !== undefined && !requiredString(p.thesisHash))) return refusal("MALFORMED_INPUT", "optional thesis identifiers must be non-empty strings");
+    for (const [observed, expires] of [[a.observedAt, a.expiresAt], [o.observedAt, o.expiresAt], [e.observedAt, e.expiresAt]]) if (observed < 0 || expires < 0 || expires <= observed || observed > p.now || p.now - observed > p.maxAgeMs || p.now >= expires) return refusal("STALE_EVIDENCE", "all evidence must be non-negative, chronological, and fresh at policy.now");
     if (e.market !== "TRUSTED" || e.account !== "TRUSTED") return refusal("UNTRUSTED_EVIDENCE", "trusted market and account evidence are required");
     if (e.economics !== undefined && (!e.economics || typeof e.economics !== "object" || !("kind" in e.economics))) return refusal("MALFORMED_INPUT", "economics evidence is malformed");
     if (e.economics?.kind === "REFUSAL") return refusal("ECONOMICS_REFUSED", "supplied execution economics refused");
+    if (e.economics !== undefined && !canonicalEconomics(e.economics)) return refusal("MALFORMED_INPUT", "economics assessment is not canonical and deeply immutable");
     if (a.confidence < p.minConfidence || a.expectedMoveBps < p.minExpectedMoveBps) return refusal("THRESHOLD_NOT_MET", "council thresholds are not met");
     const decisionHash = p.thesisHash ?? hash({ advocate: a.hash, oppose: o.hash, evidence: e.hash, policy: p });
     const thesisId = p.thesisId ?? `thesis-${hash({ symbol: a.symbol, direction: a.direction, decisionHash }).slice(0, 32)}`;

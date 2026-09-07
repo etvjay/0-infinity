@@ -2,7 +2,9 @@
 
 ## status
 
-`IMPLEMENTED / LOCAL_PASS`
+`REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`
+
+Final independent review is still required; this status is not an approval.
 
 ## baseline and scope
 
@@ -14,16 +16,16 @@
 ## implementation
 
 - `src/reasoning/index.ts` exports immutable input types, `conveneEvidenceCouncil`, `CouncilResult`, and typed refusal codes.
-- Canonical own-enumerable string-key validation rejects missing, stale, contradictory, malformed, inherited, hidden, symbol-keyed, and unsupported fields.
-- Output preserves supplied references/hashes in `TradeThesis.reasoning`, freezes the returned tree, and uses explicit stable identifiers or deterministic SHA-256 identifiers.
-- The council does not create, consume, issue, or compile any authority object. M-B3 economics is never computed; a supplied economics refusal rejects the council.
+- Canonical own-data string-key validation now inspects the complete prototype chain, including `Object.prototype`, and rejects unsupported own/inherited enumerable, non-enumerable, and symbol keys.
+- Optional `thesisId` and `thesisHash` are accepted only as non-empty strings; all evidence timestamps are finite, non-negative, chronological, and fresh.
+- Supplied economics is accepted only as the canonical deeply frozen `ASSESSMENT` shape (including frozen fills); unsupported or mutable economics refuses. `REFUSAL` economics remains an explicit council refusal.
 
 ## TDD and verification receipts
 
-- RED: `npm run build` failed before the reasoning module existed with missing `../src/reasoning/index.js`.
-- GREEN: focused `node --test dist/tests/reasoning.council.test.js` — `5/5 PASS`.
-- Full `npm test` — `375/375 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
-- Coverage includes agreement/contradiction, trust/economics refusal, stale evidence, thresholds, deterministic replay, immutability, prototype pollution boundaries, exact provenance, and no-authority boundary.
+- RED: newly added hostile regressions initially failed `3/9` (Object.prototype pollution, numeric thesis identifier, and unsupported economics); the timestamp regression was already caught by stale-age logic.
+- GREEN: focused `node --test dist/tests/reasoning.council.test.js` — `10/10 PASS`.
+- Full `npm test` — `380/380 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
+- Remediation is provisional pending exact-head independent review; no `LOCAL_PASS` promotion or final review approval is claimed.
 
 ## exclusions and unresolved evidence
 

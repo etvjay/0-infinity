@@ -94,7 +94,21 @@ const sameData = (left: unknown, right: unknown, seen = new Set<object>()): bool
 const refusal = (code: HandoffRefusalCode, message: string): HandoffRefusal => Object.freeze({ kind: "REFUSAL", code, message });
 
 const DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
-const CANONICAL_ARRAY_KEYS = Reflect.ownKeys(Array.prototype);
+const CANONICAL_ARRAY_DESCRIPTORS = Object.freeze([
+  ["length", true, false], ["constructor", true, true], ["at", true, true], ["concat", true, true], ["copyWithin", true, true], ["fill", true, true], ["find", true, true], ["findIndex", true, true], ["findLast", true, true], ["findLastIndex", true, true], ["lastIndexOf", true, true], ["pop", true, true], ["push", true, true], ["reverse", true, true], ["shift", true, true], ["unshift", true, true], ["slice", true, true], ["sort", true, true], ["splice", true, true], ["includes", true, true], ["indexOf", true, true], ["join", true, true], ["keys", true, true], ["entries", true, true], ["values", true, true], ["forEach", true, true], ["filter", true, true], ["flat", true, true], ["flatMap", true, true], ["map", true, true], ["every", true, true], ["some", true, true], ["reduce", true, true], ["reduceRight", true, true], ["toReversed", true, true], ["toSorted", true, true], ["toSpliced", true, true], ["with", true, true], ["toLocaleString", true, true], ["toString", true, true], [Symbol.iterator, true, true], [Symbol.unscopables, false, true]
+] as const);
+const canonicalArrayPrototype = (): boolean => {
+  const actual = Reflect.ownKeys(Array.prototype);
+  if (actual.length !== CANONICAL_ARRAY_DESCRIPTORS.length) return false;
+  for (const [key, writable, configurable] of CANONICAL_ARRAY_DESCRIPTORS) {
+    let present = false;
+    for (const actualKey of actual) if (actualKey === key) { present = true; break; }
+    if (!present) return false;
+    const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, key);
+    if (!descriptor || descriptor.enumerable || descriptor.writable !== writable || descriptor.configurable !== configurable || !("value" in descriptor)) return false;
+  }
+  return true;
+};
 const assessmentKeys = ["kind", "side", "requestedQuantity", "executableQuantity", "bestExecutableReference", "vwap", "worstExecutionPrice", "limitPrice", "totalCost", "spreadBps", "slippageBps", "feeBps", "fundingCostBps", "executableEdgeBps", "fills"] as const;
 const fillKeys = ["price", "quantity", "notional"] as const;
 const canonicalData = (value: unknown, keys: readonly string[], required = keys): boolean => {
@@ -108,7 +122,7 @@ const canonicalData = (value: unknown, keys: readonly string[], required = keys)
   return required.every((key) => Object.prototype.hasOwnProperty.call(value, key));
 };
 const canonicalArray = (value: unknown): value is readonly unknown[] => {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !Object.isFrozen(value) || Reflect.ownKeys(Array.prototype).length !== CANONICAL_ARRAY_KEYS.length || !CANONICAL_ARRAY_KEYS.every((key) => Reflect.ownKeys(Array.prototype).includes(key))) return false;
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !Object.isFrozen(value) || !canonicalArrayPrototype()) return false;
   const keys = Reflect.ownKeys(value);
   if (keys.length !== value.length + 1 || !keys.includes("length")) return false;
   for (let i = 0; i < value.length; i++) {

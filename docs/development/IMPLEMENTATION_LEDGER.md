@@ -6,7 +6,7 @@
 | M-B1 | Mandate Kernel | LOCAL_PASS — A, B, C, D, and E integrated locally; independent integrated-kernel review APPROVED at `db1d0df`; evidence ceiling remains local X2 |
 | M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A, M-B2-B, M-B2-C, M-B2-D, M-B2-F, and M-B2-H `LOCAL_PASS` read-only market/state slices integrated; M-B2-E bounded public `LIVE_READ_PASS`; M-B2-G public depth bootstrap `BLOCKED_EXTERNAL`; integrated M-B2 closure gate still pending |
 | M-B3 | Execution Economics | LOCAL_PASS — exact reviewed code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; nested book containers/quotes reject unsupported own/inherited enumerable/non-enumerable string/symbol keys plus polluted Array.prototype keys; focused `12/12`, full `370/370`, check/build/diff-check PASS; no live economics claimed |
-| M-B4 | Reasoning Workflow | PROVISIONAL_LOCAL_PASS — remediation candidate `6199fa805026086478449b28fda570939a262bf2`; bounded council-to-workflow handoff with immutable compiler policy/anchor binding, exact boolean approval, complete frozen economics trees, and canonical compiler symbol arrays; focused handoff `13/13`, focused economics `15/15`, focused reasoning `12/12`, full suite `398/398`; check/build/diff-check PASS; exact-head independent review pending |
+| M-B4 | Reasoning Workflow | PROVISIONAL_LOCAL_PASS — remediation candidate pending commit; bounded council-to-workflow handoff with immutable compiler policy/anchor binding, exact boolean approval, complete frozen economics trees, explicit immutable Array.prototype key/descriptor allowlist, and fresh-process pollution regressions; focused handoff `15/15`, focused economics `15/15`, focused reasoning `12/12`, full suite `400/400`; check/build/diff-check PASS; exact-head independent review pending |
 | M-B5 | OrderWriter + Reconciliation | NOT STARTED |
 | M-B6 | Full Runtime | NOT STARTED |
 | M-B7 | Shadow Evidence | NOT STARTED |
@@ -36,8 +36,8 @@ M-B3 remediation receipt:
 
 M-B4 remediation receipt:
 
-- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact remediation code head: `6199fa805026086478449b28fda570939a262bf2`; exact-head independent review remains pending.
-- scope: immutable proposal binding snapshots compiler policy and anchor, compile revalidates exact bindings; approval requires own boolean; economics requires complete recursive own-data freezing including nested order book; compiler `allowedSymbols` requires canonical dense frozen array/prototype/descriptors.
-- TDD: four hostile handoff regressions RED before remediation; focused handoff `13/13`; focused economics `15/15`; focused reasoning `12/12`; combined focused `40/40`; full `398/398`.
+- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact remediation code head: pending commit; exact-head independent review remains pending.
+- scope: immutable proposal binding snapshots compiler policy and anchor, compile revalidates exact bindings; approval requires own boolean; economics requires complete recursive own-data freezing including nested order book; compiler `allowedSymbols` and nested economics fills require an explicit immutable canonical Array.prototype key/descriptor allowlist, independent of import-time runtime snapshots.
+- TDD: fresh-process pre-import pollution regressions cover `allowedSymbols` and nested economics fills; focused handoff `15/15`; focused economics `15/15`; focused reasoning `12/12`; combined focused `42/42`; full `400/400`.
 - typecheck: `PASS`; build: `PASS`; diff_check: `PASS`.
 - evidence ceiling: local supplied/replay evidence only; no live, production, profitability, authority, network, MCP, credential, or order-path claim.

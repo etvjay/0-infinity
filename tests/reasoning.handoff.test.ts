@@ -1,4 +1,5 @@
 import test from "node:test";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { conveneEvidenceCouncil, type CouncilInput } from "../src/reasoning/index.js";
@@ -123,6 +124,17 @@ test("evaluator rejects mutable or non-canonical replay state envelopes", () => 
   assert.equal(evaluateCouncilHandoff(compiled, { workflowId: "wf-1", authorityStatus: "ACTIVE" }, runtime, Object.freeze(polluted) as never, account, evalPolicy, 1_600).kind, "REFUSAL");
 });
 
+test("fresh import rejects Array.prototype pollution for allowedSymbols", () => {
+  const fixture = new URL("./fixtures/handoff-import-pollution.js", import.meta.url);
+  const result = execFileSync(process.execPath, [fixture.pathname, "allowedSymbols"], { encoding: "utf8" });
+  assert.equal(result, "REFUSAL");
+});
+
+test("fresh import rejects Array.prototype pollution for nested economics fills", () => {
+  const fixture = new URL("./fixtures/handoff-import-pollution.js", import.meta.url);
+  const result = execFileSync(process.execPath, [fixture.pathname, "economicsFills"], { encoding: "utf8" });
+  assert.equal(result, "REFUSAL");
+});
 test("forbidden side-effect scan finds no network, order, MCP, credential, or LLM path", () => {
   const source = readFileSync(new URL("../../src/reasoning/handoff.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /fetch|axios|OrderWriter|MCP|credential|openai|llm|https?:/i);

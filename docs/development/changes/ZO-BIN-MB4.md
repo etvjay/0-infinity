@@ -25,9 +25,10 @@
 ## TDD and verification receipts
 
 - RED: four new handoff regressions failed before remediation: valid substituted policy/anchor compiled, `approve: 1` became `APPROVAL_REQUIRED`, frozen economics with mutable nested order book was accepted, and hidden numeric `allowedSymbols` entries were accepted.
-- GREEN: focused handoff `13/13 PASS`; focused economics `15/15 PASS`; focused reasoning `12/12 PASS`.
-- Full `npm test` — `398/398 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
-- Candidate code head: `6199fa805026086478449b28fda570939a262bf2`; exact-head independent review remains pending.
+- GREEN: focused handoff `15/15 PASS`; focused economics `15/15 PASS`; focused reasoning `12/12 PASS`.
+- RED: replacing the explicit canonical Array.prototype allowlist with an unconditional acceptance mutant made both fresh-process pollution regressions fail (`PROPOSAL` instead of `REFUSAL`); restored implementation passes.
+- Full `npm test` — `400/400 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
+- Candidate code head: remediation commit pending; exact-head independent review remains pending.
 
 ## exclusions and unresolved evidence
 

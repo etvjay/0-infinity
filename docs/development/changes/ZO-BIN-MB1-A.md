@@ -18,7 +18,7 @@ Reasoning-to-authority domain/compiler boundary; no execution authority.
 
 ## status
 
-`REMEDIATED / LOCAL_PASS / INTEGRATION_PENDING` — compiler validation defects fixed on isolated candidate worktree from canonical HEAD `626cacff4ea5843741e56ccb251fb52a18c3df87`.
+`REMEDIATED / INTEGRATED / LOCAL_PASS` — compiler validation defects fixed in reviewed candidate `c1247f5a06c2aa4fc9bbdb4696b283fb001f4be2` and integrated into canonical main as `34b8977678ecb8f49dbed52b8ca4dfa60cdb3503`.
 
 ## dependencies
 

@@ -48,7 +48,7 @@ ExecutionIntent → one OrderWriter → receipt/reconciliation
 |---|---|
 | Product definition / invariants / workflow | CANONICAL |
 | TradeThesis / ExecutionMandate schemas | CANONICAL TARGET |
-| Mandate kernel | NOT IMPLEMENTED |
+| Mandate kernel | LOCAL_PASS (M-B1 A–E integrated and independently reviewed; local X2 evidence only) |
 | Binance market/account adapters | NOT IMPLEMENTED |
 | Execution-cost model | NOT IMPLEMENTED |
 | OrderWriter/reconciliation | NOT IMPLEMENTED |

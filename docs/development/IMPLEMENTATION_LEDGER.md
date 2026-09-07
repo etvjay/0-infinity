@@ -3,7 +3,7 @@
 | Milestone | Objective | Status |
 |---|---|---|
 | M-B0 | Canonical packet + skills | COMPLETE |
-| M-B1 | Mandate Kernel | IN PROGRESS — M-B1-A, B, C, D, and E integrated locally; full-kernel review pending |
+| M-B1 | Mandate Kernel | LOCAL_PASS — A, B, C, D, and E integrated locally; independent integrated-kernel review APPROVED at `db1d0df`; evidence ceiling remains local X2 |
 | M-B2 | Binance State Plane | NOT STARTED |
 | M-B3 | Execution Economics | NOT STARTED |
 | M-B4 | Reasoning Workflow | NOT STARTED |

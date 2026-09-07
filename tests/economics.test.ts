@@ -1,0 +1,104 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import type { UsdMFuturesOrderBookView } from "../src/market/index.js";
+import { assessExecutionEconomics, type ExecutionEconomicsInput, type EconomicPolicy } from "../src/economics/index.js";
+
+const policy: EconomicPolicy = Object.freeze({
+  maxAuthorizedQuantity: "10", maxNotional: "100000", minPrice: "1", maxPrice: "100000",
+  maxSpreadBps: "300", maxSlippageBps: "200", maxFeeBps: "20", maxFundingCostBps: "20", minExecutableEdgeBps: "0",
+});
+const book = (asks: [string, string][], bids: [string, string][]): UsdMFuturesOrderBookView => Object.freeze({
+  version: 1, symbol: "BTCUSDT", status: "SYNCED", lastUpdateId: 1n,
+  asks: Object.freeze(asks.map(([price, quantity]) => Object.freeze({ price, quantity }))),
+  bids: Object.freeze(bids.map(([price, quantity]) => Object.freeze({ price, quantity }))),
+  bestAsk: asks[0] && Object.freeze({ price: asks[0][0], quantity: asks[0][1] }),
+  bestBid: bids[0] && Object.freeze({ price: bids[0][0], quantity: bids[0][1] }),
+});
+const input = (side: "BUY" | "SELL", requestedQuantity = "3"): ExecutionEconomicsInput => ({
+  book: book([["101", "2"], ["103", "4"]], [["99", "2"], ["97", "4"]]), side,
+  requestedQuantity, expectedMoveBps: "500", fee: { bps: "5" },
+  funding: { status: "ASSESSED", costBps: "2", horizon: "8h" }, policy, partialFill: "REJECT",
+});
+
+test("BUY walks asks and computes exact VWAP and edge", () => {
+  const result = assessExecutionEconomics(input("BUY", "3"));
+  assert.equal(result.kind, "ASSESSMENT");
+  if (result.kind !== "ASSESSMENT") return;
+  assert.equal(result.bestExecutableReference, "101");
+  assert.equal(result.vwap, "101.666666666666666666");
+  assert.equal(result.executableQuantity, "3");
+  assert.equal(result.totalCost, "305");
+  assert.equal(result.spreadBps, "200");
+  assert.equal(result.slippageBps, "66.0066006600660066");
+  assert.equal(result.executableEdgeBps, "226.993399339933993399");
+});
+
+test("SELL walks bids descending and computes side-specific slippage", () => {
+  const result = assessExecutionEconomics(input("SELL", "3"));
+  assert.equal(result.kind, "ASSESSMENT");
+  if (result.kind !== "ASSESSMENT") return;
+  assert.equal(result.bestExecutableReference, "99");
+  assert.equal(result.vwap, "98.333333333333333333");
+  assert.equal(result.totalCost, "295");
+  assert.equal(result.slippageBps, "67.340067340067340067");
+});
+
+test("ordering/permutation does not change the canonical walk", () => {
+  const ordered = assessExecutionEconomics(input("BUY"));
+  const permuted = assessExecutionEconomics({ ...input("BUY"), book: book([["103", "4"], ["101", "2"]], [["97", "4"], ["99", "2"]]) });
+  assert.deepEqual(permuted, ordered);
+});
+
+test("refuses insufficient depth unless partial fill is explicitly allowed", () => {
+  const rejected = assessExecutionEconomics({ ...input("BUY", "7"), partialFill: "REJECT" });
+  assert.equal(rejected.kind, "REFUSAL");
+  if (rejected.kind === "REFUSAL") assert.equal(rejected.code, "INSUFFICIENT_DEPTH");
+  const partial = assessExecutionEconomics({ ...input("BUY", "7"), partialFill: "ALLOW" });
+  assert.equal(partial.kind, "ASSESSMENT");
+  if (partial.kind === "ASSESSMENT") assert.equal(partial.executableQuantity, "6");
+});
+
+test("refuses absent funding and malformed/untrusted books", () => {
+  const noFunding = assessExecutionEconomics({ ...input("BUY"), funding: { status: "UNASSESSED", reason: "missing" } });
+  assert.equal(noFunding.kind, "REFUSAL");
+  if (noFunding.kind === "REFUSAL") assert.equal(noFunding.code, "FUNDING_NOT_ASSESSED");
+  const crossed = assessExecutionEconomics({ ...input("BUY"), book: book([["99", "2"]], [["101", "2"]]) });
+  assert.equal(crossed.kind, "REFUSAL");
+  if (crossed.kind === "REFUSAL") assert.equal(crossed.code, "CROSSED_BOOK");
+  const empty = assessExecutionEconomics({ ...input("BUY"), book: book([], [["99", "2"]]) });
+  assert.equal(empty.kind, "REFUSAL");
+  if (empty.kind === "REFUSAL") assert.equal(empty.code, "EMPTY_SIDE");
+  const syncing = assessExecutionEconomics({ ...input("BUY"), book: Object.freeze({ ...book([["101", "2"]], [["99", "2"]]), status: "SYNCING" }) });
+  assert.equal(syncing.kind, "REFUSAL");
+  if (syncing.kind === "REFUSAL") assert.equal(syncing.code, "BOOK_NOT_SYNCED");
+});
+
+test("enforces quantity, price, cost, fee, funding and malformed decimal bounds", () => {
+  for (const variant of [
+    { ...input("BUY", "11"), expected: "UNAUTHORIZED_QUANTITY" },
+    { ...input("BUY"), policy: { ...policy, maxPrice: "100" }, expected: "PRICE_OUT_OF_BOUNDS" },
+    { ...input("BUY"), policy: { ...policy, maxNotional: "1" }, expected: "NOTIONAL_LIMIT" },
+    { ...input("BUY"), fee: { bps: "21" }, expected: "COST_LIMIT" },
+    { ...input("BUY"), funding: { status: "ASSESSED", costBps: "21", horizon: "8h" }, expected: "COST_LIMIT" },
+    { ...input("BUY"), requestedQuantity: "0", expected: "MALFORMED_INPUT" },
+    { ...input("BUY"), requestedQuantity: "1e3", expected: "MALFORMED_INPUT" },
+  ]) {
+    const result = assessExecutionEconomics(variant as ExecutionEconomicsInput);
+    assert.equal(result.kind, "REFUSAL");
+    if (result.kind === "REFUSAL") assert.equal(result.code, variant.expected);
+  }
+});
+
+test("assessment is deeply immutable, deterministic, and handles large decimals", () => {
+  const largeBook = book([["100000000000000000000000000001", "2"]], [["99999999999999999999999999999", "2"]]);
+  const large = assessExecutionEconomics({ ...input("BUY"), book: largeBook, requestedQuantity: "2", policy: { ...policy, maxPrice: "100000000000000000000000000002", maxNotional: "1000000000000000000000000000000" } });
+  assert.equal(large.kind, "ASSESSMENT");
+  const a = assessExecutionEconomics(input("BUY"));
+  const b = assessExecutionEconomics(input("BUY"));
+  assert.deepEqual(a, b);
+  assert.equal(Object.isFrozen(a), true);
+  if (a.kind === "ASSESSMENT") {
+    assert.equal(Object.isFrozen(a.fills), true);
+    assert.throws(() => (a as { vwap: string }).vwap = "0", TypeError);
+  }
+});

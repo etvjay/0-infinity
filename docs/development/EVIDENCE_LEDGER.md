@@ -43,3 +43,12 @@ M-B2-B proof receipt:
 - typecheck/build/diff_check: `PASS`.
 - independent exact-head review: `APPROVE` was not obtained; final review returned `REVISE` only for stale documentation receipts, which were corrected without source changes. No implementation blocker remained.
 - evidence exclusions: no Binance connectivity, live snapshot acquisition, WebSocket lifecycle, account state, exchange writes, execution economics, production readiness, or profitability claim.
+
+M-B2-C proof receipt:
+
+- status: `LOCAL_PASS`, integrated on canonical main after approved candidate `2e762ec`.
+- objective: deterministic local USDⓈ-M `ACCOUNT_UPDATE` normalization.
+- tests: focused account normalizer `5/5`, full `327/327`.
+- typecheck/build/diff_check: `PASS`.
+- independent exact-head review: `APPROVE`.
+- evidence exclusions: no live Binance connectivity, authentication, credentials, production account-stream timing, evaluator, execution, exchange writes, or profitability claim.

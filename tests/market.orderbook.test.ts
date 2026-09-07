@@ -19,6 +19,14 @@ test("bridges buffered diffs across snapshot S and applies absolute levels", () 
   assert.equal(view.lastUpdateId, 101n);
 });
 
+test("accepts a post-sync overlapping range without requiring pu to equal the snapshot", () => {
+  const book = new UsdMFuturesOrderBook();
+  book.ingestSnapshot(snap(), t);
+  const view = book.ingestDiff(update({ U: 99, u: 101, pu: 98 }), t + 1);
+  assert.equal(view?.status, "SYNCED");
+  assert.equal(view?.lastUpdateId, 101n);
+});
+
 test("requires pu continuity after sync and fails closed on a gap", () => {
   const book = new UsdMFuturesOrderBook();
   book.ingestSnapshot(snap(), t);

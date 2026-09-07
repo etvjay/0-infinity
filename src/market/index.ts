@@ -98,7 +98,8 @@ export class UsdMFuturesOrderBook {
       b.buffered.push(item); return null;
     }
     if (u <= b.last) return this.view(s);
-    if (item.pu !== b.last || U > b.last + 1n) { b.status = "DESYNCED"; fail("depth continuity", "gap; book is DESYNCED"); }
+    const overlapsCurrent = U <= b.last && u >= b.last;
+    if (!overlapsCurrent && (item.pu !== b.last || U > b.last + 1n)) { b.status = "DESYNCED"; fail("depth continuity", "gap; book is DESYNCED"); }
     this.apply(b, item); b.E = ts.E; b.T = ts.T; b.receivedAt = receivedAt; return this.view(s);
   }
   ingestSnapshot(raw: unknown, receivedAt: number): UsdMFuturesOrderBookView {

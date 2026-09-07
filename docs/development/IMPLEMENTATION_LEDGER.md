@@ -7,7 +7,7 @@
 | M-B2 | Binance State Plane | IN PROGRESS — USDⓈ-M Futures UM selected; M-B2-A, M-B2-B, M-B2-C, M-B2-D, M-B2-F, and M-B2-H `LOCAL_PASS` read-only market/state slices integrated; M-B2-E bounded public `LIVE_READ_PASS`; M-B2-G public depth bootstrap `BLOCKED_EXTERNAL`; integrated M-B2 closure gate still pending |
 | M-B3 | Execution Economics | LOCAL_PASS — exact reviewed code candidate `5e539db02ed2259d4d4a665abfc515021b7cfa41`; nested book containers/quotes reject unsupported own/inherited enumerable/non-enumerable string/symbol keys plus polluted Array.prototype keys; focused `12/12`, full `370/370`, check/build/diff-check PASS; no live economics claimed |
 | M-B4 | Reasoning Workflow | PROVISIONAL_LOCAL_PASS — exact candidate `8335040183cf4d01e1c1765c9de9267f707a4c5f`; independent review found no code blockers; focused handoff `15/15`, economics `15/15`, reasoning `12/12`, combined `42/42`, full `400/400`, check/build/diff-check PASS; receipt reconciliation pending; no live evidence claimed |
-| M-B5 | OrderWriter + Reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact reviewed_head `e1f932f1abbfb8a3f837ce30876dbb74d0364699`; review `REVISE`; remediation refuses fills after CANCELLED or UNKNOWN cancellation without mutating receipt; focused `10/10`, full `410/410`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS, live execution, or production durability claimed |
+| M-B5 | OrderWriter + Reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `3d986c15ad6baab4230c848ac7dbb605a25ee4fe`; parent review `REVISE`; remediation refuses fills after REJECTED/FAILED submission, CANCELLED, or UNKNOWN cancellation without mutating receipt; focused `12/12`, full `412/412`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS, live execution, or production durability claimed |
 | M-B6 | Full Runtime | NOT STARTED |
 | M-B7 | Shadow Evidence | NOT STARTED |
 | M-B8 | Controlled Live Evidence + submission freeze | NOT STARTED |
@@ -44,7 +44,7 @@ M-B4 remediation receipt:
 
 M-B5 local receipt:
 
-- status: `REMEDIATION_COMPLETE / PROVISIONAL`; exact reviewed_head: `e1f932f1abbfb8a3f837ce30876dbb74d0364699`; independent review verdict: `REVISE`; fresh exact-head review pending.
-- TDD: cancellation/fill coherence regressions were RED before implementation, then GREEN; focused execution `10/10`; full suite `410/410`; typecheck/build/diff-check `PASS`.
-- scope: fills after `CANCELLED` or cancellation `UNKNOWN` are refused without mutating outcome, cancel state, quantity, or fill-event provenance.
+- status: `REMEDIATION_COMPLETE / PROVISIONAL`; exact remediation code head: `3d986c15ad6baab4230c848ac7dbb605a25ee4fe`; parent independent review verdict: `REVISE`; fresh exact-head review pending.
+- TDD: rejected/failed fill regressions were RED before implementation, then GREEN; focused execution `12/12`; full suite `412/412`; typecheck/build/diff-check `PASS`.
+- scope: fills after `REJECTED`/`FAILED` submission, `CANCELLED`, or cancellation `UNKNOWN` are refused without mutating outcome, cancel state, quantity, or fill-event provenance; duplicate event IDs remain idempotent.
 - evidence ceiling: local supplied/replay only; no LOCAL_PASS approval, network, credentials, MCP, live exchange writes, production crash safety, or profitability claim.

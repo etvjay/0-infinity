@@ -28,7 +28,7 @@ Current:
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
-| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact reviewed_head `e1f932f1abbfb8a3f837ce30876dbb74d0364699`; review `REVISE`; focused execution `10/10`, full `410/410`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS claim |
+| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / PROVISIONAL — exact remediation code head `3d986c15ad6baab4230c848ac7dbb605a25ee4fe`; parent review `REVISE`; focused execution `12/12`, full `412/412`, check/build/diff-check PASS; fresh exact-head review pending; no LOCAL_PASS claim |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
 
@@ -108,7 +108,7 @@ M-B4 proof receipt:
 M-B5 proof receipt:
 
 - objective: bounded local/replay OrderWriter around existing mandate consumption plus explicit submission/reconciliation outcomes.
-- reviewed_head: `e1f932f1abbfb8a3f837ce30876dbb74d0364699`; review verdict: `REVISE`; fresh exact-head review pending.
-- receipt: deterministic IDs, canonical own-data intent/event validation, complete intent fingerprint idempotency, immutable audit-bound receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, FILLED cumulative quantity >= requested, monotonic duplicate-safe cumulative fills with out-of-order handling and weighted VWAP, writer-owned cancel with durable REQUESTED/UNKNOWN/CANCELLED state, and refusal of fills after CANCELLED/UNKNOWN cancellation without receipt mutation.
-- TDD/verification: cancellation/fill coherence regressions RED before implementation; focused execution `10/10`, full `410/410`, check/build/diff-check `PASS`.
+- remediation_code_head: `3d986c15ad6baab4230c848ac7dbb605a25ee4fe`; parent review verdict: `REVISE`; fresh exact-head review pending.
+- receipt: deterministic IDs, canonical own-data intent/event validation, complete intent fingerprint idempotency, immutable audit-bound receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, FILLED cumulative quantity >= requested, monotonic duplicate-safe cumulative fills with out-of-order handling and weighted VWAP, writer-owned cancel with durable REQUESTED/UNKNOWN/CANCELLED state, and refusal of fills after REJECTED/FAILED submission or CANCELLED/UNKNOWN cancellation without receipt mutation.
+- TDD/verification: rejected/failed fill regressions RED before implementation; focused execution `12/12`, full `412/412`, check/build/diff-check `PASS`.
 - evidence ceiling: provisional local supplied/replay evidence only; no LOCAL_PASS approval, live, testnet, production durability, exchange write, network, MCP, or credential claim.

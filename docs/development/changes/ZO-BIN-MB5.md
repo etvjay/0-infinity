@@ -16,23 +16,23 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 - Same-client retries compare a complete canonical intent fingerprint, including method, quantity, account, notional, executable edge, and both state versions. Receipts bind account, method, attempt, economics, state versions, adapter acceptance provenance, and fill-event provenance.
 - Persistence precedes every adapter call. Adapter timeout or thrown call becomes `UNKNOWN`; the writer refuses blind retry. ACKNOWLEDGED does not imply a fill.
 - Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, rejects `FILLED` without a cumulative quantity reaching the requested quantity, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation durably records `REQUESTED` before the adapter, maps adapter uncertainty to durable local `UNKNOWN`, refuses blind retry, and requires deterministic client-ID/mandate/workflow/attempt/intent-fingerprint ownership.
-- Reconciliation refuses fills after `CANCELLED` or uncertain (`UNKNOWN`) cancellation, preserving the terminal/uncertain receipt without fill or outcome mutation.
+- Reconciliation refuses fills after terminal `REJECTED`/`FAILED` submission outcomes, `CANCELLED`, or uncertain (`UNKNOWN`) cancellation, preserving the terminal/uncertain receipt without fill or outcome mutation. Duplicate event IDs remain idempotent before terminal rejection checks.
 - `MemoryOrderPersistence.failNextSave()` and writer hooks model local persistence/crash windows and replay boundaries; no production crash-safety claim is made.
 
 ## TDD and verification receipts
 
-- RED: focused cancellation/fill coherence regressions failed before implementation with missing expected rejections.
-- GREEN: focused execution tests `10/10 PASS`.
-- Full `npm test`: `410/410 PASS`.
+- RED: focused rejected/failed fill regressions failed before implementation with missing expected rejections.
+- GREEN: focused execution tests `12/12 PASS`.
+- Full `npm test`: `412/412 PASS`.
 - `npm run check`: PASS.
 - `npm run build`: PASS.
 - `git diff --check`: PASS.
 
 ## review and evidence ceiling
 
-- reviewed_head: `e1f932f1abbfb8a3f837ce30876dbb74d0364699`
+- remediation_code_head: `3d986c15ad6baab4230c848ac7dbb605a25ee4fe`
 - review verdict: `REVISE` (provisional pending fresh review of the remediation head)
-- focused: `10/10`; full: `410/410`
+- focused: `12/12`; full: `412/412`
 - evidence ceiling: local/replay implementation evidence only; no approval or `LOCAL_PASS` claim.
 
 ## exclusions and risks

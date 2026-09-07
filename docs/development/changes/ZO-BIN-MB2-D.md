@@ -11,7 +11,7 @@
 - product boundary: `USD_M_FUTURES_UM` only; configured symbols remain `BTCUSDT` and `ETHUSDT`.
 - evidence ceiling: `LOCAL_PASS`; no live Binance connectivity is claimed.
 
-This slice adds a public-market lifecycle adapter around an injected transport. It validates configured UM market streams, emits official `SUBSCRIBE`/`UNSUBSCRIBE` payloads with unsigned-integer request IDs, tracks `IDLE`/`SUBSCRIBING`/`SUBSCRIBED`/`BACKOFF`/`FAILED`/`STOPPED`, routes only public `bookTicker`/`depthUpdate` events for configured symbols, feeds optional existing market/order-book interfaces using an injected receipt clock, and reconnects through an injected scheduler with bounded deterministic backoff.
+This slice adds a public-market lifecycle adapter around an injected transport. It validates configured UM market streams, emits official `SUBSCRIBE`/`UNSUBSCRIBE` payloads with unsigned-integer request IDs, tracks `IDLE`/`SUBSCRIBING`/`SUBSCRIBED`/`BACKOFF`/`FAILED`/`STOPPED`, routes only public `bookTicker`/`depthUpdate` events for configured symbols, feeds optional existing market/order-book interfaces using an injected receipt clock, and reconnects through an injected scheduler with bounded deterministic backoff. Unsubscribe invalidates and closes the active connection, cancels stale scheduled reconnect work by lifecycle token, successful subscription ACKs reset reconnect attempts, malformed/error ACKs fail closed into bounded reconnect, and only the supported `bookTicker`, `depth`, `depth@100ms`, and `depth@500ms` stream grammar is accepted. Public `st`/`ps` metadata is checked before forwarding.
 
 ## forbidden scope
 
@@ -35,11 +35,12 @@ claim_supported: official public UM market streams use wss://fstream.binance.com
 
 - implementation: `src/market/connectivity.ts`
 - tests: `tests/market.connectivity.test.ts`
-- strict TDD RED: initial focused run failed because the connectivity module did not exist (`TS2307`) and the new adapter behavior was absent.
-- focused GREEN: `6/6 PASS` (`npm run build && node --test dist/tests/market.connectivity.test.js`).
-- full receipt: `333/333 PASS` (`npm test`).
-- typecheck/build: `PASS`.
-- diff check: `PASS`.
+- strict TDD RED: focused regression run failed `5/12` before remediation: unsubscribe still routed/reconnected, reconnect attempts were not reset, broad depth grammar accepted unsupported forms, invalid ACKs hung in `SUBSCRIBING`, and UM metadata was forwarded.
+- focused GREEN: `13/13 PASS` (`npm run build && node --test dist/tests/market.connectivity.test.js`).
+- full receipt: `340/340 PASS` (`npm test`).
+- typecheck: `PASS` (`npm run check`).
+- build: `PASS` (`npm run build`).
+- diff check: `PASS` (`git diff --check`).
 - live/private evidence: none; this record must not be read as a connectivity or production-readiness claim.
 
 ## risks and unresolved questions

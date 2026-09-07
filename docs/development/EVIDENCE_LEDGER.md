@@ -52,3 +52,12 @@ M-B2-C proof receipt:
 - typecheck/build/diff_check: `PASS`.
 - independent exact-head review: `APPROVE`.
 - evidence exclusions: no live Binance connectivity, authentication, credentials, production account-stream timing, evaluator, execution, exchange writes, or profitability claim.
+
+M-B2-D proof receipt:
+
+- status: `LOCAL_PASS`, integrated on canonical main after approved candidate `70cb1fd`.
+- objective: deterministic public USDⓈ-M market connectivity lifecycle around injected transport.
+- tests: focused connectivity `15/15`, full `342/342`.
+- typecheck/build/diff_check: `PASS`.
+- independent exact-head review: `APPROVE`.
+- evidence exclusions: no live Binance connection, TLS/proxy/server timing, production reconnect behavior, private user-data, credentials, exchange writes, or production readiness.

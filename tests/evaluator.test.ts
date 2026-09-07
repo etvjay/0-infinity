@@ -230,6 +230,15 @@ test("market receivedAt independently accepts below, exact, and above age bounda
   }
 });
 
+test("account timestamps must be non-negative even with an unbounded freshness policy", () => {
+  const result = evaluate({
+    account: { ...account, observedAt: -1, receivedAt: 0 },
+    policy: { ...policy, maxAccountAgeMs: Number.MAX_SAFE_INTEGER },
+  });
+  assert.equal(result.kind, "EXECUTION_REFUSAL");
+  if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, "ACCOUNT_STATE_STALE");
+});
+
 test("account observedAt independently accepts below, exact, and above age boundary", () => {
   const ageBoundary = 2_600 - policy.maxAccountAgeMs;
   for (const [observedAt, expected] of [[ageBoundary - 1, "ACCOUNT_STATE_STALE"], [ageBoundary, "EXECUTION_INTENT"], [ageBoundary + 1, "EXECUTION_INTENT"]] as const) {

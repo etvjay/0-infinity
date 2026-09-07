@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTED / INTEGRATED / LOCAL_PASS` — final independent review APPROVE on exact candidate `1d6cb0e`; integrated into canonical main as commits `69d31b2` and `bea62e4` (final integration HEAD `bea62e4`).
+`IMPLEMENTED / INTEGRATED / LOCAL_PASS` — historical candidate review APPROVE on exact candidate `1d6cb0e`; integrated into canonical main as commits `69d31b2` and `bea62e4` (final integration HEAD `bea62e4`). The historical candidate review is resolved; the current kernel review remains pending independent review.
 
 - Baseline: `4bbf63db8fde5a61ceb4ed5884392581909292c4` (`docs: record integrated M-B1-D local pass`).
 - Remediation base: `429d8f47e3f6000e2f2d3dea310ede67031a2ea3` (`test: add integrated M-B1-E adversarial harness`).

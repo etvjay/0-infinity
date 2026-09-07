@@ -18,7 +18,7 @@ Reasoning-to-authority domain/compiler boundary; no execution authority.
 
 ## status
 
-`REMEDIATED / INTEGRATED / LOCAL_PASS` — compiler validation defects fixed in reviewed candidate `c1247f5a06c2aa4fc9bbdb4696b283fb001f4be2` and integrated into canonical main as `34b8977678ecb8f49dbed52b8ca4dfa60cdb3503`.
+`REMEDIATED / INTEGRATED / LOCAL_PASS` — compiler validation defects fixed in reviewed candidate `c1247f5a06c2aa4fc9bbdb4696b283fb001f4be2` and integrated into canonical main as `34b8977678ecb8f49dbed52b8ca4dfa60cdb3503`. This component record does not claim full-kernel approval; the current kernel remediation remains pending independent review.
 
 ## dependencies
 

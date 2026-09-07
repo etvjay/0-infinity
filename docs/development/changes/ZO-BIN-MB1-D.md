@@ -4,7 +4,7 @@ Branch target: `agent/mb1-evaluator`.
 
 ## Status
 
-`IMPLEMENTED / INTEGRATED / LOCAL_PASS` — final independent review APPROVE on exact candidate `9e31d1c`; integrated into canonical main as commit range `026977d..d0046d0` (final integration HEAD `d0046d0`).
+`IMPLEMENTED / INTEGRATED / LOCAL_PASS` — historical candidate review APPROVE on exact candidate `9e31d1c`; integrated into canonical main as commit range `026977d..d0046d0` (final integration HEAD `d0046d0`). The historical candidate review is resolved; the current kernel remediation remains pending independent review.
 
 This remediation adds focused RED/GREEN coverage and closes each listed evaluator finding without changing the authority store, runtime transition implementation, or external integrations.
 
@@ -37,7 +37,7 @@ This remediation adds focused RED/GREEN coverage and closes each listed evaluato
 - `npm run build` — PASS.
 - `git diff --check` — PASS.
 
-Integration status: pending final independent review.
+Current kernel review status: pending independent review.
 
 Proof ceiling remains `LOCAL_PASS`; no Binance, exchange, Ground Truth, or production-readiness claim is made.
 

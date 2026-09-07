@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import type { UsdMFuturesOrderBookView } from "../src/market/index.js";
 import { assessExecutionEconomics, type ExecutionEconomicsInput, type EconomicPolicy } from "../src/economics/index.js";
 
@@ -126,6 +127,26 @@ test("rejects inherited structural fields on frozen levels and frozen books", ()
   const bookResult = assessExecutionEconomics({ ...input("BUY"), book: inheritedBook as UsdMFuturesOrderBookView });
   assert.equal(bookResult.kind, "REFUSAL");
   if (bookResult.kind === "REFUSAL") assert.equal(bookResult.code, "MALFORMED_INPUT");
+});
+
+test("fresh process rejects Array.prototype pollution before economics import", () => {
+  const moduleUrl = new URL("../src/economics/index.js", import.meta.url).href;
+  const script = `
+    Object.defineProperty(Array.prototype, "preImportPollution", { value: true, enumerable: false, configurable: true });
+    const { assessExecutionEconomics } = await import(${JSON.stringify(moduleUrl)});
+    const frozen = (value) => Object.freeze(value);
+    const book = frozen({ version: 1, symbol: "BTCUSDT", status: "SYNCED", lastUpdateId: 1n,
+      asks: frozen([frozen({ price: "101", quantity: "2" })]),
+      bids: frozen([frozen({ price: "99", quantity: "2" })]),
+      bestAsk: frozen({ price: "101", quantity: "2" }), bestBid: frozen({ price: "99", quantity: "2" }) });
+    const result = assessExecutionEconomics({ book, side: "BUY", requestedQuantity: "1", expectedMoveBps: "500",
+      fee: frozen({ bps: "5" }), funding: frozen({ status: "ASSESSED", costBps: "2", horizon: "8h" }),
+      policy: frozen({ maxAuthorizedQuantity: "10", maxNotional: "100000", minPrice: "1", maxPrice: "100000",
+        maxSpreadBps: "300", maxSlippageBps: "200", maxFeeBps: "20", maxFundingCostBps: "20", minExecutableEdgeBps: "0" }),
+      partialFill: "REJECT" });
+    if (result.kind !== "REFUSAL" || result.code !== "MALFORMED_INPUT") process.exit(1);
+  `;
+  execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd() });
 });
 
 test("rejects Array.prototype pollution and restores the shared prototype", () => {

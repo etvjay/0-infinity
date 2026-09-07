@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { conveneEvidenceCouncil, type CouncilInput, type TradeThesis } from "../src/reasoning/index.js";
 
 const base = (): CouncilInput => ({
@@ -76,6 +77,24 @@ test("rejects negative or non-chronological evidence timestamps", () => {
   }
   assert.equal(conveneEvidenceCouncil({ ...base(), advocate: { ...base().advocate, expiresAt: -1 } }).kind, "REFUSAL");
   assert.equal(conveneEvidenceCouncil({ ...base(), oppose: { ...base().oppose, expiresAt: 900 } }).kind, "REFUSAL");
+});
+
+test("fresh process rejects Array.prototype pollution before reasoning import", () => {
+  const moduleUrl = new URL("../src/reasoning/index.js", import.meta.url).href;
+  const script = `
+    Object.defineProperty(Array.prototype, "preImportPollution", { value: true, enumerable: false, configurable: true });
+    const { conveneEvidenceCouncil } = await import(${JSON.stringify(moduleUrl)});
+    const frozen = (value) => Object.freeze(value);
+    const fill = frozen({ price: "100", quantity: "1", notional: "100" });
+    const economics = frozen({ kind: "ASSESSMENT", side: "BUY", requestedQuantity: "1", executableQuantity: "1", bestExecutableReference: "100", vwap: "100", worstExecutionPrice: "100", limitPrice: "100", totalCost: "100", spreadBps: "1", slippageBps: "0", feeBps: "0", fundingCostBps: "0", executableEdgeBps: "1", fills: frozen([fill]) });
+    const input = { advocate: { kind: "ADVOCATE", ref: "a-ref", hash: "a-hash", symbol: "BTCUSDT", direction: "LONG", expectedMoveBps: 40, confidence: .8, observedAt: 900, expiresAt: 2000 },
+      oppose: { kind: "OPPOSE", ref: "o-ref", hash: "o-hash", symbol: "BTCUSDT", direction: "LONG", recommendation: "AGREE", observedAt: 901, expiresAt: 2000 },
+      evidence: { kind: "MARKET_ACCOUNT", ref: "m-ref", hash: "m-hash", symbol: "BTCUSDT", market: "TRUSTED", account: "TRUSTED", observedAt: 902, expiresAt: 2000, economics },
+      policy: { method: "local-council-v1", now: 1000, maxAgeMs: 200, minConfidence: .7, minExpectedMoveBps: 10, thesisId: "stable-id", thesisHash: "stable-hash" } };
+    const result = conveneEvidenceCouncil(input);
+    if (result.kind !== "REFUSAL" || result.code !== "MALFORMED_INPUT") process.exit(1);
+  `;
+  execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd() });
 });
 
 test("accepts only a deeply frozen canonical economics assessment", () => {

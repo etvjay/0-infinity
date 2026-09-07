@@ -117,28 +117,27 @@ function validLevel(level: unknown): level is { readonly price: string; readonly
   try { const x = level as { price: unknown; quantity: unknown }; return positive(parse(x.price)) && positive(parse(x.quantity)); } catch { return false; }
 }
 
-const CANONICAL_ARRAY_PROTOTYPE_STRING_KEYS = new Set([
-  "length", "constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex",
-  "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf",
-  "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce",
-  "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toLocaleString", "toString",
-]);
-const CANONICAL_ARRAY_PROTOTYPE_SYMBOL_KEYS = new Set([Symbol.iterator, Symbol.unscopables]);
+type CanonicalArrayDescriptor = {
+  readonly key: string | symbol;
+  readonly configurable: boolean;
+  readonly writable: boolean;
+  readonly valueType: "number" | "function" | "object";
+};
+const CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS: readonly CanonicalArrayDescriptor[] = [
+  { key: "length", configurable: false, writable: true, valueType: "number" },
+  ...["constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex", "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf", "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce", "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toLocaleString", "toString"].map((key) => ({ key, configurable: true, writable: true, valueType: "function" as const })),
+  { key: Symbol.iterator, configurable: true, writable: true, valueType: "function" },
+  { key: Symbol.unscopables, configurable: true, writable: false, valueType: "object" },
+];
 function canonicalArrayPrototype(): boolean {
-  for (const key of Reflect.ownKeys(Array.prototype)) {
-    const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, key);
-    if (!descriptor || descriptor.enumerable || !("value" in descriptor)) return false;
-    if (typeof key === "string") {
-      if (!CANONICAL_ARRAY_PROTOTYPE_STRING_KEYS.has(key)) return false;
-      if (key === "length") {
-        if (descriptor.value !== 0 || descriptor.configurable || !descriptor.writable) return false;
-      } else if (!descriptor.configurable || !descriptor.writable || typeof descriptor.value !== "function") return false;
-    } else {
-      if (!CANONICAL_ARRAY_PROTOTYPE_SYMBOL_KEYS.has(key) || !descriptor.configurable || typeof descriptor.value !== (key === Symbol.iterator ? "function" : "object")) return false;
-      if (key === Symbol.unscopables && descriptor.writable) return false;
-    }
+  const actualKeys = Reflect.ownKeys(Array.prototype);
+  if (actualKeys.length !== CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS.length) return false;
+  for (const expected of CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS) {
+    const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, expected.key);
+    if (!descriptor || descriptor.enumerable || descriptor.configurable !== expected.configurable || !("value" in descriptor) || descriptor.writable !== expected.writable || typeof descriptor.value !== expected.valueType) return false;
+    if (expected.key === "length" && descriptor.value !== 0) return false;
   }
-  return true;
+  return actualKeys.every((key) => CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS.some((expected) => expected.key === key));
 }
 function arrayShape(value: unknown): value is readonly unknown[] {
   if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !canonicalArrayPrototype() || !Object.isFrozen(value)) return false;

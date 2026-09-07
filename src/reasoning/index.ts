@@ -86,18 +86,27 @@ const evidenceKeys = ["kind", "ref", "hash", "symbol", "market", "account", "obs
 const policyKeys = ["method", "now", "maxAgeMs", "minConfidence", "minExpectedMoveBps", "thesisId", "thesisHash"] as const;
 const assessmentKeys = ["kind", "side", "requestedQuantity", "executableQuantity", "bestExecutableReference", "vwap", "worstExecutionPrice", "limitPrice", "totalCost", "spreadBps", "slippageBps", "feeBps", "fundingCostBps", "executableEdgeBps", "fills"] as const;
 const fillKeys = ["price", "quantity", "notional"] as const;
-const canonicalArrayPrototypeDescriptors = new Map(Reflect.ownKeys(Array.prototype).map((key) => [key, Object.getOwnPropertyDescriptor(Array.prototype, key)] as const));
+type CanonicalArrayDescriptor = {
+  readonly key: string | symbol;
+  readonly configurable: boolean;
+  readonly writable: boolean;
+  readonly valueType: "number" | "function" | "object";
+};
+const CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS: readonly CanonicalArrayDescriptor[] = [
+  { key: "length", configurable: false, writable: true, valueType: "number" },
+  ...["constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex", "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf", "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce", "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toLocaleString", "toString"].map((key) => ({ key, configurable: true, writable: true, valueType: "function" as const })),
+  { key: Symbol.iterator, configurable: true, writable: true, valueType: "function" },
+  { key: Symbol.unscopables, configurable: true, writable: false, valueType: "object" },
+];
 function canonicalArrayPrototype(): boolean {
-  const keys = Reflect.ownKeys(Array.prototype);
-  if (keys.length !== canonicalArrayPrototypeDescriptors.size) return false;
-  for (const key of keys) {
-    const expected = canonicalArrayPrototypeDescriptors.get(key);
-    const actual = Object.getOwnPropertyDescriptor(Array.prototype, key);
-    if (!expected || !actual || expected.enumerable !== actual.enumerable || expected.configurable !== actual.configurable ||
-      ("writable" in expected && (expected.writable !== actual.writable || expected.value !== actual.value)) ||
-      ("get" in expected && (expected.get !== actual.get || expected.set !== actual.set))) return false;
+  const actualKeys = Reflect.ownKeys(Array.prototype);
+  if (actualKeys.length !== CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS.length) return false;
+  for (const expected of CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS) {
+    const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, expected.key);
+    if (!descriptor || descriptor.enumerable || descriptor.configurable !== expected.configurable || !("value" in descriptor) || descriptor.writable !== expected.writable || typeof descriptor.value !== expected.valueType) return false;
+    if (expected.key === "length" && descriptor.value !== 0) return false;
   }
-  return true;
+  return actualKeys.every((key) => CANONICAL_ARRAY_PROTOTYPE_DESCRIPTORS.some((expected) => expected.key === key));
 }
 function canonicalFill(fill: unknown): boolean {
   if (!Object.isFrozen(fill) || !allowed(fill, fillKeys, fillKeys)) return false;

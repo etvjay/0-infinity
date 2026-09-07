@@ -212,7 +212,71 @@ test("reconciles spread using the symmetric midpoint-relative basis", () => {
   assert.equal(result.kind, "EXECUTION_INTENT");
 });
 
-test("covers just-below, exact, and just-above freshness and spread boundaries", () => {
+test("market observedAt independently accepts below, exact, and above age boundary", () => {
+  const ageBoundary = 2_600 - policy.maxMarketAgeMs;
+  for (const [observedAt, expected] of [[ageBoundary - 1, "MARKET_STATE_STALE"], [ageBoundary, "EXECUTION_INTENT"], [ageBoundary + 1, "EXECUTION_INTENT"]] as const) {
+    const result = evaluate({ market: { ...market, observedAt, receivedAt: 2_501 } });
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? expected : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+});
+
+test("market receivedAt independently accepts below, exact, and above age boundary", () => {
+  const ageBoundary = 2_600 - policy.maxMarketAgeMs;
+  for (const [receivedAt, expected] of [[ageBoundary - 1, "MARKET_STATE_STALE"], [ageBoundary, "EXECUTION_INTENT"], [ageBoundary + 1, "EXECUTION_INTENT"]] as const) {
+    const result = evaluate({ market: { ...market, observedAt: receivedAt, receivedAt } });
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? expected : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+});
+
+test("account observedAt independently accepts below, exact, and above age boundary", () => {
+  const ageBoundary = 2_600 - policy.maxAccountAgeMs;
+  for (const [observedAt, expected] of [[ageBoundary - 1, "ACCOUNT_STATE_STALE"], [ageBoundary, "EXECUTION_INTENT"], [ageBoundary + 1, "EXECUTION_INTENT"]] as const) {
+    const result = evaluate({ account: { ...account, observedAt, receivedAt: 2_501 } });
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? expected : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+});
+
+test("account receivedAt independently accepts below, exact, and above age boundary", () => {
+  const ageBoundary = 2_600 - policy.maxAccountAgeMs;
+  for (const [receivedAt, expected] of [[ageBoundary - 1, "ACCOUNT_STATE_STALE"], [ageBoundary, "EXECUTION_INTENT"], [ageBoundary + 1, "EXECUTION_INTENT"]] as const) {
+    const result = evaluate({ account: { ...account, observedAt: receivedAt, receivedAt } });
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? expected : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+});
+
+test("spread independently accepts below, exact, and rejects above maxSpreadBps", () => {
+  const bid = 100_000;
+  const ask = 100_050;
+  const spread = (ask - bid) / ((ask + bid) / 2) * 10_000;
+  for (const [maxSpreadBps, expected] of [[spread + 1, "EXECUTION_INTENT"], [spread, "EXECUTION_INTENT"], [spread - 1, "COST_CEILING"]] as const) {
+    const boundedMandate = compileMandate({ workflowId: `wf-spread-bound-${maxSpreadBps}` }, thesis, { ...compilerPolicy, minEntryPrice: 100_000, maxSpreadBps }, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
+    const boundedMarket = { ...market, value: { ...market.value, bidPrice: bid, askPrice: ask, markPrice: 100_000, spreadBps: spread } };
+    const result = evaluateMandate({ workflowId: boundedMandate.workflowId, authorityStatus: "ACTIVE" }, boundedMandate, createMandateRuntime({ expiresAt: boundedMandate.expiresAt }), boundedMarket, account, policy, 2_600);
+    assert.equal(result.kind, expected === "EXECUTION_INTENT" ? expected : "EXECUTION_REFUSAL");
+    if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, expected);
+  }
+});
+
+test("the same midpoint-relative spread ceiling applies symmetrically to BUY and SELL", () => {
+  const bid = 100_000;
+  const ask = 100_050;
+  const spread = (ask - bid) / ((ask + bid) / 2) * 10_000;
+  const sellThesis = { ...thesis, thesisId: "thesis-sell", direction: "SHORT" as const, side: "SELL" as const };
+  const sellMandate = compileMandate({ workflowId: "wf-sell-spread" }, sellThesis, { ...compilerPolicy, entryTrigger: "ABOVE" as const, maxEntryPrice: 100_050, maxSpreadBps: spread }, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
+  const boundedMarket = { ...market, value: { ...market.value, bidPrice: bid, askPrice: ask, markPrice: 100_050, spreadBps: spread } };
+  const buyMandate = compileMandate({ workflowId: "wf-buy-spread" }, thesis, { ...compilerPolicy, minEntryPrice: 100_000, maxSpreadBps: spread }, { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 }, 2_000);
+  const buyMarket = { ...boundedMarket, value: { ...boundedMarket.value, markPrice: 100_000 } };
+  const buyResult = evaluateMandate({ workflowId: buyMandate.workflowId, authorityStatus: "ACTIVE" }, buyMandate, createMandateRuntime({ expiresAt: buyMandate.expiresAt }), buyMarket, account, policy, 2_600);
+  const sellResult = evaluateMandate({ workflowId: sellMandate.workflowId, authorityStatus: "ACTIVE" }, sellMandate, createMandateRuntime({ expiresAt: sellMandate.expiresAt }), boundedMarket, account, policy, 2_600);
+  assert.equal(buyResult.kind, "EXECUTION_INTENT");
+  assert.equal(sellResult.kind, "EXECUTION_INTENT");
+});
+
+test("covers just-below, just-above freshness and spread boundaries", () => {
   const freshAt = 2_600 - policy.maxMarketAgeMs;
   for (const [observedAt, expected] of [[freshAt - 1, "MARKET_STATE_STALE"], [freshAt, "EXECUTION_INTENT"], [freshAt + 1, "EXECUTION_INTENT"]] as const) {
     const result = evaluate({ market: { ...market, observedAt, receivedAt: observedAt }, account: { ...account, observedAt, receivedAt: observedAt } });

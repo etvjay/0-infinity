@@ -4,7 +4,7 @@ Branch target: `agent/mb1-evaluator`.
 
 ## Status
 
-`REMEDIATED_LOCAL` — the prior independent review verdict was `REVISE` and blocked integration. The review identified these exact findings: cross-stream `account.version`/`market.version` comparison; hidden `MAX_VERSION_LAG` policy; ask-relative spread reconciliation; an undocumented floating tolerance affecting authorization; and missing complete freshness boundary coverage. Earlier evaluator hardening also covered malformed policies, provenance, chronology, runtime history, and trigger behavior.
+`REVIEWED / APPROVE_WITH_REQUIRED_FOLLOWUPS` — independent review found no execution-logic defect, but `safe_to_integrate: false` because the midpoint-relative spread basis and explicit same-stream anchor-lag policy affect authorization and require canonical domain/product ratification before integration. Add independent observedAt/receivedAt freshness boundary cases before closeout.
 
 This remediation adds focused RED/GREEN coverage and closes each listed evaluator finding without changing the authority store, runtime transition implementation, or external integrations.
 
@@ -21,14 +21,23 @@ This remediation adds focused RED/GREEN coverage and closes each listed evaluato
 - Reported spread uses the explicit symmetric midpoint-relative convention `(ask - bid) / ((ask + bid) / 2) * 10_000`; reconciliation uses deterministic exact numeric equality, not a policy tolerance. Spread remains distinct from `slippageBps`, which is independently checked against its mandate ceiling and included in executable-edge calculation.
 - Canonical inclusive triggers are non-vacuous: `BELOW` requires `markPrice <= minPrice`; `ABOVE` requires `markPrice >= maxPrice`. Trigger thresholds come only from mandate fields; entry price bounds remain independently enforced.
 
+## Ratified conventions
+
+- Same-stream `market.version` ↔ `mandate.anchor.stateVersion` only, with `maxAnchorVersionLag` supplied by `EvaluationPolicy`; never `market.version` ↔ `account.version`.
+- Midpoint-relative spread `(ask-bid)/((ask+bid)/2)*10000`, same basis for `maxSpreadBps` and both BUY/SELL.
+- Spread distinct from slippage.
+- No hidden trigger tolerances/defaults.
+
 ## Evidence
 
-- Focused evaluator RED: 4 new assertions failed before implementation (cross-stream account version, hidden lag cap, midpoint spread, and boundary behavior).
-- Focused compiled evaluator tests — PASS: 22 tests, 0 failures.
+- Candidate: `6a5e28922f9757c0726876efaa69a25b67e46ccc` (`6a5e289`). Prior review: `APPROVE_WITH_REQUIRED_FOLLOWUPS`; `safe_to_integrate: false` only for these ratification/freshness followups.
+- Final focused compiled evaluator tests — PASS: 28 tests, 0 failures; includes 3-point boundary coverage for market observedAt, market receivedAt, account observedAt, account receivedAt, spread below/equal/above `maxSpreadBps`, and BUY/SELL symmetry.
 - `npm run check` — PASS.
-- `npm test` — PASS: build plus 274 tests, 0 failures.
+- `npm test` — PASS: build plus 280 tests, 0 failures.
 - `npm run build` — PASS.
 - `git diff --check` — PASS.
+
+Integration status: pending final independent review.
 
 Proof ceiling remains `LOCAL_PASS`; no Binance, exchange, Ground Truth, or production-readiness claim is made.
 

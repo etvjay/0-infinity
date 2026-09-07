@@ -13,14 +13,14 @@ M-B5 is a local/replay-only execution boundary. It is not exchange, live, testne
 - Intent and fill-event validation requires frozen canonical own-data objects with the exact Object prototype, enumerable data descriptors, and no unsupported inherited, hidden, symbol, or accessor keys; persisted mandate bindings enforce workflow, symbol, side, method, account (when supplied), and entry price bounds.
 - Same-client retries compare a complete canonical intent fingerprint, including method, quantity, account, notional, executable edge, and both state versions. Receipts bind account, method, attempt, economics, state versions, adapter acceptance provenance, and fill-event provenance.
 - Persistence precedes every adapter call. Adapter timeout or thrown call becomes `UNKNOWN`; the writer refuses blind retry. ACKNOWLEDGED does not imply a fill.
-- Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation is limited to writer-owned IDs.
+- Reconciliation is idempotent by event ID, treats fill quantities as cumulative watermarks, rejects `FILLED` without a cumulative quantity reaching the requested quantity, ignores out-of-order lower snapshots, and computes weighted average price from newly observed cumulative quantity. Cancellation durably records `REQUESTED` before the adapter, maps adapter uncertainty to durable local `UNKNOWN`, refuses blind retry, and requires deterministic client-ID/mandate/workflow/attempt/intent-fingerprint ownership.
 - `MemoryOrderPersistence.failNextSave()` and writer hooks model local persistence/crash windows and replay boundaries; no production crash-safety claim is made.
 
 ## TDD and verification receipts
 
-- RED: focused hostile regressions failed against the candidate with missing receipt audit fields/type errors before implementation.
-- GREEN: focused execution tests `7/7 PASS`.
-- Full `npm test`: `407/407 PASS`.
+- RED: focused regressions for FILLED quantity consistency, durable cancellation uncertainty, and forged cancel ownership failed before implementation.
+- GREEN: focused execution tests `10/10 PASS`.
+- Full `npm test`: `410/410 PASS`.
 - `npm run check`: PASS.
 - `npm run build`: PASS.
 - `git diff --check`: PASS.

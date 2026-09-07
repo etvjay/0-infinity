@@ -28,7 +28,7 @@ Current:
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
-| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / LOCAL_PASS — focused execution `7/7`, full `407/407`, check/build/diff-check PASS; local/replay adapter and injected persistence/failure hooks only |
+| M-B5 local OrderWriter + reconciliation | REMEDIATION_COMPLETE / LOCAL_PASS — focused execution `10/10`, full `410/410`, check/build/diff-check PASS; local/replay adapter and injected persistence/failure hooks only |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
 
@@ -108,6 +108,6 @@ M-B4 proof receipt:
 M-B5 proof receipt:
 
 - objective: bounded local/replay OrderWriter around existing mandate consumption plus explicit submission/reconciliation outcomes.
-- receipt: deterministic IDs, canonical own-data intent/event validation, complete intent fingerprint idempotency, immutable audit-bound receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, monotonic duplicate-safe cumulative fills with out-of-order handling and weighted VWAP, and writer-owned cancel.
-- TDD/verification: hostile regressions RED before implementation; focused execution `7/7`, full `407/407`, check/build/diff-check `PASS`.
+- receipt: deterministic IDs, canonical own-data intent/event validation, complete intent fingerprint idempotency, immutable audit-bound receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, FILLED cumulative quantity >= requested, monotonic duplicate-safe cumulative fills with out-of-order handling and weighted VWAP, and writer-owned cancel with durable REQUESTED/UNKNOWN/CANCELLED state.
+- TDD/verification: FILLED consistency, durable cancellation uncertainty, and forged ownership regressions RED before implementation; focused execution `10/10`, full `410/410`, check/build/diff-check `PASS`.
 - evidence ceiling: `LOCAL_PASS` only; no live, testnet, production durability, exchange write, network, MCP, or credential claim.

@@ -81,3 +81,38 @@ test("rejects custom-prototype, hidden, symbol, and accessor reconciliation even
   const symbol = Object.freeze({ eventId: "symbol", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 101, [Symbol("extra")]: true });
   await assert.rejects(() => writer.reconcile(receipt.clientOrderId, symbol), /invalid/);
 });
+
+test("FILLED requires a cumulative fill quantity that reaches the requested quantity", async () => {
+  const writer = new OrderWriter(store(), new MemoryOrderPersistence(), adapter());
+  const receipt = await writer.submit(intent, 7);
+  await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "missing-filled", status: "FILLED", fillPrice: 101 })), /invalid/);
+  await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: "short-filled", status: "FILLED", fillQuantity: 1, fillPrice: 101 })), /invalid/);
+});
+
+test("cancel durably records a request before the adapter and UNKNOWN after an uncertain call", async () => {
+  const persistence = new MemoryOrderPersistence();
+  let seen: any;
+  const writer = new OrderWriter(store(), persistence, {
+    submit: async () => ({ kind: "ACKNOWLEDGED" }),
+    cancel: async () => { seen = persistence.replay()[0]; throw new Error("lost cancel response"); },
+  });
+  const receipt = await writer.submit(intent, 8);
+  const unknown = await writer.cancel(receipt.clientOrderId);
+  assert.equal(seen.cancelState, "REQUESTED");
+  assert.equal(unknown.outcome, "UNKNOWN");
+  assert.equal(unknown.cancelState, "UNKNOWN");
+  assert.equal(persistence.replay()[0].cancelState, "UNKNOWN");
+  await assert.rejects(() => writer.cancel(receipt.clientOrderId), /unknown cancellation cannot be retried/);
+});
+
+test("cancel refuses a persisted record without deterministic writer ownership", async () => {
+  const forged = {
+    clientOrderId: "forged-id", mandateId: "m-1", workflowId: "w-1", symbol: "BTCUSDT", side: "BUY", method: "LIMIT",
+    attempt: 0, notional: 200, executableEdgeBps: 10, marketStateVersion: 1n, accountStateVersion: 1n,
+    quantity: 2, price: 100, outcome: "ACKNOWLEDGED", filledQuantity: 0, acceptanceProvenance: "ACKNOWLEDGED",
+    fillEventIds: [], intent, events: [], filledNotional: 0, cancelState: "NONE",
+  };
+  const persistence = { load: () => forged, save: async () => undefined } as any;
+  const writer = new OrderWriter(store(), persistence, adapter());
+  await assert.rejects(() => writer.cancel("forged-id"), /writer-owned/);
+});

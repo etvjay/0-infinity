@@ -4,6 +4,7 @@ import type { MandateStore } from "../store/index.js";
 
 export const ORDER_OUTCOMES = ["ACKNOWLEDGED", "REJECTED", "FAILED", "UNKNOWN", "PARTIALLY_FILLED", "FILLED", "CANCELLED"] as const;
 export type OrderOutcome = (typeof ORDER_OUTCOMES)[number];
+export type CancelState = "NONE" | "REQUESTED" | "UNKNOWN" | "CANCELLED";
 export type BoundedIntent = ExecutionIntent & { readonly quantity?: number; readonly accountId?: string; readonly price: number };
 export type AdapterResult = { readonly kind: "ACKNOWLEDGED" | "REJECTED" | "FAILED" | "TIMEOUT"; readonly message?: string };
 export interface ExchangeAdapter { submit(intent: BoundedIntent, clientOrderId: string): Promise<AdapterResult>; cancel?: (clientOrderId: string) => Promise<void>; }
@@ -13,9 +14,10 @@ export interface OrderReceipt {
   readonly accountId?: string; readonly method: BoundedIntent["method"]; readonly attempt: number; readonly notional: number; readonly executableEdgeBps: number;
   readonly marketStateVersion: bigint; readonly accountStateVersion: bigint; readonly quantity: number; readonly price: number;
   readonly outcome: OrderOutcome; readonly filledQuantity: number; readonly averagePrice?: number; readonly acceptanceProvenance: AdapterResult["kind"];
+  readonly cancelState: CancelState;
   readonly fillEventIds: readonly string[]; readonly intent: BoundedIntent;
 }
-interface StoredOrder extends OrderReceipt { readonly events: readonly string[]; readonly filledNotional: number; }
+interface StoredOrder extends OrderReceipt { readonly events: readonly string[]; readonly filledNotional: number; readonly intentFingerprint: string; }
 export interface OrderPersistence { load(clientOrderId: string): StoredOrder | undefined; save(order: StoredOrder): Promise<void>; }
 export class MemoryOrderPersistence implements OrderPersistence {
   private readonly orders = new Map<string, StoredOrder>(); private fail = false;
@@ -56,6 +58,7 @@ function validEvent(value: unknown): value is FillEvent {
   if (typeof x.eventId !== "string" || x.eventId.length === 0 || !["ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "CANCELLED", "REJECTED", "FAILED"].includes(x.status as string)) return false;
   if (x.fillQuantity !== undefined && (typeof x.fillQuantity !== "number" || !Number.isFinite(x.fillQuantity) || x.fillQuantity < 0)) return false;
   if (x.fillPrice !== undefined && (typeof x.fillPrice !== "number" || !Number.isFinite(x.fillPrice) || x.fillPrice <= 0)) return false;
+  if (x.status === "FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0)) return false;
   return x.fillQuantity === undefined || x.fillQuantity === 0 || x.fillPrice !== undefined;
 }
 function deepFrozen(value: unknown, seen = new Set<object>()): boolean { if (!value || typeof value !== "object") return true; if (seen.has(value)) return true; seen.add(value); return Object.isFrozen(value) && Reflect.ownKeys(value).every((key) => { const descriptor = Object.getOwnPropertyDescriptor(value, key); return !!descriptor && "value" in descriptor && deepFrozen(descriptor.value, seen); }); }
@@ -77,7 +80,7 @@ export class OrderWriter {
     const bound = records.find((record) => record.mandate.mandateId === intent.mandateId);
     if (bound && (bound.mandate.workflowId !== intent.workflowId || bound.mandate.symbol !== intent.symbol || bound.mandate.side !== intent.side || bound.mandate.execution.method !== intent.method || (intent.accountId !== undefined && bound.mandate.accountId !== intent.accountId) || intent.price < bound.mandate.entry.minPrice || intent.price > bound.mandate.entry.maxPrice)) fail("intent binding or mandate price bound violated");
     await this.mandates.consumeForSubmission(intent.mandateId, clientOrderId);
-    let order: StoredOrder = freeze({ clientOrderId, mandateId: intent.mandateId, workflowId: intent.workflowId, symbol: intent.symbol, side: intent.side, accountId: intent.accountId, method: intent.method, attempt, notional: intent.notional, executableEdgeBps: intent.executableEdgeBps, marketStateVersion: intent.marketStateVersion, accountStateVersion: intent.accountStateVersion, quantity, price: intent.price, outcome: "UNKNOWN", filledQuantity: 0, acceptanceProvenance: "TIMEOUT", fillEventIds: [], intent: clone(intent), events: [], filledNotional: 0 });
+    let order: StoredOrder = freeze({ clientOrderId, mandateId: intent.mandateId, workflowId: intent.workflowId, symbol: intent.symbol, side: intent.side, accountId: intent.accountId, method: intent.method, attempt, notional: intent.notional, executableEdgeBps: intent.executableEdgeBps, marketStateVersion: intent.marketStateVersion, accountStateVersion: intent.accountStateVersion, quantity, price: intent.price, outcome: "UNKNOWN", filledQuantity: 0, acceptanceProvenance: "TIMEOUT", cancelState: "NONE", fillEventIds: [], intent: clone(intent), intentFingerprint: fingerprint, events: [], filledNotional: 0 });
     await this.persistence.save(order); await this.hooks.beforeAdapterCall?.();
     let result: AdapterResult; try { result = await this.adapter.submit(intent, clientOrderId); } catch { result = { kind: "TIMEOUT" }; }
     await this.hooks.afterAdapterCall?.(); order = { ...order, outcome: result.kind === "TIMEOUT" ? "UNKNOWN" : result.kind, acceptanceProvenance: result.kind, events: [] }; await this.persistence.save(freeze(order)); return freeze(clone(order));
@@ -87,7 +90,7 @@ export class OrderWriter {
     const prior = this.persistence.load(clientOrderId); if (!prior) fail("unknown writer-owned clientOrderId");
     if (!validEvent(event)) fail("invalid reconciliation event");
     if (prior.events.includes(event.eventId)) return freeze(clone(prior));
-    const q = event.fillQuantity ?? 0; const p = event.fillPrice; if (q > prior.quantity) fail("invalid fill");
+    const q = event.fillQuantity ?? 0; const p = event.fillPrice; if (q > prior.quantity || (event.status === "FILLED" && q < prior.quantity)) fail("invalid fill");
     let filled = prior.filledQuantity; let filledNotional = prior.filledNotional || (prior.averagePrice ?? 0) * prior.filledQuantity;
     if (q > filled) { filled = q; if (!p) fail("invalid fill"); filledNotional += (q - prior.filledQuantity) * p; }
     const average = filled ? filledNotional / filled : prior.averagePrice;
@@ -96,7 +99,31 @@ export class OrderWriter {
     await this.persistence.save(next); return freeze(clone(next));
   }
   cancel(clientOrderId: string): Promise<OrderReceipt> { return this.serial(() => this.cancelOnce(clientOrderId)); }
-  private async cancelOnce(clientOrderId: string): Promise<OrderReceipt> { const prior = this.persistence.load(clientOrderId); if (!prior) fail("can only cancel writer-owned clientOrderId"); if (prior.outcome === "FILLED" || prior.outcome === "CANCELLED") return freeze(clone(prior)); if (!this.adapter.cancel) fail("adapter does not support cancellation"); await this.adapter.cancel(clientOrderId); const next = freeze({ ...prior, outcome: "CANCELLED" as const }); await this.persistence.save(next); return freeze(clone(next)); }
+  private async cancelOnce(clientOrderId: string): Promise<OrderReceipt> {
+    const prior = this.persistence.load(clientOrderId);
+    if (!prior || !this.writerOwns(prior, clientOrderId)) fail("can only cancel writer-owned clientOrderId");
+    if (prior.cancelState === "UNKNOWN") fail("unknown cancellation cannot be retried");
+    if (prior.cancelState === "REQUESTED") fail("pending cancellation cannot be retried");
+    if (prior.outcome === "FILLED" || prior.outcome === "CANCELLED") return freeze(clone(prior));
+    if (!this.adapter.cancel) fail("adapter does not support cancellation");
+    const requested = freeze({ ...prior, cancelState: "REQUESTED" as const });
+    await this.persistence.save(requested);
+    try {
+      await this.adapter.cancel(clientOrderId);
+    } catch {
+      const unknown = freeze({ ...requested, outcome: "UNKNOWN" as const, cancelState: "UNKNOWN" as const });
+      await this.persistence.save(unknown);
+      return freeze(clone(unknown));
+    }
+    const next = freeze({ ...requested, outcome: "CANCELLED" as const, cancelState: "CANCELLED" as const });
+    await this.persistence.save(next); return freeze(clone(next));
+  }
+  private writerOwns(order: StoredOrder, clientOrderId: string): boolean {
+    if (order.clientOrderId !== clientOrderId || order.clientOrderId !== OrderWriter.clientOrderId(order.intent, order.attempt)) return false;
+    const persistedIntent = freeze(clone(order.intent));
+    if (!validIntent(persistedIntent) || order.intentFingerprint !== intentFingerprint(persistedIntent)) return false;
+    return order.mandateId === persistedIntent.mandateId && order.workflowId === persistedIntent.workflowId && order.cancelState !== undefined;
+  }
   private serial<T>(operation: () => Promise<T>): Promise<T> { const result = this.tail.then(operation); this.tail = result.then(() => undefined, () => undefined); return result; }
 }
 export type { ExecutionIntent };

@@ -28,7 +28,7 @@
 - RED: new handoff tests failed against shallow assessment acceptance, missing provenance, truthy approval, and mutable replay state acceptance.
 - GREEN: focused handoff `11/11 PASS`; focused economics `15/15 PASS`; focused reasoning `12/12 PASS`.
 - Full `npm test` — `396/396 PASS`; `npm run check`, `npm run build`, and `git diff --check` — PASS.
-- Candidate: `6087fba5ec7c80561b34dafa90c2cf45a786191f`; independent review remains pending.
+- Candidate: final remediation commit; independent review remains pending.
 
 ## exclusions and unresolved evidence
 

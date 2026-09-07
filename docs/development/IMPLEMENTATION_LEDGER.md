@@ -36,7 +36,7 @@ M-B3 remediation receipt:
 
 M-B4 remediation receipt:
 
-- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact remediation head `6087fba5ec7c80561b34dafa90c2cf45a786191f`; exact-head independent review remains pending.
+- status: `REMEDIATION_COMPLETE / PROVISIONAL_LOCAL_PASS`; exact remediation head is recorded in the final receipt; exact-head independent review remains pending.
 - scope: full prototype-chain validation including `Object.prototype`; explicit local/replay provenance and frozen SYNCED/trusted order-book assertion; canonical deeply frozen economics assessment validation including exact decimal fields and dense fills; exact boolean approval; compile request/policy/anchor and replay state-envelope shape validation.
 - TDD: hostile handoff regressions RED before remediation; focused handoff `11/11`; focused economics `15/15`; focused reasoning `12/12`; combined focused `38/38`; full `396/396`.
 - typecheck: `PASS`; build: `PASS`; diff_check: `PASS`.

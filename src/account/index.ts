@@ -73,8 +73,15 @@ const accountFields = new Set(["m", "B", "P"]);
 const balanceFields = new Set(["a", "wb", "cw", "bc"]);
 const positionFields = new Set(["s", "pa", "ep", "cr", "up", "mt", "iw", "ps"]);
 
-function allowlist(value: Record<string, unknown>, fields: Set<string>, field: string): void {
+function allowlist(value: Record<string, unknown>, fields: Set<string>, field: string, required: readonly string[] = []): void {
   for (const key of Object.keys(value)) if (!fields.has(key)) fail(`${field}.${key}`, "is unsupported");
+  for (let prototype = Object.getPrototypeOf(value); prototype && prototype !== Object.prototype; prototype = Object.getPrototypeOf(prototype)) {
+    for (const key of Object.keys(prototype)) {
+      if (!fields.has(key)) fail(`${field}.${key}`, "is unsupported");
+      fail(`${field}.${key}`, "must be an own property");
+    }
+  }
+  for (const key of required) if (!own(value, key)) fail(`${field}.${key}`, "is required as an own property");
 }
 function quotedEnd(raw: string, start: number): number {
   for (let i = start + 1; i < raw.length; i += 1) {
@@ -125,12 +132,12 @@ function parsed(raw: unknown): Record<string, unknown> {
       if (versionTokens.length !== 1) fail("u", versionTokens.length === 0 ? "is required at top level" : "is duplicated or ambiguous");
       const token = versionTokens[0];
       value.u = token.startsWith('"') ? JSON.parse(token) : token;
-      allowlist(value, topLevelFields, "payload");
+      allowlist(value, topLevelFields, "payload", ["e", "E", "T", "productFamily", "a", "u"]);
       return value;
     } catch (error) { if (error instanceof RangeError) throw error; fail("payload", "must be valid JSON"); }
   }
   const value = object(raw, "payload");
-  allowlist(value, topLevelFields, "payload");
+  allowlist(value, topLevelFields, "payload", ["e", "E", "T", "productFamily", "a", "u"]);
   return value;
 }
 function asset(value: unknown): UsdMFuturesAccountAsset {
@@ -152,9 +159,9 @@ export function normalizeUsdMFuturesAccountState(raw: unknown, receivedAt: numbe
   if (E > received || T > received) fail("timestamp", "cannot be in future");
   if (T > E) fail("chronology", "is incoherent");
   const account = object(value.a, "a");
-  allowlist(account, accountFields, "account");
+  allowlist(account, accountFields, "account", ["B", "P"]);
   if (!Array.isArray(account.B) || !Array.isArray(account.P)) fail("account", "B and P arrays are required");
-  const balances = (account.B as unknown[]).map((item: unknown) => { const b = object(item, "balance"); allowlist(b, balanceFields, "balance"); return { asset: asset(b.a), walletBalance: decimal(b.wb, "walletBalance"), crossWalletBalance: decimal(b.cw, "crossWalletBalance"), balanceChange: decimal(b.bc, "balanceChange", true) }; });
-  const positions = (account.P as unknown[]).map((item: unknown) => { const p = object(item, "position"); allowlist(p, positionFields, "position"); if (typeof p.s !== "string" || !symbols.has(p.s as UsdMFuturesAccountSymbol)) fail("symbol", "is not supported"); if (p.mt !== "cross" && p.mt !== "isolated") fail("margin type", "is invalid"); return { symbol: p.s as UsdMFuturesAccountSymbol, positionAmount: decimal(p.pa, "positionAmount", true), entryPrice: decimal(p.ep, "entryPrice"), realizedPnl: decimal(p.cr, "realizedPnl", true), unrealizedPnl: decimal(p.up, "unrealizedPnl", true), marginType: p.mt as "cross" | "isolated", isolatedWallet: decimal(p.iw, "isolatedWallet"), positionSide: positionSide(p.ps) }; });
+  const balances = (account.B as unknown[]).map((item: unknown) => { const b = object(item, "balance"); allowlist(b, balanceFields, "balance", ["a", "wb", "cw", "bc"]); return { asset: asset(b.a), walletBalance: decimal(b.wb, "walletBalance"), crossWalletBalance: decimal(b.cw, "crossWalletBalance"), balanceChange: decimal(b.bc, "balanceChange", true) }; });
+  const positions = (account.P as unknown[]).map((item: unknown) => { const p = object(item, "position"); allowlist(p, positionFields, "position", ["s", "pa", "ep", "cr", "up", "mt", "iw", "ps"]); if (typeof p.s !== "string" || !symbols.has(p.s as UsdMFuturesAccountSymbol)) fail("symbol", "is not supported"); if (p.mt !== "cross" && p.mt !== "isolated") fail("margin type", "is invalid"); return { symbol: p.s as UsdMFuturesAccountSymbol, positionAmount: decimal(p.pa, "positionAmount", true), entryPrice: decimal(p.ep, "entryPrice"), realizedPnl: decimal(p.cr, "realizedPnl", true), unrealizedPnl: decimal(p.up, "unrealizedPnl", true), marginType: p.mt as "cross" | "isolated", isolatedWallet: decimal(p.iw, "isolatedWallet"), positionSide: positionSide(p.ps) }; });
   return freezeDeep({ version: version(value.u), venue: "BINANCE", instrument: "USD_M_FUTURES", productFamily: "USD_M_FUTURES_UM", observedAt: T, receivedAt: received, balances, positions, source: { productFamily: "USD_M_FUTURES_UM", event: "ACCOUNT_UPDATE" } });
 }

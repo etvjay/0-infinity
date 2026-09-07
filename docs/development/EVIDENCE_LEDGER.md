@@ -79,3 +79,12 @@ M-B2-G evidence receipt:
 - receipt: `docs/development/evidence/ZO-BIN-MB2-G-public-depth-bootstrap.json`.
 - bridge: `NOT_ATTEMPTED`; no snapshot `lastUpdateId`, local `SYNCED` book, best bid/ask, or clean unsubscribe/close receipt was claimed.
 - evidence ceiling: `BLOCKED_EXTERNAL` for public depth bootstrap only; M-B2 remains incomplete.
+
+M-B2-H proof receipt:
+
+- status: `LOCAL_PASS / BLOCKED_EXTERNAL`, integrated on canonical main at `4162468` after independent exact-head `APPROVE`.
+- objective: credential-free authenticated account-source contract, deterministic replay/mock handoff, and existing M-B2-C normalization boundary.
+- tests: focused account adapter `5/5`, full `358/358`.
+- typecheck/build/diff_check: `PASS`.
+- classification: `PRIVATE_ACCOUNT_LIVE_READ=BLOCKED_EXTERNAL`.
+- evidence exclusions: no Binance authentication, private transport, listenKey, account-stream continuity, MCP operation, credentials, exchange writes, or production readiness.

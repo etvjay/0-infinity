@@ -128,6 +128,27 @@ test("rejects inherited structural fields on frozen levels and frozen books", ()
   if (bookResult.kind === "REFUSAL") assert.equal(bookResult.code, "MALFORMED_INPUT");
 });
 
+test("rejects Array.prototype pollution and restores the shared prototype", () => {
+  const pollutionCases: [string | symbol, PropertyDescriptor][] = [
+    ["enumerablePollution", { value: true, enumerable: true, configurable: true }],
+    ["hiddenPollution", { value: true, enumerable: false, configurable: true }],
+    [Symbol("symbolPollution"), { value: true, enumerable: false, configurable: true }],
+  ];
+  for (const [key, descriptor] of pollutionCases) {
+    const prior = Object.getOwnPropertyDescriptor(Array.prototype, key);
+    try {
+      Object.defineProperty(Array.prototype, key, descriptor);
+      const result = assessExecutionEconomics(input("BUY"));
+      assert.equal(result.kind, "REFUSAL");
+      if (result.kind === "REFUSAL") assert.equal(result.code, "MALFORMED_INPUT");
+    } finally {
+      if (prior) Object.defineProperty(Array.prototype, key, prior);
+      else delete Array.prototype[key as keyof unknown[]];
+    }
+  }
+  assert.equal(assessExecutionEconomics(input("BUY")).kind, "ASSESSMENT");
+});
+
 test("rejects hidden unsupported keys on nested book containers and quotes", () => {
   const base = input("BUY");
   const hostile = (value: object, location: "own" | "inherited", key: string | symbol, enumerable: boolean) => {

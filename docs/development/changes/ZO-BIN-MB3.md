@@ -20,9 +20,9 @@
 
 ## TDD and verification receipts
 
-- RED: initial focused economics suite failed before implementation (`tsc: Cannot find module ../src/economics/index.js`); the nested-container hostile regression failed before the complete key enumeration fix (`ASSESSMENT` instead of `REFUSAL`).
-- GREEN: focused `node --test dist/tests/economics.test.js` — `11/11 PASS`.
-- full suite: `npm test` — `369/369 PASS`.
+- RED: initial focused economics suite failed before implementation (`tsc: Cannot find module ../src/economics/index.js`); the Array.prototype pollution regression failed before canonical prototype inspection (`ASSESSMENT` instead of `REFUSAL`).
+- GREEN: focused `node --test dist/tests/economics.test.js` — `12/12 PASS`.
+- full suite: `npm test` — `370/370 PASS`.
 - typecheck: `npm run check` — PASS.
 - build: `npm run build` — PASS.
 - diff check: `git diff --check` — PASS.

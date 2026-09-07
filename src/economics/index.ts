@@ -117,8 +117,31 @@ function validLevel(level: unknown): level is { readonly price: string; readonly
   try { const x = level as { price: unknown; quantity: unknown }; return positive(parse(x.price)) && positive(parse(x.quantity)); } catch { return false; }
 }
 
+const CANONICAL_ARRAY_PROTOTYPE_STRING_KEYS = new Set([
+  "length", "constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex",
+  "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf",
+  "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce",
+  "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toLocaleString", "toString",
+]);
+const CANONICAL_ARRAY_PROTOTYPE_SYMBOL_KEYS = new Set([Symbol.iterator, Symbol.unscopables]);
+function canonicalArrayPrototype(): boolean {
+  for (const key of Reflect.ownKeys(Array.prototype)) {
+    const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, key);
+    if (!descriptor || descriptor.enumerable || !("value" in descriptor)) return false;
+    if (typeof key === "string") {
+      if (!CANONICAL_ARRAY_PROTOTYPE_STRING_KEYS.has(key)) return false;
+      if (key === "length") {
+        if (descriptor.value !== 0 || descriptor.configurable || !descriptor.writable) return false;
+      } else if (!descriptor.configurable || !descriptor.writable || typeof descriptor.value !== "function") return false;
+    } else {
+      if (!CANONICAL_ARRAY_PROTOTYPE_SYMBOL_KEYS.has(key) || !descriptor.configurable || typeof descriptor.value !== (key === Symbol.iterator ? "function" : "object")) return false;
+      if (key === Symbol.unscopables && descriptor.writable) return false;
+    }
+  }
+  return true;
+}
 function arrayShape(value: unknown): value is readonly unknown[] {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !canonicalArrayPrototype()) return false;
   for (const key of Reflect.ownKeys(value)) {
     if (key === "length") continue;
     if (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= 2 ** 32 - 1) return false;

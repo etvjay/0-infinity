@@ -86,15 +86,42 @@ const evidenceKeys = ["kind", "ref", "hash", "symbol", "market", "account", "obs
 const policyKeys = ["method", "now", "maxAgeMs", "minConfidence", "minExpectedMoveBps", "thesisId", "thesisHash"] as const;
 const assessmentKeys = ["kind", "side", "requestedQuantity", "executableQuantity", "bestExecutableReference", "vwap", "worstExecutionPrice", "limitPrice", "totalCost", "spreadBps", "slippageBps", "feeBps", "fundingCostBps", "executableEdgeBps", "fills"] as const;
 const fillKeys = ["price", "quantity", "notional"] as const;
+const canonicalArrayPrototypeDescriptors = new Map(Reflect.ownKeys(Array.prototype).map((key) => [key, Object.getOwnPropertyDescriptor(Array.prototype, key)] as const));
+function canonicalArrayPrototype(): boolean {
+  const keys = Reflect.ownKeys(Array.prototype);
+  if (keys.length !== canonicalArrayPrototypeDescriptors.size) return false;
+  for (const key of keys) {
+    const expected = canonicalArrayPrototypeDescriptors.get(key);
+    const actual = Object.getOwnPropertyDescriptor(Array.prototype, key);
+    if (!expected || !actual || expected.enumerable !== actual.enumerable || expected.configurable !== actual.configurable ||
+      ("writable" in expected && (expected.writable !== actual.writable || expected.value !== actual.value)) ||
+      ("get" in expected && (expected.get !== actual.get || expected.set !== actual.set))) return false;
+  }
+  return true;
+}
+function canonicalFill(fill: unknown): boolean {
+  if (!Object.isFrozen(fill) || !allowed(fill, fillKeys, fillKeys)) return false;
+  const object = fill as object;
+  return fillKeys.every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(object, key);
+    return !!descriptor && descriptor.enumerable && !descriptor.writable && !descriptor.configurable && "value" in descriptor && requiredString(descriptor.value);
+  });
+}
 function canonicalEconomics(value: unknown): boolean {
   if (!Object.isFrozen(value) || !allowed(value, assessmentKeys, assessmentKeys)) return false;
   const assessment = value as Record<string, unknown>;
   if (assessment.kind !== "ASSESSMENT" || (assessment.side !== "BUY" && assessment.side !== "SELL")) return false;
   for (const key of assessmentKeys) if (key !== "kind" && key !== "side" && key !== "fills" && !requiredString(assessment[key])) return false;
   const fills = assessment.fills;
-  if (!Array.isArray(fills) || Object.getPrototypeOf(fills) !== Array.prototype || !Object.isFrozen(fills)) return false;
-  for (const key of Reflect.ownKeys(fills)) if (key !== "length" && (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key))) return false;
-  return fills.every((fill) => Object.isFrozen(fill) && allowed(fill, fillKeys, fillKeys) && fillKeys.every((key) => requiredString((fill as Record<string, unknown>)[key])));
+  if (!canonicalArrayPrototype() || !Array.isArray(fills) || Object.getPrototypeOf(fills) !== Array.prototype || !Object.isFrozen(fills)) return false;
+  const length = Object.getOwnPropertyDescriptor(fills, "length");
+  if (!length || length.value !== fills.length || length.writable || length.enumerable || length.configurable) return false;
+  if (Reflect.ownKeys(fills).length !== fills.length + 1) return false;
+  for (let index = 0; index < fills.length; index += 1) {
+    const descriptor = Object.getOwnPropertyDescriptor(fills, String(index));
+    if (!descriptor || !descriptor.enumerable || descriptor.writable || descriptor.configurable || !("value" in descriptor) || !canonicalFill(descriptor.value)) return false;
+  }
+  return true;
 }
 
 export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {

@@ -87,3 +87,39 @@ test("accepts only a deeply frozen canonical economics assessment", () => {
   const assessment = Object.freeze({ kind: "ASSESSMENT", side: "BUY", requestedQuantity: "1", executableQuantity: "1", bestExecutableReference: "100", vwap: "100", worstExecutionPrice: "100", limitPrice: "100", totalCost: "100", spreadBps: "1", slippageBps: "0", feeBps: "0", fundingCostBps: "0", executableEdgeBps: "1", fills: Object.freeze([fill]) });
   assert.equal(conveneEvidenceCouncil({ ...base(), evidence: { ...base().evidence, economics: assessment } }).kind, "THESIS");
 });
+
+test("rejects non-canonical frozen fills at the council boundary", () => {
+  const fill = Object.freeze({ price: "100", quantity: "1", notional: "100" });
+  const assessment = (fills: unknown) => Object.freeze({ kind: "ASSESSMENT", side: "BUY", requestedQuantity: "1", executableQuantity: "1", bestExecutableReference: "100", vwap: "100", worstExecutionPrice: "100", limitPrice: "100", totalCost: "100", spreadBps: "1", slippageBps: "0", feeBps: "0", fundingCostBps: "0", executableEdgeBps: "1", fills });
+  const submit = (fills: unknown) => conveneEvidenceCouncil({ ...base(), evidence: { ...base().evidence, economics: assessment(fills) } } as never).kind;
+
+  assert.equal(submit(Object.freeze([fill])), "THESIS");
+  assert.equal(submit(Object.freeze(new Array(1))), "REFUSAL"); // sparse
+
+  const hidden = [] as unknown[];
+  Object.defineProperty(hidden, "0", { value: fill, enumerable: false, writable: false, configurable: false });
+  Object.defineProperty(hidden, "length", { value: 1, writable: false });
+  assert.equal(submit(Object.freeze(hidden)), "REFUSAL"); // non-enumerable numeric entry
+
+  const accessor = [] as unknown[];
+  Object.defineProperty(accessor, "0", { get: () => fill, enumerable: true, configurable: false });
+  Object.defineProperty(accessor, "length", { value: 1, writable: false });
+  assert.equal(submit(Object.freeze(accessor)), "REFUSAL"); // accessor numeric entry
+
+  const unsupported = [fill] as unknown[];
+  Object.defineProperty(unsupported, "junk", { value: true, enumerable: false, configurable: false });
+  assert.equal(submit(Object.freeze(unsupported)), "REFUSAL");
+
+  const symbol = [fill] as unknown[];
+  Object.defineProperty(symbol, Symbol("poison"), { value: true, configurable: false });
+  assert.equal(submit(Object.freeze(symbol)), "REFUSAL");
+
+  const polluted = Object.freeze([fill]);
+  Object.defineProperty(Array.prototype, "1", { value: fill, enumerable: false, configurable: true });
+  try {
+    assert.equal(submit(polluted), "REFUSAL");
+    assert.equal(submit(Object.freeze(new Array(2))), "REFUSAL"); // prototype pollution cannot fill coverage
+  } finally {
+    delete (Array.prototype as unknown as Record<string, unknown>)["1"];
+  }
+});

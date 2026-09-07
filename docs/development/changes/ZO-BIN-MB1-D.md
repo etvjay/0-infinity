@@ -37,7 +37,7 @@ This remediation adds focused RED/GREEN coverage and closes each listed evaluato
 - `npm run build` — PASS.
 - `git diff --check` — PASS.
 
-- Current integrated verification at canonical HEAD `86b09e48db24f2e6a2e821df37e49d2cadc89dc2`: `npm test` — PASS: 295 tests, 0 failures; focused evaluator — PASS: 29 tests, 0 failures; integrated E — PASS: 10 tests, 0 failures. Current kernel review remains pending.
+- Current integrated verification at the `M-B1-AUTHORITY-VALIDATION` checkpoint: `npm test` — PASS: 295 tests, 0 failures; focused evaluator — PASS: 29 tests, 0 failures; integrated E — PASS: 10 tests, 0 failures. Current kernel review remains pending.
 
 ## Remaining contract decisions / risks
 

@@ -76,13 +76,41 @@ test("requires trusted local or replay provenance and synced order book", () => 
   assert.equal(createCouncilHandoff({ ...input, economics: Object.freeze({ ...input.economics, orderBook: Object.freeze({ status: "DESYNCED", trusted: true }) }) as never }).kind, "REFUSAL");
 });
 
-test("requires exact true approval and canonical compile request shapes", () => {
+test("requires exact boolean approval and canonical compile request shapes", () => {
   const proposal = createCouncilHandoff(handoffInput());
-  assert.equal(compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor, now: 1_500, approve: 1 as never }).kind, "APPROVAL_REQUIRED");
+  const truthyApproval = compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor, now: 1_500, approve: 1 as never });
+  assert.equal(truthyApproval.kind, "REFUSAL");
+  if (truthyApproval.kind === "REFUSAL") assert.equal(truthyApproval.code, "COMPILER_REFUSED");
   const malformedRequest = compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor, now: 1_500, approve: true, extra: true } as never);
   assert.equal(malformedRequest.kind, "REFUSAL"); if (malformedRequest.kind === "REFUSAL") assert.equal(malformedRequest.code, "COMPILER_REFUSED");
   const malformedAnchor = compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor: { ...anchor, stateVersion: 1 }, now: 1_500, approve: true } as never);
   assert.equal(malformedAnchor.kind, "REFUSAL"); if (malformedAnchor.kind === "REFUSAL") assert.equal(malformedAnchor.code, "COMPILER_REFUSED");
+});
+
+test("binds the proposal to its compiler policy and anchor", () => {
+  const proposal = createCouncilHandoff(handoffInput());
+  assert.equal(proposal.kind, "PROPOSAL");
+  if (proposal.kind !== "PROPOSAL") return;
+  const boundProposal = proposal as typeof proposal & { compilerPolicy: CompilerPolicy; anchor: AnchorState };
+  assert.deepEqual(boundProposal.compilerPolicy, compilerPolicy);
+  assert.deepEqual(boundProposal.anchor, anchor);
+  const substitutedPolicy = compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: { ...compilerPolicy, accountId: "acct-b" }, anchor, now: 1_500, approve: true });
+  assert.equal(substitutedPolicy.kind, "REFUSAL");
+  const substitutedAnchor = compileCouncilHandoff(proposal, { workflowId: "wf-1", policy: compilerPolicy, anchor: { ...anchor, stateVersion: 4n }, now: 1_500, approve: true });
+  assert.equal(substitutedAnchor.kind, "REFUSAL");
+});
+
+test("rejects mutable nested economics and hidden compiler-policy symbols", () => {
+  const input = handoffInput();
+  const mutableOrderBook = { status: "SYNCED" as const, trusted: true };
+  const mutableEconomics = Object.freeze({ ...input.economics, orderBook: mutableOrderBook });
+  assert.equal(createCouncilHandoff({ ...input, economics: mutableEconomics as never }).kind, "REFUSAL");
+
+  const hiddenSymbols = ["BTCUSDT"] as string[];
+  Object.defineProperty(hiddenSymbols, "0", { value: "BTCUSDT", enumerable: false, writable: false, configurable: false });
+  Object.freeze(hiddenSymbols);
+  const policy = { ...compilerPolicy, allowedSymbols: hiddenSymbols };
+  assert.equal(createCouncilHandoff({ ...input, compilerPolicy: policy }).kind, "REFUSAL");
 });
 
 test("evaluator rejects mutable or non-canonical replay state envelopes", () => {

@@ -25,6 +25,8 @@ export interface CouncilProposal {
   readonly kind: "PROPOSAL";
   readonly workflowId: string;
   readonly thesis: TradeThesis;
+  readonly compilerPolicy: CompilerPolicy;
+  readonly anchor: AnchorState;
   readonly economics: CompilerEconomicsEnvelope;
 }
 export interface HandoffRefusal {
@@ -61,7 +63,11 @@ const frozenTree = (value: unknown, seen = new Set<object>()): boolean => {
   if (!value || typeof value !== "object") return true;
   if (seen.has(value)) return true;
   seen.add(value);
-  return Object.isFrozen(value) && Object.values(value as Record<string, unknown>).every((child) => frozenTree(child, seen));
+  if (!Object.isFrozen(value)) return false;
+  return Reflect.ownKeys(value).every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return Boolean(descriptor && "value" in descriptor && frozenTree(descriptor.value, seen));
+  });
 };
 const freeze = <T>(value: T): T => {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -69,6 +75,21 @@ const freeze = <T>(value: T): T => {
     for (const child of Object.values(value as Record<string, unknown>)) freeze(child);
   }
   return value;
+};
+const snapshotPolicy = (value: CompilerPolicy): CompilerPolicy => freeze({ ...value, ...(value.allowedSymbols === undefined ? {} : { allowedSymbols: [...value.allowedSymbols] }) });
+const snapshotAnchor = (value: AnchorState): AnchorState => freeze({ ...value });
+const sameData = (left: unknown, right: unknown, seen = new Set<object>()): boolean => {
+  if (Object.is(left, right)) return true;
+  if (!left || !right || typeof left !== "object" || typeof right !== "object") return false;
+  if (seen.has(left) || seen.has(right)) return false;
+  seen.add(left); seen.add(right);
+  const leftKeys = Reflect.ownKeys(left); const rightKeys = Reflect.ownKeys(right);
+  return leftKeys.length === rightKeys.length && leftKeys.every((key) => {
+    if (!rightKeys.includes(key)) return false;
+    const leftDescriptor = Object.getOwnPropertyDescriptor(left, key);
+    const rightDescriptor = Object.getOwnPropertyDescriptor(right, key);
+    return Boolean(leftDescriptor && rightDescriptor && "value" in leftDescriptor && "value" in rightDescriptor && sameData(leftDescriptor.value, rightDescriptor.value, seen));
+  });
 };
 const refusal = (code: HandoffRefusalCode, message: string): HandoffRefusal => Object.freeze({ kind: "REFUSAL", code, message });
 
@@ -110,10 +131,10 @@ const validPolicy = (value: unknown): value is CompilerPolicy => {
   const keys = ["accountId", "validityMs", "minExecutableEdgeBps", "maxSpreadBps", "maxSlippageBps", "maxFeeBps", "maxFundingCostBps", "maxNotional", "maxLossBps", "execution", "minEntryPrice", "maxEntryPrice", "entryTrigger", "allowedSymbols"];
   if (!canonicalData(value, keys, keys.slice(0, -1)) || !text((value as CompilerPolicy).accountId)) return false;
   const symbols = (value as CompilerPolicy).allowedSymbols;
-  if (symbols !== undefined && (!Array.isArray(symbols) || Object.getPrototypeOf(symbols) !== Array.prototype || Reflect.ownKeys(symbols).length !== symbols.length + 1 || !symbols.every(text))) return false;
+  if (symbols !== undefined && (!canonicalArray(symbols) || !symbols.every(text))) return false;
   return Object.entries(value as Record<string, unknown>).every(([key, item]) => key === "accountId" || key === "execution" || key === "entryTrigger" || key === "allowedSymbols" || finite(item));
 };
-const validCompileRequest = (value: unknown): value is CompileRequest => canonicalData(value, ["workflowId", "policy", "anchor", "now", "approve"]) && text((value as CompileRequest).workflowId) && validPolicy((value as CompileRequest).policy) && validAnchor((value as CompileRequest).anchor) && finite((value as CompileRequest).now) && (value as CompileRequest).now >= 0;
+const validCompileRequest = (value: unknown): value is CompileRequest => canonicalData(value, ["workflowId", "policy", "anchor", "now", "approve"]) && text((value as CompileRequest).workflowId) && validPolicy((value as CompileRequest).policy) && validAnchor((value as CompileRequest).anchor) && finite((value as CompileRequest).now) && (value as CompileRequest).now >= 0 && typeof (value as CompileRequest).approve === "boolean";
 const marketStateKeys = ["venue", "instrument", "symbol", "bidPrice", "askPrice", "markPrice", "expectedMoveBps", "spreadBps", "slippageBps", "feeBps", "fundingCostBps"];
 const accountStateKeys = ["accountId", "availableNotional", "currentNotional", "currentLossBps"];
 const validStateEnvelope = (value: unknown, stateKeys: readonly string[]): boolean => {
@@ -126,19 +147,19 @@ const validStateEnvelope = (value: unknown, stateKeys: readonly string[]): boole
 function validEconomicsEnvelope(value: unknown): value is CompilerEconomicsEnvelope {
   if (!ownKeys(value as object, ["kind", "evidenceHash", "observedAt", "receivedAt", "source", "orderBook", "result"]) || !Object.isFrozen(value) || !text((value as CompilerEconomicsEnvelope).evidenceHash)) return false;
   const envelope = value as CompilerEconomicsEnvelope;
-  return envelope.kind === "ECONOMICS" && (envelope.source === "LOCAL" || envelope.source === "REPLAY") && canonicalData(envelope.orderBook, ["status", "trusted"]) && envelope.orderBook.status === "SYNCED" && envelope.orderBook.trusted === true && finite(envelope.observedAt) && finite(envelope.receivedAt) && envelope.observedAt >= 0 && envelope.receivedAt >= envelope.observedAt && validAssessment(envelope.result);
+  return envelope.kind === "ECONOMICS" && (envelope.source === "LOCAL" || envelope.source === "REPLAY") && canonicalData(envelope.orderBook, ["status", "trusted"]) && envelope.orderBook.status === "SYNCED" && envelope.orderBook.trusted === true && finite(envelope.observedAt) && finite(envelope.receivedAt) && envelope.observedAt >= 0 && envelope.receivedAt >= envelope.observedAt && validAssessment(envelope.result) && frozenTree(envelope);
 }
 
 /** Default boundary: council reasoning becomes only a proposal or refusal. */
 export function createCouncilHandoff(input: CouncilHandoffInput): CouncilHandoff {
   try {
-    if (!ownKeys(input as object, ["council", "workflowId", "compilerPolicy", "anchor", "now", "economics"]) || !text(input.workflowId) || !finite(input.now) || input.now < 0 || !validEconomicsEnvelope(input.economics)) return refusal("MALFORMED_INPUT", "handoff input is not canonical");
+    if (!ownKeys(input as object, ["council", "workflowId", "compilerPolicy", "anchor", "now", "economics"]) || !text(input.workflowId) || !finite(input.now) || input.now < 0 || !validPolicy(input.compilerPolicy) || !validAnchor(input.anchor) || !validEconomicsEnvelope(input.economics)) return refusal("MALFORMED_INPUT", "handoff input is not canonical");
     if (input.council.kind === "REFUSAL") return refusal("COUNCIL_REFUSED", input.council.message);
     if (input.council.kind !== "THESIS" || !frozenTree(input.council) || input.economics.evidenceHash !== input.council.thesis.reasoning.evidenceBundleHash) return refusal("IDENTITY_MISMATCH", "economics evidence hash is not bound to the council thesis");
     const thesis = input.council.thesis;
     if (input.economics.observedAt < thesis.createdAt || input.economics.receivedAt > input.now || input.economics.receivedAt < input.economics.observedAt || input.now >= thesis.expiresAt) return refusal("STALE_ECONOMICS", "economics evidence is stale or outside thesis validity");
     if (input.economics.result.kind !== "ASSESSMENT" || input.economics.result.side !== thesis.side) return refusal("UNTRUSTED_ECONOMICS", "economics assessment is not bound to thesis direction");
-    return freeze({ kind: "PROPOSAL" as const, workflowId: input.workflowId, thesis, economics: input.economics });
+    return freeze({ kind: "PROPOSAL" as const, workflowId: input.workflowId, thesis, compilerPolicy: snapshotPolicy(input.compilerPolicy), anchor: snapshotAnchor(input.anchor), economics: input.economics });
   } catch { return refusal("MALFORMED_INPUT", "handoff input is malformed"); }
 }
 
@@ -149,6 +170,7 @@ export function compileCouncilHandoff(proposal: CouncilHandoff, request: Compile
     if (proposal.kind !== "PROPOSAL" || !validCompileRequest(request)) return refusal("COMPILER_REFUSED", "compile request is not canonical");
     if (request.approve !== true) return Object.freeze({ kind: "APPROVAL_REQUIRED", workflowId: proposal.workflowId, thesisId: proposal.thesis.thesisId, message: "explicit caller approval is required before mandate compilation" });
     if (request.workflowId !== proposal.workflowId) return refusal("IDENTITY_MISMATCH", "workflow identity does not match proposal");
+    if (!sameData(request.policy, proposal.compilerPolicy) || !sameData(request.anchor, proposal.anchor)) return refusal("IDENTITY_MISMATCH", "compiler policy or anchor does not match proposal binding");
     const mandate = compileMandate({ workflowId: request.workflowId }, proposal.thesis, request.policy, request.anchor, request.now);
     return freeze({ kind: "MANDATE_COMPILED" as const, workflowId: request.workflowId, thesis: proposal.thesis, mandate });
   } catch { return refusal("COMPILER_REFUSED", "explicit mandate compilation refused"); }

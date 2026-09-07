@@ -100,7 +100,7 @@ The exported domain types must represent the canonical `TradeThesis`, `Execution
 - Explicit compiler negative tests cover provenance, expiry shape, entry authority, negative ceilings, and caller mutation isolation.
 - Remediation RED — focused compiler run failed 3 new assertions: negative state version, numeric thesis hash, and negative timestamps.
 - Remediation GREEN — focused compiler run passed 9/9 tests after minimal validation changes.
-- Full-suite and build receipts for this candidate are recorded below; evidence ceiling remains `LOCAL_PASS` and integration is pending.
+- Full-suite and build receipts for this candidate are recorded below; evidence ceiling remains `LOCAL_PASS`. The candidate is now integrated at canonical HEAD `535a967d8d1a109a92bcf58f2174616137205284`; the current kernel remediation remains pending independent review.
 
 ## review_verdict
 

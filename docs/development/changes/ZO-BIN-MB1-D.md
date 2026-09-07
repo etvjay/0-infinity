@@ -37,9 +37,7 @@ This remediation adds focused RED/GREEN coverage and closes each listed evaluato
 - `npm run build` — PASS.
 - `git diff --check` — PASS.
 
-Current kernel review status: pending independent review.
-
-Proof ceiling remains `LOCAL_PASS`; no Binance, exchange, Ground Truth, or production-readiness claim is made.
+- Current integrated verification at canonical HEAD `535a967d8d1a109a92bcf58f2174616137205284`: `npm test` — PASS: 294 tests, 0 failures; focused evaluator — PASS: 29 tests, 0 failures; integrated E — PASS: 10 tests, 0 failures. Current kernel review remains pending.
 
 ## Remaining contract decisions / risks
 

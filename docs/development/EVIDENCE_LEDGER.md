@@ -28,6 +28,7 @@ Current:
 | Binance account state | UNVERIFIED |
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
+| M-B5 local OrderWriter + reconciliation | LOCAL_PASS — focused execution `3/3`, full `403/403`, check/build/diff-check PASS; local/replay adapter and injected persistence/failure hooks only |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
 
@@ -103,3 +104,9 @@ M-B4 proof receipt:
 - status: `PROVISIONAL_LOCAL_PASS`; remediation code head: `8335040183cf4d01e1c1765c9de9267f707a4c5f`; bounded council-to-workflow handoff candidate; default immutable `PROPOSAL`/typed refusal; immutable compiler policy/anchor binding, exact `approve === true`, explicit immutable Array.prototype key/descriptor allowlist independent of import-time snapshots, complete frozen economics trees, and deeply immutable replay state boundaries yield `MANDATE_COMPILED`/`EVALUATED_INTENT` or refusal. Focused handoff `15/15`, focused economics `15/15`, focused reasoning `12/12`; full suite `400/400`; check/build/diff-check PASS; exact-head independent review pending.
 - objective: deterministic local/replay council handoff consuming supplied compiler policy/anchor/time and M-B3 economics evidence with identity/hash/freshness binding; no auto-authority and no execution side effects.
 - evidence ceiling: `LOCAL_PASS` only; no live, production, profitability, exchange, network, MCP, or credential claim.
+
+M-B5 proof receipt:
+
+- objective: bounded local/replay OrderWriter around existing mandate consumption plus explicit submission/reconciliation outcomes.
+- receipt: deterministic IDs, frozen intent/receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, monotonic duplicate-safe fills, cumulative quantity/VWAP, and writer-owned cancel.
+- evidence ceiling: `LOCAL_PASS` only; no live, testnet, production durability, exchange write, network, MCP, or credential claim.

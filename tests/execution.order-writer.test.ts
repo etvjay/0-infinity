@@ -284,6 +284,22 @@ test("canonical frozen receipt arrays reject Array.prototype pollution", async (
   } finally { delete (Array.prototype as any).pollutedReceiptKey; }
 });
 
+test("canonical receipt arrays reject replacement of an allowlisted Array.prototype method", async () => {
+  const persistence = new MemoryOrderPersistence();
+  const writer = new OrderWriter(store(), persistence, adapter());
+  const receipt = await writer.submit(intent, 20);
+  const persisted = persistence.replay()[0];
+  const prior = Object.getOwnPropertyDescriptor(Array.prototype, "at");
+  try {
+    Object.defineProperty(Array.prototype, "at", { ...prior, value: function at() { return 0; } });
+    const poisoned = { load: () => Object.freeze({ ...persisted, fillEventIds: Object.freeze([]), events: Object.freeze([]) }), save: async () => undefined } as any;
+    const poisonedWriter = new OrderWriter(store(), poisoned, adapter());
+    await assert.rejects(() => poisonedWriter.submit(intent, 20), /persisted receipt/);
+  } finally {
+    if (prior) Object.defineProperty(Array.prototype, "at", prior);
+  }
+});
+
 test("receipt validation is independent of Array.prototype state at module import", () => {
   const source = `
     Object.defineProperty(Array.prototype, "preImportReceiptPollution", { value: true, configurable: true });

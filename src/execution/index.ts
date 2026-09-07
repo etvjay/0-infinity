@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { runInNewContext } from "node:vm";
 import type { ExecutionIntent } from "../evaluator/index.js";
 import type { MandateStore } from "../store/index.js";
 
@@ -37,6 +38,54 @@ const ADAPTER_RESULT_KEYS = ["kind", "message"] as const;
 const CANONICAL_ARRAY_PROTO_KEYS = new Set<PropertyKey>([
   "length", "constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex", "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf", "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce", "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toLocaleString", "toString", Symbol.iterator, Symbol.unscopables,
 ]);
+type ArrayProtoDescriptorSpec = { enumerable: boolean; configurable: boolean; writable?: boolean; valueType: string; primitiveValue?: unknown; source?: string };
+const CANONICAL_ARRAY_PROTO_SPECS = runInNewContext(`(() => {
+  const proto = Array.prototype;
+  const toSource = Function.prototype.toString;
+  return Object.fromEntries(Reflect.ownKeys(proto).filter((key) => typeof key === "string").map((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+    return [key, {
+      enumerable: descriptor.enumerable,
+      configurable: descriptor.configurable,
+      writable: "writable" in descriptor ? descriptor.writable : undefined,
+      valueType: typeof descriptor.value,
+      primitiveValue: descriptor.value !== null && (typeof descriptor.value !== "object" && typeof descriptor.value !== "function") ? descriptor.value : undefined,
+      source: typeof descriptor.value === "function" ? toSource.call(descriptor.value) : undefined,
+    }];
+  }));
+})()`) as Record<string, ArrayProtoDescriptorSpec>;
+const CANONICAL_ARRAY_PROTO_SYMBOL_SPECS = runInNewContext(`(() => {
+  const proto = Array.prototype;
+  const toSource = Function.prototype.toString;
+  return Object.fromEntries(Reflect.ownKeys(proto).filter((key) => typeof key === "symbol").map((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+    return [key.description, {
+      enumerable: descriptor.enumerable,
+      configurable: descriptor.configurable,
+      writable: "writable" in descriptor ? descriptor.writable : undefined,
+      valueType: typeof descriptor.value,
+      source: typeof descriptor.value === "function" ? toSource.call(descriptor.value) : undefined,
+    }];
+  }));
+})()`) as Record<string, ArrayProtoDescriptorSpec>;
+function canonicalArrayPrototype(): boolean {
+  const actualKeys = Reflect.ownKeys(Array.prototype);
+  if (actualKeys.length !== CANONICAL_ARRAY_PROTO_KEYS.size || actualKeys.some((key) => !CANONICAL_ARRAY_PROTO_KEYS.has(key))) return false;
+  for (const key of actualKeys) {
+    if (typeof key !== "string") {
+      const expected = CANONICAL_ARRAY_PROTO_SYMBOL_SPECS[key.description ?? ""];
+      const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, key);
+      if (!expected || !descriptor || !("value" in descriptor) || descriptor.enumerable !== expected.enumerable || descriptor.configurable !== expected.configurable || descriptor.writable !== expected.writable || typeof descriptor.value !== expected.valueType || (expected.source !== undefined && Function.prototype.toString.call(descriptor.value) !== expected.source)) return false;
+      continue;
+    }
+    const expected = CANONICAL_ARRAY_PROTO_SPECS[key];
+    const actual = Object.getOwnPropertyDescriptor(Array.prototype, key);
+    if (!expected || !actual || !("value" in actual) || actual.enumerable !== expected.enumerable || actual.configurable !== expected.configurable || actual.writable !== expected.writable || typeof actual.value !== expected.valueType) return false;
+    if (expected.primitiveValue !== undefined && actual.value !== expected.primitiveValue) return false;
+    if (expected.source !== undefined && Function.prototype.toString.call(actual.value) !== expected.source) return false;
+  }
+  return true;
+}
 function canonicalOwnData(value: object, allowed: readonly string[], required: readonly string[]): boolean {
   if (Object.getPrototypeOf(value) !== Object.prototype) return false;
   const keys = Reflect.ownKeys(value);
@@ -49,7 +98,7 @@ function canonicalOwnData(value: object, allowed: readonly string[], required: r
 }
 function canonicalFrozenStringArray(value: unknown): value is readonly string[] {
   if (!Array.isArray(value) || !Object.isFrozen(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
-  if (Reflect.ownKeys(Array.prototype).some((key) => !CANONICAL_ARRAY_PROTO_KEYS.has(key))) return false;
+  if (!canonicalArrayPrototype()) return false;
   const keys = Reflect.ownKeys(value);
   if (keys.some((key) => key !== "length" && (typeof key !== "string" || !/^\d+$/.test(key)))) return false;
   if (keys.filter((key) => key !== "length").length !== value.length) return false;

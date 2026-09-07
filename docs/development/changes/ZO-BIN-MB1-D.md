@@ -4,7 +4,7 @@ Branch target: `agent/mb1-evaluator`.
 
 ## Status
 
-`REVIEWED / APPROVE_WITH_REQUIRED_FOLLOWUPS` — independent review found no execution-logic defect, but `safe_to_integrate: false` because the midpoint-relative spread basis and explicit same-stream anchor-lag policy affect authorization and require canonical domain/product ratification before integration. Add independent observedAt/receivedAt freshness boundary cases before closeout.
+`REVIEWED / APPROVED` — final independent review found no execution-logic defect. The previously required ratification follow-up is closed by Jason’s explicit decisions: midpoint-relative spread and same-stream market-anchor version policy.
 
 This remediation adds focused RED/GREEN coverage and closes each listed evaluator finding without changing the authority store, runtime transition implementation, or external integrations.
 
@@ -43,7 +43,7 @@ Proof ceiling remains `LOCAL_PASS`; no Binance, exchange, Ground Truth, or produ
 
 ## Remaining contract decisions / risks
 
-- The explicit same-stream lag policy and midpoint-relative spread convention are local M-B1-D conventions and require canonical domain/product ratification before they can be treated as broader protocol policy.
-- Trigger semantics are now canonical and tested locally, but downstream product owners must preserve the `ABOVE >= maxPrice` / `BELOW <= minPrice` interpretation when compiling mandates.
+- The same-stream lag policy and midpoint-relative spread convention are ratified local M-B1-D conventions; they do not establish broader production readiness.
+- Trigger semantics are canonical and tested locally; downstream product owners must preserve `ABOVE >= maxPrice` / `BELOW <= minPrice` when compiling mandates.
 - Runtime transition timestamp monotonicity and reason semantics are enforced by evaluator input validation; the runtime transition API itself still documents caller-provided timestamps and remains unchanged.
 - Live adapters and OrderWriter remain later milestones; this evaluator does not submit orders or make network calls.

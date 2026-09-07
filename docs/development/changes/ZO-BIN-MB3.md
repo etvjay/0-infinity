@@ -20,12 +20,13 @@
 
 ## TDD and verification receipts
 
-- RED: initial focused economics suite failed before implementation (`tsc: Cannot find module ../src/economics/index.js`); post-implementation assertion failures exposed incorrect test expectations for VWAP/cost, then were corrected.
-- GREEN: focused `node --test dist/tests/economics.test.js` — `7/7 PASS`.
-- full suite: `npm test` — `365/365 PASS`.
+- RED: initial focused economics suite failed before implementation (`tsc: Cannot find module ../src/economics/index.js`); the hostile non-enumerable/symbol regression failed before the complete key enumeration fix (`ASSESSMENT` instead of `REFUSAL`).
+- GREEN: focused `node --test dist/tests/economics.test.js` — `10/10 PASS`.
+- full suite: `npm test` — `368/368 PASS`.
 - typecheck: `npm run check` — PASS.
 - build: `npm run build` — PASS.
 - diff check: `git diff --check` — PASS.
+- review status: `LOCAL_PASS`; no live or external evidence claimed.
 
 ## exclusions and unresolved external evidence
 

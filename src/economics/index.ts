@@ -100,9 +100,15 @@ function shape(value: unknown, allowed: readonly string[], required: readonly st
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const object = value as object;
   const allowedKeys = new Set(allowed);
-  for (const key of Object.keys(object)) if (!allowedKeys.has(key)) return false;
+  for (const key of Reflect.ownKeys(object)) {
+    if (typeof key !== "string" || !allowedKeys.has(key)) return false;
+    const descriptor = Object.getOwnPropertyDescriptor(object, key);
+    if (!descriptor || !("value" in descriptor)) return false;
+  }
   for (let prototype = Object.getPrototypeOf(object); prototype && prototype !== Object.prototype; prototype = Object.getPrototypeOf(prototype)) {
-    for (const key of Object.keys(prototype)) if (!allowedKeys.has(key) || !own(object, key)) return false;
+    for (const key of Reflect.ownKeys(prototype)) {
+      if (typeof key !== "string" || !allowedKeys.has(key) || !own(object, key)) return false;
+    }
   }
   return required.every((key) => own(object, key));
 }

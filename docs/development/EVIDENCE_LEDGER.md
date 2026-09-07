@@ -88,3 +88,12 @@ M-B2-H proof receipt:
 - typecheck/build/diff_check: `PASS`.
 - classification: `PRIVATE_ACCOUNT_LIVE_READ=BLOCKED_EXTERNAL`.
 - evidence exclusions: no Binance authentication, private transport, listenKey, account-stream continuity, MCP operation, credentials, exchange writes, or production readiness.
+
+M-B3 proof receipt:
+
+- status: `LOCAL_PASS`.
+- objective: deterministic execution economics with complete key-shape validation across top-level input, fee, policy, funding, order book, and book-level boundaries; own and inherited non-enumerable and symbol keys are rejected, while allowed canonical fields remain own data properties.
+- tests: focused economics `10/10`, full suite `368/368`.
+- typecheck/build/diff_check: `PASS`.
+- review status: local remediation complete; no independent approval or live evidence claimed.
+- evidence exclusions: no network, credentials, MCP, exchange read/write, mandate authority operation, order submission, cancellation, live execution, production readiness, or profitability claim.

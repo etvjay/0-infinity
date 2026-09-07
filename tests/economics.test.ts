@@ -145,4 +145,27 @@ test("rejects inherited fields at every economics input boundary", () => {
     assert.equal(result.kind, "REFUSAL");
     if (result.kind === "REFUSAL") assert.equal(result.code, "MALFORMED_INPUT");
   }
+  const symbol = Symbol("unsupported");
+  const hostile = (value: object, inherited: boolean, symbolKey: boolean) => {
+    const target = inherited ? Object.create({}) : {};
+    Object.assign(target, value);
+    const key: string | symbol = symbolKey ? symbol : "unsupported";
+    Object.defineProperty(inherited ? Object.getPrototypeOf(target) : target, key, { value: true, enumerable: false });
+    return Object.freeze(target);
+  };
+  const hostileCases: ExecutionEconomicsInput[] = [];
+  for (const inherited of [false, true]) for (const symbolKey of [false, true]) {
+    hostileCases.push(hostile(base, inherited, symbolKey) as ExecutionEconomicsInput);
+    hostileCases.push({ ...base, fee: hostile(base.fee, inherited, symbolKey) as ExecutionEconomicsInput["fee"] });
+    hostileCases.push({ ...base, policy: hostile(policy, inherited, symbolKey) as EconomicPolicy });
+    hostileCases.push({ ...base, funding: hostile(base.funding, inherited, symbolKey) as ExecutionEconomicsInput["funding"] });
+    hostileCases.push({ ...base, book: hostile(base.book, inherited, symbolKey) as UsdMFuturesOrderBookView });
+    const hostileLevel = hostile({ price: "101", quantity: "2" }, inherited, symbolKey);
+    hostileCases.push({ ...base, book: Object.freeze({ ...base.book, asks: Object.freeze([hostileLevel]) }) as UsdMFuturesOrderBookView });
+  }
+  for (const candidate of hostileCases) {
+    const result = assessExecutionEconomics(candidate);
+    assert.equal(result.kind, "REFUSAL");
+    if (result.kind === "REFUSAL") assert.equal(result.code, "MALFORMED_INPUT");
+  }
 });

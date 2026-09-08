@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { compileMandate, type TradeThesis, type CompilerPolicy } from "../src/domain/index.js";
 import { MandateStore, MemoryPersistence } from "../src/store/index.js";
 import { MemoryOrderPersistence, OrderWriter, type ExchangeAdapter } from "../src/execution/index.js";
-import { RuntimeSupervisor, MemoryWorkflowPersistence, type WorkflowMarketState, type WorkflowAccountState } from "../src/runtime/index.js";
+import { RuntimeSupervisor, MemoryWorkflowPersistence, WORKFLOW_PERSISTENCE_CAS_CAPABILITY, type WorkflowMarketState, type WorkflowAccountState } from "../src/runtime/index.js";
 
 const thesis: TradeThesis = { thesisId: "t", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .9, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c" }, createdAt: 1_000, expiresAt: 61_000 };
 const policy: CompilerPolicy = { accountId: "acct", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 6, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_975, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
@@ -96,7 +97,7 @@ test("start blocks any existing forged, mutable, or structurally hostile record"
     () => { const r = { ...original }; (r as any).runtime = { ...original.runtime }; return Object.freeze(r); },
   ]) {
     const hostile = forge();
-    const persistence = { load: () => hostile, save: async () => {}, compareAndSave: async () => {} };
+    const persistence = { load: () => hostile, save: async () => {}, compareAndSave: async () => {}, [WORKFLOW_PERSISTENCE_CAS_CAPABILITY]: true };
     const supervisor = new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence, clock: () => 2_600 });
     await assert.rejects(() => supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" }), /RECOVERY_BLOCKED/);
   }
@@ -125,5 +126,47 @@ test("serial cleanup removes each completed workflow tail token", async () => {
 
 test("custom persistence must explicitly implement compare-and-save CAS", () => {
   const x = setup();
-  assert.throws(() => new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence: { load: () => undefined, save: async () => {} }, clock: () => 2_600 } as any), /compareAndSave/);
+  assert.throws(() => new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence: { load: () => undefined, save: async () => {} }, clock: () => 2_600 } as any), /CAS/);
+});
+
+test("silently ignoring compare-and-save is rejected by the capability contract", () => {
+  const x = setup();
+  const persistence = { load: () => undefined, save: async () => {}, compareAndSave: async () => {} };
+  assert.throws(() => new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence, clock: () => 2_600 } as any), /CAS/);
+  const supported = { ...persistence, [WORKFLOW_PERSISTENCE_CAS_CAPABILITY]: true };
+  assert.doesNotThrow(() => new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence: supported, clock: () => 2_600 } as any));
+});
+
+test("unknown receipts reject invalid outcomes and incoherent optional fields", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  const original = ((x.supervisor as any).persistence as MemoryWorkflowPersistence).load("wf")!;
+  const bad = [
+    { orderOutcome: "EVIL", clientOrderId: "mb5-" + "a".repeat(48) },
+    { orderOutcome: "UNKNOWN", clientOrderId: "evil" },
+    { orderOutcome: "UNKNOWN", clientOrderId: "mb5-" + "a".repeat(48), refusalCode: "bad" },
+    { recoveryStatus: "RECONCILED" },
+  ];
+  for (const fields of bad) {
+    const persistence = { load: () => Object.freeze({ ...original, status: "UNKNOWN", runtime: Object.freeze({ ...original.runtime, state: "UNKNOWN" }), ...fields }), save: async () => {}, compareAndSave: async () => {}, [WORKFLOW_PERSISTENCE_CAS_CAPABILITY]: true } as any;
+    const supervisor = new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence, clock: () => 2_600 });
+    await assert.rejects(() => supervisor.restore("wf"), /RECOVERY_BLOCKED/);
+  }
+});
+
+test("persistence boundary rejects impossible market envelopes", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  const impossible = deepFreeze({ ...market, value: { ...market.value, bidPrice: 100, askPrice: 99, markPrice: 110 } });
+  await assert.rejects(() => x.supervisor.start({ workflowId: "wf", mandate, market: impossible, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" }), /invalid workflow binding/);
+});
+
+test("fresh process rejects Object and Array pollution before supervisor import", () => {
+  const moduleUrl = new URL("../src/evaluator/index.js", import.meta.url).href;
+  const script = `
+    Object.defineProperty(Object.prototype, "evil", { value: true, configurable: true });
+    Object.defineProperty(Array.prototype, "evil", { value: true, configurable: true });
+    const { isCanonicalFrozenObject, isCanonicalFrozenArray } = await import(${JSON.stringify(moduleUrl)});
+    if (isCanonicalFrozenObject(Object.freeze({ ok: 1 }), ["ok"]) || isCanonicalFrozenArray(Object.freeze([1]))) process.exit(1);
+  `;
+  execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd() });
 });

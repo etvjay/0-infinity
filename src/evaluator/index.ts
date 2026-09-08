@@ -1,3 +1,4 @@
+import { runInNewContext } from "node:vm";
 import type { ExecutionMandate, Instrument, Side, Venue } from "../domain/index.js";
 import { MANDATE_STATES, isLegalTransition, type MandateState } from "../runtime/mandateState.js";
 import type { MandateRuntime } from "../runtime/mandateRuntime.js";
@@ -18,8 +19,29 @@ const nonNegative = (v: unknown): v is number => finite(v) && v >= 0;
 const text = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 const MAX_AGE = Number.MAX_SAFE_INTEGER;
 
+type PrototypeContract = { keys: readonly PropertyKey[]; descriptors: Record<string, { enumerable: boolean; configurable: boolean; writable?: boolean; type: string; source?: string }> };
+function pristinePrototypeContracts(): { object: PrototypeContract; array: PrototypeContract } {
+  return runInNewContext(`(() => {
+    const describe = (p) => ({ keys: Reflect.ownKeys(p), descriptors: Object.fromEntries(Reflect.ownKeys(p).map((k) => {
+      const d = Object.getOwnPropertyDescriptor(p, k); const v = d.value;
+      return [typeof k === "symbol" ? "symbol:" + (k.description ?? "") : k, { enumerable: d.enumerable, configurable: d.configurable, writable: "writable" in d ? d.writable : undefined, type: "value" in d ? typeof v : "accessor", source: typeof v === "function" ? Function.prototype.toString.call(v) : undefined }];
+    })) });
+    return { object: describe(Object.prototype), array: describe(Array.prototype) };
+  })()`) as { object: PrototypeContract; array: PrototypeContract };
+}
+function pristinePrototype(p: object, contract: PrototypeContract): boolean {
+  const keys = Reflect.ownKeys(p); if (keys.length !== contract.keys.length || keys.some((k) => !contract.keys.some((expected) => (typeof k === "symbol" && typeof expected === "symbol") ? k.description === expected.description : k === expected))) return false;
+  return keys.every((key) => {
+    const name = typeof key === "symbol" ? "symbol:" + (key.description ?? "") : key;
+    const expected = contract.descriptors[name]; const actual = Object.getOwnPropertyDescriptor(p, key);
+    if (!expected || !actual || actual.enumerable !== expected.enumerable || actual.configurable !== expected.configurable || ("writable" in actual ? actual.writable : undefined) !== expected.writable || ("value" in actual ? typeof actual.value : "accessor") !== expected.type) return false;
+    return expected.source === undefined || ("value" in actual && typeof actual.value === "function" && Function.prototype.toString.call(actual.value) === expected.source);
+  });
+}
+function pristineIntrinsics(): boolean { const c = pristinePrototypeContracts(); return pristinePrototype(Object.prototype, c.object) && pristinePrototype(Array.prototype, c.array); }
+
 export function isCanonicalFrozenObject(value: unknown, keys: readonly string[], optional: readonly string[] = []): value is Record<string, unknown> {
-  if (!object(value) || Object.getPrototypeOf(value) !== Object.prototype || !Object.isFrozen(value)) return false;
+  if (!pristineIntrinsics() || !object(value) || Object.getPrototypeOf(value) !== Object.prototype || !Object.isFrozen(value)) return false;
   const allowed = new Set([...keys, ...optional]);
   const own = Reflect.ownKeys(value);
   if (own.some((key) => typeof key !== "string" || !allowed.has(key)) || keys.some((key) => !own.includes(key))) return false;
@@ -30,7 +52,7 @@ export function isCanonicalFrozenObject(value: unknown, keys: readonly string[],
 }
 
 export function isCanonicalFrozenArray(value: unknown): value is readonly unknown[] {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !Object.isFrozen(value)) return false;
+  if (!pristineIntrinsics() || !Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !Object.isFrozen(value)) return false;
   const own = Reflect.ownKeys(value);
   if (own.length !== value.length + 1 || !own.includes("length")) return false;
   const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");

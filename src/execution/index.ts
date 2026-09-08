@@ -68,6 +68,20 @@ const CANONICAL_ARRAY_PROTO_SYMBOL_SPECS = runInNewContext(`(() => {
     }];
   }));
 })()`) as Record<string, ArrayProtoDescriptorSpec>;
+const CANONICAL_OBJECT_PROTO = runInNewContext(`(() => {
+  const p = Object.prototype; const s = Function.prototype.toString;
+  return Reflect.ownKeys(p).map((k) => { const d = Object.getOwnPropertyDescriptor(p, k); return [typeof k === "symbol" ? "symbol:" + (k.description ?? "") : k, d.enumerable, d.configurable, "writable" in d ? d.writable : undefined, "value" in d ? typeof d.value : "accessor", typeof d.value === "function" ? s.call(d.value) : undefined]; });
+})()`) as readonly [string, boolean, boolean, boolean | undefined, string, string | undefined][];
+function canonicalObjectPrototype(): boolean {
+  const actual = Reflect.ownKeys(Object.prototype);
+  if (actual.length !== CANONICAL_OBJECT_PROTO.length) return false;
+  return CANONICAL_OBJECT_PROTO.every(([name, enumerable, configurable, writable, type, source]) => {
+    const key = name.startsWith("symbol:") ? actual.find((k) => typeof k === "symbol" && "symbol:" + (k.description ?? "") === name) : name;
+    if (key === undefined) return false;
+    const d = Object.getOwnPropertyDescriptor(Object.prototype, key);
+    return !!d && d.enumerable === enumerable && d.configurable === configurable && ("writable" in d ? d.writable : undefined) === writable && ("value" in d ? typeof d.value : "accessor") === type && (source === undefined || ("value" in d && typeof d.value === "function" && Function.prototype.toString.call(d.value) === source));
+  });
+}
 function canonicalArrayPrototype(): boolean {
   const actualKeys = Reflect.ownKeys(Array.prototype);
   if (actualKeys.length !== CANONICAL_ARRAY_PROTO_KEYS.size || actualKeys.some((key) => !CANONICAL_ARRAY_PROTO_KEYS.has(key))) return false;
@@ -87,7 +101,7 @@ function canonicalArrayPrototype(): boolean {
   return true;
 }
 function canonicalOwnData(value: object, allowed: readonly string[], required: readonly string[]): boolean {
-  if (Object.getPrototypeOf(value) !== Object.prototype) return false;
+  if (!canonicalObjectPrototype() || Object.getPrototypeOf(value) !== Object.prototype) return false;
   const keys = Reflect.ownKeys(value);
   if (keys.some((key) => typeof key !== "string" || !allowed.includes(key))) return false;
   for (const key of keys) {

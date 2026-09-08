@@ -10,49 +10,18 @@
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
-  <a class="wordmark" href="#/" aria-label="0 Infinity home">0∞</a>
+  <a class="wordmark" href="/0-infinity/" aria-label="0 Infinity home">0∞</a>
   <nav aria-label="Primary navigation">
-    <a href="#/app/demo" data-route="demo">Demo</a>
-    <a href="#/app/integrate" data-route="integrate">Integrate</a>
-    <a href="#/app/try" data-route="try">Try</a>
+    <a href="/0-infinity/app/demo/" data-route="demo">Demo</a>
+    <a href="/0-infinity/app/integrate/" data-route="integrate">Integrate</a>
+    <a href="/0-infinity/app/try/" data-route="try">Try</a>
   </nav>
 </header>
 <main id="main">
-  <section id="landing" class="view landing surface" aria-labelledby="hero-title">
-    <div class="hero-copy">
-      <p class="kicker">0∞ / DECISION INFRASTRUCTURE</p>
-      <h1 id="hero-title">Evidence before action.</h1>
-      <p class="lede">Turn a market hypothesis into a bounded, inspectable decision. Reasoning, authority, and execution stay separate.</p>
-      <div class="actions"><a class="button primary" href="#/app/demo">Open app <span>↗</span></a><a class="button" href="#/app/integrate">Integrate 0∞ <span>↗</span></a></div>
-    </div>
-    <div class="architecture" aria-label="0 Infinity architecture">
-      <div class="arch-node"><span>01</span><b>MARKET</b><small>external reference</small></div><div class="arch-line"></div>
-      <div class="arch-node"><span>02</span><b>HYPOTHESIS</b><small>your probability</small></div><div class="arch-line"></div>
-      <div class="arch-node"><span>03</span><b>COMMITMENT</b><small>immutable intent</small></div><div class="arch-line"></div>
-      <div class="arch-node accent"><span>04</span><b>POLICY</b><small>bounded decision</small></div><div class="arch-line"></div>
-      <div class="arch-node"><span>05</span><b>EVIDENCE</b><small>what happened</small></div>
-    </div>
-  </section>
-
-  <section id="app" class="view app-view" hidden aria-labelledby="app-title">
+  <section id="app" class="view app-view" aria-labelledby="app-title">
     <div class="app-heading"><div><p class="kicker">0∞ / OPEN APP</p><h2 id="app-title">A bounded surface for a consequential choice.</h2></div><span id="route-state" class="route-state">DEMO / READ-ONLY</span></div>
-    <nav class="app-nav" aria-label="App navigation"><a href="#/app/demo" data-route="demo">Demo</a><a href="#/app/integrate" data-route="integrate">Integrate</a><a href="#/app/try" data-route="try">Try</a></nav>
-
-    <section id="demo-panel" class="app-panel" aria-labelledby="demo-title">
-      <div class="section-intro"><p class="kicker">DEMO / CANONICAL CONSTRUCT</p><h3 id="demo-title">Fourteen states. One fail-closed boundary.</h3><p class="muted">A read-only map of the canonical mandate runtime. It shows the actual state vocabulary and legal flow; no workflow is created and no execution value is invented.</p></div>
-      <div class="demo-meta"><span class="status neutral">READ-ONLY</span><span>source: <code>src/runtime/mandateState.ts</code></span><span>private reasoning: not displayed</span></div>
-      <div id="stage-grid" class="stage-grid" aria-label="14-stage canonical construct"></div>
-      <details class="artifact-details"><summary>Canonical artifact boundaries</summary><div class="artifact-copy"><p><b>Visible artifacts:</b> state, transition, terminality, and bounded result references returned by the service.</p><p><b>Not visible:</b> private chain-of-thought, credentials, exchange writes, or fabricated receipt values.</p><p><b>Proof:</b> the construct is an inspectable representation of the repository's canonical runtime states, not a live claim.</p></div></details>
-    </section>
-
-    <section id="integrate-panel" class="app-panel" aria-labelledby="integrate-title" hidden>
-      <div class="section-intro"><p class="kicker">INTEGRATE / EXISTING SURFACES</p><h3 id="integrate-title">Use the names already implemented.</h3><p class="muted">These examples map directly to the hosted REST, MCP, and SDK surfaces. Adapters are the role boundary; no fictional methods are shown.</p></div>
-      <div class="tabs" role="tablist" aria-label="Integration surfaces"><button class="tab active" role="tab" aria-selected="true" data-tab="mcp">MCP</button><button class="tab" role="tab" aria-selected="false" data-tab="rest">REST</button><button class="tab" role="tab" aria-selected="false" data-tab="sdk">SDK</button><button class="tab" role="tab" aria-selected="false" data-tab="adapters">Adapters</button></div>
-      <div class="code-panel"><div class="code-top"><span id="code-label">MCP / tools/list</span><button type="button" class="copy-button" id="copy-code">Copy</button></div><pre><code id="code-example"></code></pre></div>
-      <div class="integration-note"><p class="kicker">CAPABILITY TRUTH</p><div class="truth-grid"><span><b>SHADOW</b> no-write</span><span><b>PAPER_LIVE</b> simulated</span><span><b>TESTNET</b> credentials required</span><span><b>LIVE</b> not authorized</span></div></div>
-    </section>
-
-    <section id="try-panel" class="app-panel" aria-labelledby="try-title" hidden>
+    <nav class="app-nav" aria-label="App navigation"><a href="/0-infinity/app/demo/" data-route="demo">Demo</a><a href="/0-infinity/app/integrate/" data-route="integrate">Integrate</a><a href="/0-infinity/app/try/" data-route="try">Try</a></nav>
+    <section id="try-panel" class="app-panel" aria-labelledby="try-title">
       <div class="section-intro"><p class="kicker">TRY / REAL REST CALLS</p><h3 id="try-title">Make one bounded decision.</h3><p class="muted">Choose SHADOW or PAPER, send the hypothesis to the configured service, and inspect only what it returns.</p></div>
       <div class="try-grid"><form id="demo-form" class="panel controls"><div class="field"><label for="symbol">MARKET</label><select id="symbol"><option>BTCUSDT</option></select></div><div class="field"><span class="label">HYPOTHESIS</span><div class="segmented"><button type="button" class="selected" aria-pressed="true" data-side="LONG">LONG</button><button type="button" aria-pressed="false" data-side="SHORT">SHORT</button></div></div><div class="field"><span class="label">AUTHORITY</span><div class="mode-buttons"><button type="button" class="mode selected" data-mode="SHADOW">SHADOW <small>no-write</small></button><button type="button" class="mode" data-mode="PAPER">PAPER <small>simulation</small></button><button type="button" class="mode disabled" disabled data-mode="TESTNET">TESTNET <small>credentials required</small></button></div></div><p class="locked-note">LIVE <b>NOT AUTHORIZED</b>. TESTNET is disabled until credentials and an authorized runtime are supplied.</p><button class="button primary run" id="run-demo" type="submit">Run SHADOW <span>→</span></button></form>
         <div class="panel sequence" aria-live="polite"><div class="sequence-head"><span class="label">RESULT SEQUENCE</span><span id="api-state" class="status neutral">NOT CONNECTED</span></div><ol id="result-sequence"><li class="current"><span>01</span><b>Ready</b><small>Choose a mode to call the configured service.</small></li><li><span>02</span><b>Reasoning</b><small>Awaiting bounded workflow.</small></li><li><span>03</span><b>Outcome</b><small>No result yet.</small></li></ol><div class="outcome" id="outcome"><span class="label">ACTUAL OUTCOME</span><strong>Nothing has run.</strong><p class="muted">No simulated result is shown before the API responds.</p></div><div class="economics"><span class="label">ECONOMICS</span><div><b id="edge-value">—</b><small>executable edge</small></div><div><b id="cost-value">—</b><small>costs</small></div><div><b id="threshold-value">—</b><small>required</small></div></div><section id="narrative" class="narrative" aria-label="Structured result details" hidden><p class="label">STRUCTURED RESULT DETAILS</p><p class="muted">Expandable views of returned artifacts only. No private chain-of-thought is displayed.</p><div id="narrative-details"></div></section><div class="result-links"><button type="button" class="text-button" id="receipt-link" disabled>Receipt ↗</button><button type="button" class="text-button" id="raw-link" disabled>Raw JSON ↗</button></div></div></div>

@@ -7,12 +7,18 @@ const root = process.cwd();
 const read = (name: string) => readFileSync(join(root, name), "utf8");
 
 test("public IA is landing plus exactly three app routes", () => {
-  for (const file of ["web/index.html", "web/404.html", "web/styles.css", "web/app.js", "docs/WEB_UI.md", ".github/workflows/pages.yml"]) assert.ok(existsSync(join(root, file)), file);
+  for (const file of ["web/index.html", "web/app/demo/index.html", "web/app/integrate/index.html", "web/app/try/index.html", "web/404.html", "web/styles.css", "web/app.js", "docs/WEB_UI.md", ".github/workflows/pages.yml"]) assert.ok(existsSync(join(root, file)), file);
   const html = read("web/index.html");
   const app = read("web/app.js");
-  assert.match(html, /href="#\/app\/demo"/);
-  assert.match(html, /href="#\/app\/integrate"/);
-  assert.match(html, /href="#\/app\/try"/);
+  assert.match(html, /href="\/0-infinity\/app\/demo\/"/);
+  assert.match(html, /href="\/0-infinity\/app\/integrate\/"/);
+  assert.match(html, /href="\/0-infinity\/app\/try\/"/);
+  assert.doesNotMatch(html, /id="app"|id="demo-panel"|id="integrate-panel"|id="try-panel"/);
+  for (const [route, heading] of [["demo", "demo-panel"], ["integrate", "integrate-panel"], ["try", "try-panel"]] as const) {
+    const page = read(`web/app/${route}/index.html`);
+    assert.match(page, new RegExp(`id="${heading}"`));
+    assert.doesNotMatch(page, /id="landing"|id="hero-title"/);
+  }
   assert.doesNotMatch(html, /Markets|Portfolio|Analytics|Bots|Strategies|Activity|Settings/);
   for (const label of ["ARMED", "TRIGGERED", "VALIDATING", "SUBMITTING", "ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "REFUSED", "INVALIDATED", "EXPIRED", "SUPERSEDED", "CANCELLED", "FAILED", "UNKNOWN"]) assert.match(app, new RegExp(label), label);
 });
@@ -26,7 +32,7 @@ test("static UI uses configurable API base and explicit demo opt-in", () => {
 });
 
 test("result narrative is expandable and never renders private reasoning fields", () => {
-  const html = read("web/index.html");
+  const html = read("web/app/try/index.html");
   const app = read("web/app.js");
   assert.match(html, /<details|narrative-details/);
   for (const banned of [/chainOfThought/i, /privateReasoning/i, /thoughtProcess/i]) {

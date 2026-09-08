@@ -1,9 +1,9 @@
 {
   "campaignId": "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1",
   "mode": "SHADOW",
-  "startingSha": "3372389a6608a5fc58866724bcbaf0a38faf0d8b",
-  "codeSha": "3372389a6608a5fc58866724bcbaf0a38faf0d8b",
-  "finalSha": "3372389a6608a5fc58866724bcbaf0a38faf0d8b",
+  "startingSha": "81fbeff09034582bd03ec197b7f6474121453dc6",
+  "codeSha": "81fbeff09034582bd03ec197b7f6474121453dc6",
+  "finalSha": "81fbeff09034582bd03ec197b7f6474121453dc6",
   "workflowCount": 20,
   "scenarios": [
     "approval-ack",
@@ -31,102 +31,322 @@
     {
       "workflowId": "mb7-01",
       "scenario": "approval-ack",
-      "status": "ACKNOWLEDGED"
+      "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-02",
       "scenario": "approval-partial",
-      "status": "PARTIALLY_FILLED"
+      "status": "PARTIALLY_FILLED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-03",
       "scenario": "approval-fill",
-      "status": "FILLED"
+      "status": "FILLED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-04",
       "scenario": "submission-reject",
-      "status": "FAILED"
+      "status": "FAILED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-05",
       "scenario": "unknown-recovery",
-      "status": "UNKNOWN"
+      "status": "UNKNOWN",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-06",
       "scenario": "council-refusal",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "council",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-07",
       "scenario": "stale-market",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-08",
       "scenario": "stale-account",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-09",
       "scenario": "cost-ceiling",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-10",
       "scenario": "risk-limit",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-11",
       "scenario": "revoked-authority",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-12",
       "scenario": "superseded-authority",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-13",
       "scenario": "expiry",
-      "status": "REFUSED"
+      "status": "EXPIRED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-14",
       "scenario": "duplicate-trigger-event-suppression",
-      "status": "ACKNOWLEDGED"
+      "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-15",
       "scenario": "duplicate-order-events",
-      "status": "FILLED"
+      "status": "FILLED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-16",
       "scenario": "out-of-order-terminal-refusal",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-17",
       "scenario": "restart-restore",
-      "status": "ACKNOWLEDGED"
+      "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-18",
       "scenario": "unknown-recovery-order-absent",
-      "status": "RECOVERY_BLOCKED"
+      "status": "RECOVERY_BLOCKED",
+      "provenance": {
+        "stage": "recovery",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-19",
       "scenario": "contradictory-authority",
-      "status": "REFUSED"
+      "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     },
     {
       "workflowId": "mb7-20",
       "scenario": "symbol-isolation",
-      "status": "ACKNOWLEDGED"
+      "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      }
     }
   ],
   "receipts": [
@@ -135,6 +355,17 @@
       "workflowId": "mb7-01",
       "scenario": "approval-ack",
       "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "orderOutcome": "ACKNOWLEDGED"
     },
     {
@@ -142,6 +373,17 @@
       "workflowId": "mb7-02",
       "scenario": "approval-partial",
       "status": "PARTIALLY_FILLED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "orderOutcome": "PARTIALLY_FILLED"
     },
     {
@@ -149,6 +391,17 @@
       "workflowId": "mb7-03",
       "scenario": "approval-fill",
       "status": "FILLED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "orderOutcome": "FILLED"
     },
     {
@@ -156,6 +409,17 @@
       "workflowId": "mb7-04",
       "scenario": "submission-reject",
       "status": "FAILED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "orderOutcome": "REJECTED"
     },
     {
@@ -163,6 +427,17 @@
       "workflowId": "mb7-05",
       "scenario": "unknown-recovery",
       "status": "UNKNOWN",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "orderOutcome": "ACKNOWLEDGED",
       "recoveryStatus": "RECONCILED"
     },
@@ -171,13 +446,36 @@
       "workflowId": "mb7-06",
       "scenario": "council-refusal",
       "status": "REFUSED",
-      "refusalCode": "EXECUTABLE_EDGE_TOO_LOW"
+      "provenance": {
+        "stage": "council",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
+      "refusalCode": "THRESHOLD_NOT_MET",
+      "refusalMessage": "council thresholds are not met"
     },
     {
       "receiptId": "receipt-mb7-07",
       "workflowId": "mb7-07",
       "scenario": "stale-market",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "refusalCode": "MARKET_STATE_STALE"
     },
     {
@@ -185,6 +483,17 @@
       "workflowId": "mb7-08",
       "scenario": "stale-account",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "refusalCode": "ACCOUNT_STATE_STALE"
     },
     {
@@ -192,6 +501,17 @@
       "workflowId": "mb7-09",
       "scenario": "cost-ceiling",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "refusalCode": "COST_CEILING"
     },
     {
@@ -199,6 +519,17 @@
       "workflowId": "mb7-10",
       "scenario": "risk-limit",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "refusalCode": "RISK_LIMIT"
     },
     {
@@ -206,6 +537,17 @@
       "workflowId": "mb7-11",
       "scenario": "revoked-authority",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "refusalCode": "AUTHORITY_STATUS"
     },
     {
@@ -213,13 +555,35 @@
       "workflowId": "mb7-12",
       "scenario": "superseded-authority",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "refusalCode": "AUTHORITY_STATUS"
     },
     {
       "receiptId": "receipt-mb7-13",
       "workflowId": "mb7-13",
       "scenario": "expiry",
-      "status": "REFUSED",
+      "status": "EXPIRED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "refusalCode": "MANDATE_EXPIRED"
     },
     {
@@ -227,6 +591,17 @@
       "workflowId": "mb7-14",
       "scenario": "duplicate-trigger-event-suppression",
       "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "versionBefore": 1,
       "versionAfter": 1,
       "unchanged": true
@@ -236,6 +611,17 @@
       "workflowId": "mb7-15",
       "scenario": "duplicate-order-events",
       "status": "FILLED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "unchanged": true
     },
     {
@@ -243,6 +629,17 @@
       "workflowId": "mb7-16",
       "scenario": "out-of-order-terminal-refusal",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "prevented": true
     },
     {
@@ -250,6 +647,17 @@
       "workflowId": "mb7-17",
       "scenario": "restart-restore",
       "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "restoredVersion": 1
     },
     {
@@ -257,13 +665,39 @@
       "workflowId": "mb7-18",
       "scenario": "unknown-recovery-order-absent",
       "status": "RECOVERY_BLOCKED",
-      "reason": "injected OrderWriter has no order-lookup boundary; terminal absence remains bounded recovery-blocked"
+      "provenance": {
+        "stage": "recovery",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
+      "recoveryStatus": "RECOVERY_BLOCKED",
+      "recoveryError": {
+        "code": "RECOVERY_BLOCKED",
+        "message": "workflow is not persisted"
+      }
     },
     {
       "receiptId": "receipt-mb7-19",
       "workflowId": "mb7-19",
       "scenario": "contradictory-authority",
       "status": "REFUSED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "prevented": true
     },
     {
@@ -271,6 +705,17 @@
       "workflowId": "mb7-20",
       "scenario": "symbol-isolation",
       "status": "ACKNOWLEDGED",
+      "provenance": {
+        "stage": "supervisor",
+        "source": "M-B7 deterministic fixture",
+        "lineage": [
+          "council",
+          "thesis",
+          "mandate",
+          "supervisor",
+          "order-receipt"
+        ]
+      },
       "symbols": [
         "run-isolation-btc-BTCUSDT:thesis-BTCUSDT:1",
         "run-isolation-eth-ETHUSDT:thesis-ETHUSDT:1"
@@ -280,11 +725,11 @@
   ],
   "metrics": {
     "councilRefusals": 1,
-    "approvals": 5,
-    "mandates": 5,
-    "refusals": 10,
+    "approvals": 7,
+    "mandates": 19,
+    "refusals": 9,
     "refusalByCode": {
-      "EXECUTABLE_EDGE_TOO_LOW": 1,
+      "THRESHOLD_NOT_MET": 1,
       "MARKET_STATE_STALE": 1,
       "ACCOUNT_STATE_STALE": 1,
       "COST_CEILING": 1,
@@ -310,6 +755,7 @@
     "liveClaims": 0,
     "deterministicRuns": 2
   },
+  "deterministicReplayDigest": "7674d8adcdeac5b9c62747d640e12c6990b682fc107a4287d3e202e6b8b151b0",
   "testCommands": [
     "npm run shadow:campaign",
     "npm run evidence:mb7",
@@ -328,5 +774,5 @@
     "M-B2-G HTTP 451 bypass",
     "push"
   ],
-  "artifactHash": "4277b6a5e66580711703a90092892fb4cbb3fda94afc4970851d87ba181bdb5d"
+  "artifactHash": "8310beb0f09e136091746cfbabed09120fcff18da5026d5147f4fc401ca43f26"
 }

@@ -1,47 +1,84 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Zero Infinity decision operating surface — evidence, reasoning, and bounded execution readiness.">
-  <title>Zero Infinity / Decision Surface</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="0∞ turns a market hypothesis into bounded, inspectable action.">
+  <title>0∞ / evidence before action</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="app-shell">
-  <aside class="rail" aria-label="Primary navigation">
-    <div class="brand"><span class="mark">∞</span><span>ZERO<br><b>INFINITY</b></span></div>
-    <nav>
-      <a class="nav-item active" href="#workflows" aria-current="page"><span>01</span> Workflows</a>
-      <a class="nav-item" href="#stacks"><span>02</span> Reasoning Stacks</a>
-      <a class="nav-item" href="#integrations"><span>03</span> Integrations</a>
-      <a class="nav-item" href="#proof"><span>04</span> Proof / Readiness</a>
-      <a class="nav-item" href="#settings"><span>05</span> Settings</a>
-    </nav>
-    <div class="rail-foot"><span class="status-dot"></span> LOCAL CONSOLE<br><small>no live authority</small></div>
-  </aside>
-  <main id="main">
-    <header class="topbar"><div><p class="eyebrow">DECISION OPERATING SURFACE / ZI-01</p><h1>Evidence before action.</h1></div><div class="top-actions"><span id="connection" class="pill neutral">API · not checked</span><button id="refresh" class="button ghost">Refresh</button></div></header>
-    <section class="mode-strip" aria-label="Execution modes">
-      <div><span class="eyebrow">AUTHORITY POSTURE</span><strong>Reasoning is available. Execution is bounded.</strong></div>
-      <div class="modes"><span class="mode paper"><b>PAPER</b><small>simulation</small></span><span class="mode shadow"><b>SHADOW</b><small>ready</small></span><span class="mode blocked"><b>TESTNET</b><small>blocked</small></span><span class="mode locked"><b>LIVE</b><small>locked</small></span></div>
-    </section>
-    <section class="card demo-card" aria-labelledby="demo-title"><div class="card-head"><div><p class="eyebrow">LOCAL DEMO</p><h2 id="demo-title">Run the bounded workflow</h2></div><span class="pill neutral">NO EXCHANGE WRITE</span></div><p class="muted">These buttons call the configured REST service. SHADOW and PAPER are real local service runs; Testnet and LIVE remain unavailable.</p><div class="demo-actions"><button id="run-shadow" class="button">RUN SHADOW</button><button id="run-paper" class="button ghost">RUN PAPER</button></div><div id="demo-status" class="callout">Ready to run a local no-write demo.</div></section>
-    <section id="workflows" class="section"><div class="section-head"><div><p class="eyebrow">FLAGSHIP WORKFLOW</p><h2>BTC / USD-M Futures · decision trace</h2></div><span class="pill neutral">READ-ONLY VIEW</span></div>
-      <div class="pipeline" aria-label="Workflow pipeline">
-        <div class="stage done"><i>01</i><b>Evidence</b><small>bundle accepted</small></div><div class="connector"></div><div class="stage done"><i>02</i><b>Opposition</b><small>challenge issued</small></div><div class="connector"></div><div class="stage done"><i>03</i><b>Council</b><small>deliberation</small></div><div class="connector"></div><div class="stage done"><i>04</i><b>ReasoningReceipt</b><small>hash captured</small></div><div class="connector"></div><div class="stage current"><i>05</i><b>TradeThesis</b><small>paper candidate</small></div><div class="connector"></div><div class="stage pending"><i>06</i><b>Mandate</b><small>not authorized</small></div><div class="connector"></div><div class="stage pending"><i>07</i><b>Economics</b><small>awaiting gate</small></div><div class="connector"></div><div class="stage pending"><i>08</i><b>Evaluation</b><small>not run</small></div><div class="connector"></div><div class="stage pending"><i>09</i><b>Intent / Refusal</b><small>bounded output</small></div><div class="connector"></div><div class="stage pending"><i>10</i><b>Receipt</b><small>local only</small></div>
-      </div>
-    </section>
-    <section class="card latency-card" aria-labelledby="latency-title"><div class="card-head"><div><p class="eyebrow">BOUNDED CLOCKS</p><h2 id="latency-title">Slow reasoning → deterministic hot path</h2></div><span class="pill neutral">NO HFT CLAIM</span></div><p class="muted">Council completes before a mandate is armed. One Council result may feed repeated evaluations; the hot path makes no second LLM call.</p><div class="latency-grid"><div><span>REASONING TIME</span><b id="reasoning-time">NOT MEASURED</b></div><div><span>TRIGGER → DECISION</span><b id="trigger-decision">NOT MEASURED</b></div><div><span>MANDATE ARMED</span><b id="mandate-armed">NOT MEASURED</b></div><div><span>VALID FOR</span><b id="valid-for">NOT MEASURED</b></div><div><span>EVALUATIONS</span><b id="evaluations">0</b></div><div><span>NO SECOND LLM CALL</span><b id="no-second-llm">NOT MEASURED</b></div></div></section>
-    <div class="grid">
-      <section id="stacks" class="card"><div class="card-head"><div><p class="eyebrow">REASONING STACK</p><h2>Default / v1</h2></div><span class="badge green">ACTIVE</span></div><p class="muted">Independent roles produce artifacts; the council records support, opposition, and unresolved claims.</p><div class="roles"><span>ADVOCATE <em>builtin</em></span><span>OPPOSER <em>builtin</em></span><span>MARKET ANALYST <em>builtin</em></span><span>COUNCIL <em>builtin</em></span></div><div class="receipt"><span class="eyebrow">REASONING RECEIPT HASH</span><code id="receipt-hash">waiting for API response</code><small>Provenance is retained locally; no exchange credentials are used.</small></div></section>
-      <section id="proof" class="card"><div class="card-head"><div><p class="eyebrow">PROOF / READINESS</p><h2 id="readiness-title">Local bounded state</h2></div><span id="readiness-badge" class="badge amber">CHECKING</span></div><div class="readiness-list"><div><span>Reasoning engine</span><b class="ok">AVAILABLE</b></div><div><span>Paper order writer</span><b class="ok">NO-WRITE</b></div><div><span>Hosted evidence</span><b class="warn">NOT PRESENT</b></div><div><span>Live authority</span><b class="warn">LOCKED</b></div><div><span>Testnet adapter</span><b class="warn">BLOCKED</b></div></div><div id="blocker" class="callout">Run locally to inspect service state. A static Pages deployment does not host REST or MCP.</div></section>
-      <section id="integrations" class="card wide"><div class="card-head"><div><p class="eyebrow">INTEGRATIONS</p><h2>Connected surfaces</h2></div><span class="pill neutral">NO SECRETS IN UI</span></div><div class="integration-grid"><div><b>REST API</b><span id="api-url">Configurable endpoint · not connected</span></div><div><b>MCP</b><span>Local JSON-RPC entrypoint · available by command</span></div><div><b>Market / Account</b><span>Paper fixtures only · external writes disabled</span></div></div></section>
+<header class="site-header">
+  <a class="wordmark" href="#landing" aria-label="0 Infinity home">0∞</a>
+  <nav aria-label="Primary navigation">
+    <a href="#try">Try</a>
+    <a href="#integrate">Integrate</a>
+    <a href="https://github.com/" rel="noreferrer">GitHub</a>
+    <a href="#proof">Proof</a>
+  </nav>
+</header>
+<main id="main">
+  <section id="landing" class="hero surface" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="kicker">0∞ / DECISION INFRASTRUCTURE</p>
+      <h1 id="hero-title">Evidence before action.</h1>
+      <p class="lede">Turn a market hypothesis into a bounded, inspectable decision. 0∞ keeps reasoning, authority, and execution separate.</p>
+      <div class="actions"><a class="button primary" href="#try">Try the demo <span>↗</span></a><a class="button" href="#integrate">Integrate 0∞ <span>↗</span></a></div>
     </div>
-    <section id="settings" class="settings"><p class="eyebrow">SETTINGS</p><label><input id="demo-toggle" type="checkbox"> Use local demo fixture (explicit opt-in)</label><p class="muted">Without this switch, the UI only renders data returned by the configured REST API. API base can be set with <code>window.__ZERO_INFINITY_CONFIG__.apiBase</code> before loading this page.</p></section>
-    <footer>ZERO INFINITY <span>•</span> Truthful by construction <span>•</span> v1 local surface</footer>
-  </main>
-</div>
+    <div class="architecture" aria-label="0 Infinity architecture">
+      <div class="arch-node"><span>01</span><b>MARKET</b><small>external reference</small></div>
+      <div class="arch-line"></div>
+      <div class="arch-node"><span>02</span><b>HYPOTHESIS</b><small>your probability</small></div>
+      <div class="arch-line"></div>
+      <div class="arch-node"><span>03</span><b>COMMITMENT</b><small>immutable intent</small></div>
+      <div class="arch-line"></div>
+      <div class="arch-node accent"><span>04</span><b>POLICY</b><small>bounded decision</small></div>
+      <div class="arch-line"></div>
+      <div class="arch-node"><span>05</span><b>EVIDENCE</b><small>what happened</small></div>
+    </div>
+  </section>
+
+  <section class="example surface compact" aria-labelledby="example-title">
+    <div><p class="kicker">A SMALL EXAMPLE</p><h2 id="example-title">When the edge collapses, the system says no.</h2><p class="muted">Expected edge +9 bps. Required edge +12 bps. Outcome is a refusal, not a trade.</p></div>
+    <div class="example-result"><span class="status refusal">REFUSED</span><code>EDGE_COLLAPSED</code></div>
+  </section>
+
+  <section id="try" class="surface try-surface" aria-labelledby="try-title">
+    <div class="section-intro"><p class="kicker">TRY / REAL REST CALLS</p><h2 id="try-title">Make one bounded decision.</h2><p class="muted">A public, no-write path through the existing service. Choose a mode, send the hypothesis, inspect the result.</p></div>
+    <div class="try-grid">
+      <form id="demo-form" class="panel controls">
+        <div class="field"><label for="symbol">MARKET</label><select id="symbol"><option>BTCUSDT</option></select></div>
+        <div class="field"><span class="label">HYPOTHESIS</span><div class="segmented"><button type="button" class="selected" aria-pressed="true" data-side="LONG">LONG</button><button type="button" aria-pressed="false" data-side="SHORT">SHORT</button></div></div>
+        <div class="field"><span class="label">AUTHORITY</span><div class="mode-buttons"><button type="button" class="mode selected" data-mode="SHADOW">SHADOW <small>no-write</small></button><button type="button" class="mode" data-mode="PAPER">PAPER <small>simulation</small></button><button type="button" class="mode disabled" disabled data-mode="TESTNET">TESTNET <small>credentials required</small></button></div></div>
+        <p class="locked-note">LIVE <b>NOT AUTHORIZED</b>. TESTNET is disabled until credentials and an authorized runtime are supplied.</p>
+        <button class="button primary run" id="run-demo" type="submit">Run SHADOW <span>→</span></button>
+      </form>
+      <div class="panel sequence" aria-live="polite">
+        <div class="sequence-head"><span class="label">RESULT SEQUENCE</span><span id="api-state" class="status neutral">NOT CONNECTED</span></div>
+        <ol id="result-sequence"><li class="current"><span>01</span><b>Ready</b><small>Choose a mode to call the configured service.</small></li><li><span>02</span><b>Reasoning</b><small>Awaiting bounded workflow.</small></li><li><span>03</span><b>Outcome</b><small>No result yet.</small></li></ol>
+        <div class="outcome" id="outcome"><span class="label">ACTUAL OUTCOME</span><strong>Nothing has run.</strong><p class="muted">No simulated result is shown before the API responds.</p></div>
+        <div class="economics"><span class="label">ECONOMICS</span><div><b id="edge-value">—</b><small>executable edge</small></div><div><b id="cost-value">—</b><small>costs</small></div><div><b id="threshold-value">—</b><small>required</small></div></div>
+        <div class="result-links"><button type="button" class="text-button" id="receipt-link" disabled>Receipt ↗</button><button type="button" class="text-button" id="mandate-link" disabled>Mandate · NOT AUTHORIZED</button><button type="button" class="text-button" id="raw-link" disabled>Raw JSON ↗</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="integrate" class="surface integrate-surface" aria-labelledby="integrate-title">
+    <div class="section-intro"><p class="kicker">INTEGRATE / YOUR AGENT, YOUR AUTHORITY</p><h2 id="integrate-title">One bounded service, three ways in.</h2><p class="muted">Use the names already implemented in this repository. The endpoint is runtime configuration, not a backend dependency baked into this page.</p></div>
+    <div class="tabs" role="tablist" aria-label="Integration examples"><button class="tab active" role="tab" aria-selected="true" data-tab="rest">REST</button><button class="tab" role="tab" aria-selected="false" data-tab="mcp">MCP</button><button class="tab" role="tab" aria-selected="false" data-tab="sdk">SDK</button></div>
+    <div class="code-panel"><div class="code-top"><span id="code-label">REST / POST /v1/shadow</span><button type="button" class="copy-button" id="copy-code">Copy</button></div><pre><code id="code-example">curl -X POST "$ZERO_INFINITY_API/v1/shadow" \\
+  -H 'content-type: application/json' \\
+  -d '{"symbol":"BTCUSDT","side":"LONG"}'</code></pre></div>
+    <div class="byo"><p class="kicker">BYO AGENT</p><p>Bring the agent that makes sense for your workflow. Existing adapters include <code>Advocate</code>, <code>Opposer</code>, <code>MarketAnalyst</code>, and <code>Council</code>. 0∞ returns bounded artifacts, not private chain-of-thought.</p></div>
+    <p class="config-note">Runtime: set <code>window.__ZERO_INFINITY_CONFIG__ = { apiBase: '…' }</code> before <code>app.js</code>. Default is local <code>http://127.0.0.1:8787</code>.</p>
+    <details class="vocabulary"><summary>Existing service vocabulary</summary><p>Workflows · Reasoning Stacks · Integrations · Proof / Readiness · Settings</p><p>Evidence → Opposition → Council → ReasoningReceipt → TradeThesis → Mandate → Economics → Evaluation → Intent / Refusal → Receipt</p></details>
+  </section>
+
+  <section id="proof" class="surface proof compact" aria-labelledby="proof-title"><div><p class="kicker">PROOF / BOUNDED STATES</p><h2 id="proof-title">What is true today.</h2></div><div class="proof-list"><span><b>SHADOW_PASS</b> deterministic</span><span><b>PAPER_MARKET_PASS</b> simulated</span><span><b>LIVE_READ_PASS</b> Binance public market</span><span><b>TESTNET</b> CREDENTIAL_REQUIRED</span><span><b>LIVE</b> NOT_AUTHORIZED</span><span><b>TESTS</b> 521/521 PASS</span></div><a class="text-button" href="https://github.com/" rel="noreferrer">GitHub / evidence ↗</a></section>
+</main>
+<footer>0∞ <span>no-write truth labels</span><span>configured runtime only</span></footer>
+<pre class="raw-json" id="raw-json" hidden></pre>
 <script src="app.js"></script>
 </body>
 </html>

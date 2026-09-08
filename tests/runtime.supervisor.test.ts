@@ -28,6 +28,19 @@ test("valid local replay trigger reaches an immutable receipt once", async () =>
   assert.equal(Object.isFrozen(second), true); assert.equal((await x.supervisor.trigger("wf")).version, second.version);
 });
 
+test("arms then composes a versioned market observation through deterministic evaluation and writer", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  const input = { workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" as const };
+  const armed = await (x.supervisor as any).arm(input);
+  assert.equal(armed.status, "READY");
+  const newerMarket = deepFreeze({ ...market, version: 2n, observedAt: 2_550, receivedAt: 2_551 });
+  const result = await (x.supervisor as any).observeMarket("wf", newerMarket);
+  assert.equal(result.status, "ACKNOWLEDGED");
+  assert.equal(result.orderOutcome, "ACKNOWLEDGED");
+  assert.equal(result.runtime.state, "ACKNOWLEDGED");
+});
+
+
 test("unknown recovery reconciles and never retries", async () => {
   let calls = 0; const x = setup({ submit: async () => { calls++; return { kind: "TIMEOUT" }; } }); await x.mandates.issue(mandate);
   await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });

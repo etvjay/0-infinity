@@ -6,7 +6,7 @@ title: Compose versioned market observation into deterministic trigger evaluatio
 objective: >
   Complete the existing market-state to RuntimeSupervisor to evaluator to
   OrderWriter path without adding a second authority or execution architecture.
-status: CANDIDATE_PENDING_REVIEW
+status: ACCEPTED_LOCAL_PASS
 canonical_components:
   - UsdMFuturesMarketState
   - UsdMFuturesMarketConnectivity
@@ -49,7 +49,7 @@ evidence_produced:
   - GREEN focused supervisor suite: 22/22.
   - GREEN full suite: 520/520.
   - implementation commits: bdeff86, ccd3dbb.
-  - final exact-head review pending.
+  - final exact-head review: APPROVE, safe_to_integrate=true at 03c7d2b.
 evidence_ceiling: >
   LOCAL_PASS only; injected deterministic market/account envelopes and local/replay writer.
   No live exchange execution, production durability, synchronized live market truth,

@@ -33,6 +33,18 @@ test("opportunity dedup keys remain distinct when fields contain separators", ()
   assert.notEqual(opportunityDedupKey(first), opportunityDedupKey(second));
 });
 
+test("structural opportunity prefilter rejects polluted Object.prototype fields", () => {
+  const objectPrototype = Object.prototype as Record<string, unknown>;
+  const originalVenue = Object.getOwnPropertyDescriptor(objectPrototype, "venue");
+  try {
+    Object.defineProperty(objectPrototype, "venue", { configurable: true, value: "BINANCE" });
+    assert.equal(structuralOpportunityPrefilter({ instrument: "USD_M_FUTURES", symbol: "BTCUSDT" }), false);
+  } finally {
+    if (originalVenue === undefined) delete objectPrototype.venue;
+    else Object.defineProperty(objectPrototype, "venue", originalVenue);
+  }
+});
+
 test("structural opportunity prefilter requires a plain canonical data shape", () => {
   const inherited = Object.create({ venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: "BTCUSDT" });
   assert.equal(structuralOpportunityPrefilter(inherited), false);

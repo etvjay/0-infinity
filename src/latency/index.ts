@@ -120,8 +120,12 @@ export function structuralOpportunityPrefilter(value: unknown): value is Structu
       const descriptor = Object.getOwnPropertyDescriptor(x, key);
       if (!descriptor || !descriptor.enumerable || !("value" in descriptor)) return false;
     }
+    const hasOwn = (key: string): boolean => Object.prototype.hasOwnProperty.call(x, key);
+    if (!["venue", "instrument", "symbol"].every(hasOwn)) return false;
+    const direction = hasOwn("direction") ? x.direction : undefined;
+    const thesisId = hasOwn("thesisId") ? x.thesisId : undefined;
     if (![x.venue, x.instrument, x.symbol].every((v) => typeof v === "string" && v.trim().length > 0)) return false;
-    return [x.direction, x.thesisId].every((v) => v === undefined || typeof v === "string");
+    return [direction, thesisId].every((v) => v === undefined || typeof v === "string");
   } catch {
     return false;
   }

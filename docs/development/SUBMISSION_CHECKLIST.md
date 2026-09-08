@@ -11,9 +11,9 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | GitHub | `https://github.com/etvjay/0-infinity` | PASS | Public repository; final candidate SHA is pushed only after final review | 0-infinity | Verify origin/main after push |
 | Survey | Prepared answers | USER_INPUT_REQUIRED | `docs/submission/SURVEY_ANSWERS.md` | User | Account-specific fields |
 | Hosted Web | GitHub Pages workflow | BLOCKED_EXTERNAL | `docs/DEPLOYMENT.md` | 0-infinity | Pages hosting not independently verified |
-| REST | Local HTTP server + bounded ephemeral preview attempt | LOCAL_ONLY | `npm run api`, `npm run check`; quick HTTPS preview briefly proved health/workflow then returned 502 and was stopped | 0-infinity | No persistent public host |
-| MCP | Local line-delimited JSON-RPC | LOCAL_PASS | `npm run mcp`, `docs/MCP.md` | 0-infinity | No public host |
-| SDK docs | TypeScript client and consumer fixture | CONSUMER_PASS | `src/product/sdk.ts`, `examples/consumer`; clean `npm ci` + `npm run smoke` passed | 0-infinity | Hosted SDK target unavailable |
+| REST | Hosted Northflank runtime + local HTTP server | HOSTED_PASS | `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run`; health, readiness, workflow, receipt, thesis, SHADOW, and PAPER_LIVE cold-tested at deployed SHA `e1f9d2fd3764eb63aefca7b75815ed2d8280c1ce` | 0-infinity | No production durability claim |
+| MCP | Hosted HTTP JSON-RPC + local stdio | HOSTED_PASS | Same public URL; capabilities and full bounded cold sequence verified; `authority=false` | 0-infinity | No live-write tools |
+| SDK docs | TypeScript client and hosted consumer fixture | HOSTED_PASS | `src/product/sdk.ts`, `examples/consumer`; hosted workflow/receipt smoke passed | 0-infinity | No authenticated exchange claim |
 | Binance Skills | Adapter and evidence | BLOCKED_EXTERNAL | `docs/development/evidence/ZO-BIN-MB8-binance-skills-live.json` | 0-infinity | Binance eligibility restriction |
 | Agentic MCP | Authorization boundary | AUTH_BLOCKED_EXTERNAL | `docs/development/evidence/ZO-BIN-MB8-binance-agentic-mcp-read.json` | 0-infinity | Official OAuth/client registration block |
 | SHADOW | Deterministic replay | SHADOW_PASS | `npm run demo`, M-B7 evidence | 0-infinity | None |
@@ -22,7 +22,7 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | README | Product explanation and runbook | PASS | `README.md` | 0-infinity | Keep claims current |
 | Security | Hostile-boundary tests and scans | LOCAL_PASS | `npm test`, `npm run secret-scan` | 0-infinity | External deployment security unproven |
 | Clean clone | `npm ci` and full gates | PASS | Fresh clone at `c0917a2`: npm ci, check, 521/521 tests, build, demo, evidence validation, web check, consumer npm ci | 0-infinity | None |
-| Cold review | Local cold REST/MCP/SDK smoke | LOCAL_PASS | Fresh process/client receipts recorded in release review | Reviewer | Public Web/REST/MCP unavailable |
+| Cold review | Hosted REST/MCP/SDK cold clients | HOSTED_PASS | Public runtime health/readiness, hosted workflow/receipt/thesis, SHADOW/PAPER, MCP sequence, and SDK consumer verified at deployed SHA `e1f9d2fd3764eb63aefca7b75815ed2d8280c1ce` | Reviewer | Public Web hosting remains separately blocked |
 
 ## Prepared X submission
 

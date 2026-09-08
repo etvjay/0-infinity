@@ -1,6 +1,13 @@
 # Web UI
 
-The `web/` directory is a dependency-free, static judge-facing surface. It shows the decision pipeline, reasoning-stack composition, provenance posture, and authority/readiness boundaries.
+The `web/` directory is a dependency-free static public surface with four clearly separated views:
+
+- **LANDING** — what 0-infinity is and why an agent uses it;
+- **TRY** — the primary no-write SHADOW/PAPER workflow demo;
+- **INTEGRATE** — truthful MCP, REST, and SDK entry points;
+- **PROOF** — a compact list of bounded evidence states.
+
+It is not a trading dashboard. It does not expose Markets, Portfolio, Analytics, Bots, Strategies, Activity, Settings, or Readiness navigation.
 
 ## Local use
 
@@ -9,10 +16,24 @@ npm run api                 # REST at http://127.0.0.1:8787
 python3 -m http.server 4173 --directory web
 ```
 
-To connect the static page to the local REST service, open the browser console before loading the page and set `window.__ZERO_INFINITY_CONFIG__ = { apiBase: 'http://127.0.0.1:8787' }`, or serve a small wrapper that defines that value before `app.js`. The default has no API base and therefore makes no network claim. The **Use local demo fixture** switch is an explicit opt-in and is labeled as demo; it is not evidence.
+The page uses a runtime-configurable API base:
 
-The UI sends `credentials: omit`, has no credential fields, and exposes no write controls. It does not infer live/testnet state from a failed request.
+```js
+window.__ZERO_INFINITY_CONFIG__ = { apiBase: 'http://127.0.0.1:8787' };
+```
 
-## Latency representation
+The default is local `http://127.0.0.1:8787`. A hosted deployment may set the same value before loading `app.js`; the public page does not hard-code a hosted backend dependency.
 
-The surface shows separate `REASONING TIME` and `TRIGGER → DECISION` clocks, plus `MANDATE ARMED`, `VALID FOR`, `EVALUATIONS`, and `NO SECOND LLM CALL`. These values are populated only from an API `trace` object. Until a runtime trace is present, the UI renders `NOT MEASURED` and `0` for the evaluation count. It never substitutes browser load time, a request round trip, or a static demo value. The timeline is Council-before-trigger: slow role/council deliberation first, then deterministic evaluations during the mandate TTL. This is not an HFT claim.
+## Try surface
+
+The form supports `BTCUSDT`, `LONG`, `SHADOW`, and `PAPER`. TESTNET is displayed as `Credentials required` and disabled. LIVE is displayed as `NOT AUTHORIZED` and is never selectable.
+
+SHADOW and PAPER call the existing REST endpoints with `credentials: omit`. Results expose the bounded workflow sequence, actual outcome, economics when returned, reasoning receipt, raw JSON, and a visibly unauthorized mandate control. No credential fields or financial-write controls exist.
+
+The UI does not infer live or testnet state from a failed request. No private chain-of-thought is displayed.
+
+## Integration surface
+
+The tabs show the implemented MCP tool names, the existing REST route sequence, and the `ZeroInfinityClient` SDK methods. Endpoint values are runtime configuration, not invented fixed infrastructure.
+
+The page distinguishes local/static presentation, hosted REST/MCP/SDK evidence, Binance public market evidence, unauthenticated Agentic MCP, credential-gated Testnet, and locked LIVE authority. See `docs/MCP.md` and `docs/DEPLOYMENT.md` for the current evidence boundary.

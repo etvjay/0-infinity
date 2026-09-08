@@ -1,15 +1,35 @@
 # 0-infinity Demo Video Script
 
-Target duration: 90–120 seconds. Every shown state must come from the local deterministic demo or an independently verified external receipt. Captions are required. No live exchange success is shown.
+Target duration: 60–90 seconds. Every shown state must come from the current static UI or an independently verified no-write response. No live exchange success is shown. The existing 125-second console recording is historical and should not be presented as the current public UI.
 
-1. **0–10s** — Title: `0-INFINITY`. Caption: `An agent's opinion should not automatically become a trade.`
-2. **10–23s** — Show the local Web UI and architecture: external agent/trader → Binance capabilities → 0-infinity. Caption: `0-infinity sits between intelligence and execution.`
-3. **23–42s** — Show ADVOCATE, OPPOSER, MARKET_ANALYST, COUNCIL, then the ReasoningReceipt. Caption: `Every opportunity is supported, challenged, and adjudicated before authority exists.`
-4. **42–61s** — Show mandate and two clocks. Caption: `Council approval becomes short-lived bounded authority. The LLM leaves the hot path.`
-5. **61–78s** — Run the actual edge-collapse demo: expected `+31 bps`, costs `-22 bps`, executable edge `+9`, required `12`, result `REFUSED — EDGE_COLLAPSED`.
-6. **78–94s** — Show mode posture: `SHADOW`, `PAPER`, `TESTNET NOT ESTABLISHED / BLOCKED`, `LIVE LOCKED`. Show the actual PAPER receipt if recorded.
-7. **94–106s** — Show REST, MCP, SDK, and Reasoning Stack surfaces. Caption: `Traders use the app. Agents connect through MCP, REST, or SDK.`
-8. **106–116s** — Show Proof / Readiness and truthful Binance statuses. Caption: `Binance capabilities supply evidence; 0-infinity governs when evidence can become authority.`
-9. **116–120s** — End card: `0-INFINITY — Evidence-bounded execution for Binance Agent OS.`
+1. **0–08s — LANDING**
+   - Show `0-infinity` and: `A control layer between trading agents and execution.`
+   - Caption: `Agents propose trades. 0-infinity checks evidence before execution.`
 
-If testnet remains blocked, display the exact blocked label. Do not show a READY badge or fabricated ACK/fill.
+2. **08–18s — ARCHITECTURE**
+   - Show the single vertical path: Agent / Trader → Opportunity → Evidence + Opposition → Council → Reasoning Receipt → Execution Mandate → Market Revalidation → TRADE / REFUSE.
+   - Caption: `Evidence, opposition, Council, short-lived authority, then market revalidation.`
+
+3. **18–28s — CONCRETE REFUSAL**
+   - Show the edge-collapse example: expected move `+31 bps`, spread `-5`, slippage `-11`, fees `-4`, funding `-2`, executable edge `+9`, required `12`.
+   - Caption: `The Council can approve while execution still refuses a collapsed edge.`
+
+4. **28–48s — TRY**
+   - Select `BTCUSDT`, `LONG`, and `SHADOW` or `PAPER`.
+   - Run the configured no-write REST workflow.
+   - Show the linear sequence: Advocate, Opposer, Market Analyst, Council, Reasoning Receipt, Execution Mandate, Execution Check.
+   - Show the actual returned outcome and economics. Never replace the response with fixture data.
+
+5. **48–60s — RECEIPT CONTROLS**
+   - Open only `View reasoning receipt`, `View mandate`, or `View raw JSON`.
+   - Keep private chain-of-thought out of the recording.
+
+6. **60–78s — INTEGRATE**
+   - Show the MCP, REST, and SDK tabs with their actual implemented names and runtime-configurable endpoint.
+   - Caption: `Agents connect through the existing MCP, REST, and SDK surfaces.`
+
+7. **78–90s — PROOF / CLOSE**
+   - Show `SHADOW_PASS`, `PAPER_MARKET_PASS`, `LIVE_READ_PASS`, `TESTNET CREDENTIAL_REQUIRED`, `AUTH_BLOCKED_EXTERNAL`, and `LIVE NOT_AUTHORIZED`.
+   - End card: `0-infinity — evidence before action.`
+
+Before recording, run `npm run web:check`, `npm test`, `npm run demo`, `npm run readiness:validate`, and `npm run secret-scan`. Record only states reproduced by those checks or by the verified no-write API response.

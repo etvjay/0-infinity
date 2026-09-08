@@ -12,7 +12,7 @@ curl http://127.0.0.1:8787/health
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"get_readiness","params":{}}' | npm run mcp
 ```
 
-These surfaces share `ZeroInfinityService` and expose no live financial write endpoint. They are local entrypoints, not hosted service claims.
+These surfaces share `ZeroInfinityService` and expose no live financial write endpoint. The local entrypoints remain available, and the same REST/MCP service is independently verified on Northflank at `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run` for deployed SHA `e1f9d2fd3764eb63aefca7b75815ed2d8280c1ce`.
 
 ## GitHub Pages
 

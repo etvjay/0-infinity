@@ -6,9 +6,8 @@
   const state = { mode: 'SHADOW', side: 'LONG', workflowId: null, payload: null };
   const examples = {
     rest: { label: 'REST / POST /v1/shadow', text: `curl -X POST "$ZERO_INFINITY_API/v1/shadow" \\\n  -H 'content-type: application/json' \\\n  -d '{"symbol":"BTCUSDT","side":"LONG"}'` },
-    mcp: { label: 'MCP / run_shadow_workflow', text: `{"jsonrpc":"2.0","id":1,"method":"run_shadow_workflow","params":{"opportunity":{"symbol":"BTCUSDT","side":"LONG"}}}` },
-    sdk: { label: 'SDK / ZeroInfinityClient', text: `const client = new ZeroInfinityClient(fetch, apiBase);
-await client.runShadowWorkflow({ symbol: "BTCUSDT", side: "LONG" });` }
+    mcp: { label: 'MCP / actual tool methods', text: `get_capabilities\nget_readiness\ncreate_workflow\nsubmit_opportunity\nget_workflow\nget_reasoning_receipt\nget_trade_thesis\nrun_shadow_workflow\nrun_paper_live` },
+    sdk: { label: 'SDK / ZeroInfinityClient', text: `const client = new ZeroInfinityClient(fetch, apiBase);\nconst workflow = await client.createWorkflow({ symbol: "BTCUSDT", side: "LONG" });\nconst receipt = await client.getReasoningReceipt(workflow.workflowId);\nconst result = await client.runPaperLiveWorkflow({ symbol: "BTCUSDT", side: "LONG" });` }
   };
   function setStatus(text, kind = 'neutral') { const el = $('api-state'); el.textContent = text; el.className = `status ${kind}`; }
   function setSequence(step, outcome = 'Awaiting bounded workflow.') {

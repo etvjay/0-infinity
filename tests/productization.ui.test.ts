@@ -6,12 +6,15 @@ import test from "node:test";
 const root = process.cwd();
 const read = (name: string) => readFileSync(join(root, name), "utf8");
 
-test("judge UI exists with truthful operating states and workflow pipeline", () => {
-  for (const file of ["web/index.html", "web/styles.css", "web/app.js", "docs/WEB_UI.md", "docs/DEPLOYMENT.md", "docs/SUBMISSION.md", ".github/workflows/pages.yml", "src/product/server.ts", "src/product/mcp-server.ts"]) assert.ok(existsSync(join(root, file)), file);
+test("public IA is landing plus exactly three app routes", () => {
+  for (const file of ["web/index.html", "web/404.html", "web/styles.css", "web/app.js", "docs/WEB_UI.md", ".github/workflows/pages.yml"]) assert.ok(existsSync(join(root, file)), file);
   const html = read("web/index.html");
   const app = read("web/app.js");
-  const surface = `${html}\n${app}`;
-  for (const label of ["Workflow", "Try", "Integrate", "Proof", "PAPER", "SHADOW", "TESTNET", "LIVE", "Evidence", "Opposition", "Council", "ReasoningReceipt", "TradeThesis", "Mandate", "Economics", "Evaluation", "Intent / Refusal", "Receipt", "HOSTED REST", "HOSTED NETWORK MCP", "HOSTED SDK", "BINANCE PUBLIC MARKET READ", "AGENTIC MCP", "AUTH_BLOCKED_EXTERNAL", "CREDENTIAL_REQUIRED", "NOT AUTHORIZED", "hostedEvidence=false", "Advocate support", "Opposer challenge", "Market Analyst evidence", "Council decision / confidence", "Supporting evidence", "Opposing evidence", "Assumptions", "Unresolved uncertainty", "Invalidation", "Hashes", "Paper receipt"]) assert.match(surface, new RegExp(label.replace(/[ /]/g, "[ /]")), label);
+  assert.match(html, /href="#\/app\/demo"/);
+  assert.match(html, /href="#\/app\/integrate"/);
+  assert.match(html, /href="#\/app\/try"/);
+  assert.doesNotMatch(html, /Markets|Portfolio|Analytics|Bots|Strategies|Activity|Settings/);
+  for (const label of ["ARMED", "TRIGGERED", "VALIDATING", "SUBMITTING", "ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "REFUSED", "INVALIDATED", "EXPIRED", "SUPERSEDED", "CANCELLED", "FAILED", "UNKNOWN"]) assert.match(app, new RegExp(label), label);
 });
 
 test("static UI uses configurable API base and explicit demo opt-in", () => {

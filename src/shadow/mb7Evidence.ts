@@ -39,7 +39,7 @@ function exactArray(value: unknown, length: number): value is unknown[] {
   if (own.length !== length + 1 || !own.includes("length") || !lengthDescriptor || !("value" in lengthDescriptor) || lengthDescriptor.enumerable || lengthDescriptor.configurable || !lengthDescriptor.writable || own.some(k => k !== "length" && (typeof k !== "string" || !/^\d+$/.test(k)))) return false;
   return Array.from({ length }, (_, i) => {
     const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
-    return !!descriptor && "value" in descriptor && descriptor.enumerable === true;
+    return !!descriptor && "value" in descriptor && descriptor.get === undefined && descriptor.set === undefined && descriptor.enumerable === true && descriptor.writable === true && descriptor.configurable === true;
   }).every(Boolean);
 }
 function finiteInt(value: unknown): value is number { return typeof value === "number" && Number.isSafeInteger(value); }

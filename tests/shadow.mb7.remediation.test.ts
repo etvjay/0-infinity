@@ -58,6 +58,26 @@ test("M-B7 rejects rehashed accessor-backed canonical arrays", async () => {
   assert.equal(validateEvidence(copy), false);
 });
 
+test("M-B7 rejects rehashed non-writable numeric array descriptors", async () => {
+  const { artifact } = await runCampaign();
+  const copy = structuredClone(artifact) as any;
+  Object.defineProperty(copy.scenarios, "0", { value: copy.scenarios[0], enumerable: true, writable: false, configurable: true });
+  const payload = { ...copy };
+  delete payload.artifactPayloadSha256;
+  copy.artifactPayloadSha256 = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  assert.equal(validateEvidence(copy), false);
+});
+
+test("M-B7 rejects rehashed non-configurable numeric array descriptors", async () => {
+  const { artifact } = await runCampaign();
+  const copy = structuredClone(artifact) as any;
+  Object.defineProperty(copy.scenarios, "0", { value: copy.scenarios[0], enumerable: true, writable: true, configurable: false });
+  const payload = { ...copy };
+  delete payload.artifactPayloadSha256;
+  copy.artifactPayloadSha256 = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  assert.equal(validateEvidence(copy), false);
+});
+
 test("M-B7 requires exact one-to-one scenario coverage after rehash", async () => {
   const { artifact } = await runCampaign();
   const copy = structuredClone(artifact) as any;

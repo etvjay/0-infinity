@@ -327,3 +327,45 @@ test("partially filled orders cannot become invalid positive-fill cancellations"
   await writer.reconcile(receipt.clientOrderId, event({ eventId: "partial-before-cancel", status: "PARTIALLY_FILLED", fillQuantity: 1, fillPrice: 101 }));
   await assert.rejects(() => writer.cancel(receipt.clientOrderId), /filled order cannot be cancelled/);
 });
+
+test("invalid intent identity and versions are rejected before mandate, adapter, or persistence side effects", async () => {
+  const persistence = new MemoryOrderPersistence();
+  let consumeCalls = 0;
+  let adapterCalls = 0;
+  const writer = new OrderWriter({ consumeForSubmission: async () => { consumeCalls++; } } as any, persistence, {
+    submit: async () => { adapterCalls++; return { kind: "ACKNOWLEDGED" }; },
+  });
+  for (const change of [
+    { mandateId: "" },
+    { workflowId: "" },
+    { marketStateVersion: -1n },
+    { accountStateVersion: -1n },
+  ]) {
+    await assert.rejects(() => writer.submit(Object.freeze({ ...intent, ...change } as any), 22), /invalid/);
+    assert.equal(consumeCalls, 0);
+    assert.equal(adapterCalls, 0);
+    assert.deepEqual(persistence.replay(), []);
+  }
+});
+
+test("ACKNOWLEDGED events reject any fill fields before persistence mutation", async () => {
+  const persistence = new MemoryOrderPersistence();
+  let saves = 0;
+  const baseSave = persistence.save.bind(persistence);
+  persistence.save = async (order) => { saves++; await baseSave(order); };
+  const writer = new OrderWriter(store(), persistence, adapter());
+  const receipt = await writer.submit(intent, 23);
+  const before = persistence.replay();
+  const beforeSaves = saves;
+  for (const fields of [
+    { fillQuantity: 0 },
+    { fillQuantity: 1 },
+    { fillPrice: 101 },
+    { fillQuantity: undefined },
+    { fillPrice: undefined },
+  ]) {
+    await assert.rejects(() => writer.reconcile(receipt.clientOrderId, event({ eventId: `ack-${beforeSaves}-${Object.keys(fields)[0]}`, status: "ACKNOWLEDGED", ...fields } as any)), /invalid reconciliation event/);
+    assert.equal(saves, beforeSaves);
+    assert.deepEqual(persistence.replay(), before);
+  }
+});

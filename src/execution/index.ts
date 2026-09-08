@@ -139,8 +139,8 @@ function exactProductEquals(left: number, right: number, product: number): boole
 function validIntent(value: unknown): value is BoundedIntent {
   if (!value || typeof value !== "object" || !Object.isFrozen(value) || !canonicalOwnData(value, INTENT_KEYS, INTENT_KEYS.slice(0, 11))) return false;
   const x = value as Record<string, unknown>;
-  if (x.kind !== "EXECUTION_INTENT" || typeof x.mandateId !== "string" || typeof x.workflowId !== "string" || typeof x.symbol !== "string" || (x.side !== "BUY" && x.side !== "SELL") || (x.method !== "LIMIT" && x.method !== "MARKET")) return false;
-  if (![x.price, x.notional, x.executableEdgeBps].every((n) => typeof n === "number" && Number.isFinite(n) && n > 0) || typeof x.marketStateVersion !== "bigint" || typeof x.accountStateVersion !== "bigint") return false;
+  if (x.kind !== "EXECUTION_INTENT" || typeof x.mandateId !== "string" || x.mandateId.length === 0 || typeof x.workflowId !== "string" || x.workflowId.length === 0 || typeof x.symbol !== "string" || (x.side !== "BUY" && x.side !== "SELL") || (x.method !== "LIMIT" && x.method !== "MARKET")) return false;
+  if (![x.price, x.notional, x.executableEdgeBps].every((n) => typeof n === "number" && Number.isFinite(n) && n > 0) || typeof x.marketStateVersion !== "bigint" || x.marketStateVersion < 0n || typeof x.accountStateVersion !== "bigint" || x.accountStateVersion < 0n) return false;
   if (x.quantity !== undefined && (typeof x.quantity !== "number" || !Number.isFinite(x.quantity) || x.quantity <= 0)) return false;
   if (x.accountId !== undefined && typeof x.accountId !== "string") return false;
   return deepFrozen(value);
@@ -151,8 +151,9 @@ function validEvent(value: unknown): value is FillEvent {
   if (typeof x.eventId !== "string" || x.eventId.length === 0 || !["ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "CANCELLED", "REJECTED", "FAILED"].includes(x.status as string)) return false;
   if (x.fillQuantity !== undefined && (typeof x.fillQuantity !== "number" || !Number.isFinite(x.fillQuantity) || x.fillQuantity < 0)) return false;
   if (x.fillPrice !== undefined && (typeof x.fillPrice !== "number" || !Number.isFinite(x.fillPrice) || x.fillPrice <= 0)) return false;
+  if (x.status === "ACKNOWLEDGED" && (Object.prototype.hasOwnProperty.call(x, "fillQuantity") || Object.prototype.hasOwnProperty.call(x, "fillPrice"))) return false;
   if (x.status === "PARTIALLY_FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0 || x.fillPrice === undefined)) return false;
-  if (x.status === "FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0)) return false;
+  if (x.status === "FILLED" && (x.fillQuantity === undefined || x.fillQuantity <= 0 || x.fillPrice === undefined)) return false;
   if (["CANCELLED", "REJECTED", "FAILED"].includes(x.status as string) && (x.fillQuantity !== undefined && x.fillQuantity !== 0 || x.fillPrice !== undefined)) return false;
   return x.fillQuantity === undefined || x.fillQuantity === 0 || x.fillPrice !== undefined;
 }

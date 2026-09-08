@@ -9,7 +9,7 @@
 | M-B4 | Reasoning Workflow | PROVISIONAL_LOCAL_PASS — exact candidate `8335040183cf4d01e1c1765c9de9267f707a4c5f`; independent review found no code blockers; focused handoff `15/15`, economics `15/15`, reasoning `12/12`, combined `42/42`, full `400/400`, check/build/diff-check PASS; receipt reconciliation pending; no live evidence claimed |
 | M-B5 local OrderWriter + reconciliation | PROVISIONAL_LOCAL_PASS — final docs/review tree `e7fcc6e734a4e2e097c331258649ab4a18aa904c`; reviewed code tree `46c3e9f80294a426ffb765d7c042b216e1b7e39c`; code remediation `536071d76f70908d258606cf1f9f6d7c176bc74c`; exact-head code review clear and final receipt-only review `APPROVE`; focused execution `23/23`, full `423/423`, check/build/diff-check PASS; no live execution claimed |
 | M-B6 | Full Runtime | LOCAL_PASS — reviewed candidate `5c51584826876fe344337b9a0c19b83b4bb84a74`; independent exact-head review `APPROVE`; safe_to_integrate: `true`; focused RuntimeSupervisor `19/19`, focused OrderWriter `25/25`, full `444/444`, check/build/diff-check PASS; local/replay only, no live execution or production durability claim |
-| M-B7 | Shadow Evidence | NOT STARTED |
+| M-B7 | Shadow Evidence | SHADOW_PASS — reviewed integration/docs tree `d3b78f2f29235baf2970436ef90f867a4a83a757`; independent exact-head review `APPROVE`; safe_to_integrate: `true`; 20 deterministic SHADOW workflows, focused M-B7 `12/12`, full `456/456`, check/build/campaign/validator/diff-check PASS; critical invariant counters zero; no live execution, production durability, or profitability claim |
 | M-B8 | Controlled Live Evidence + submission freeze | NOT STARTED |
 
 M-B1 proof receipt:

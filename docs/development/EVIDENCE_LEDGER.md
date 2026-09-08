@@ -26,7 +26,7 @@ Current:
 | Binance live market state | UNVERIFIED — no live depth snapshot/reconciliation, reconnect, or integrated live-state claim |
 | Binance public depth bootstrap | BLOCKED_EXTERNAL — WebSocket diff-depth events received, but REST snapshot returned HTTP 451; receipt: `docs/development/evidence/ZO-BIN-MB2-G-public-depth-bootstrap.json` |
 | Binance account state | UNVERIFIED |
-| Shadow workflow | UNVERIFIED |
+| Shadow workflow | SHADOW_PASS — M-B7 deterministic local replay campaign, 20 workflows, independently reviewed; no live execution claim |
 | Live bounded execution | UNVERIFIED |
 | M-B5 local OrderWriter + reconciliation | PROVISIONAL_LOCAL_PASS — final docs/review tree `46c3e9f80294a426ffb765d7c042b216e1b7e39c`; code remediation `536071d76f70908d258606cf1f9f6d7c176bc74c`; independent review found no code blockers and REVISE was receipt-only; focused execution `23/23`, full `423/423`, check/build/diff-check PASS; no live execution claimed |
 | M-B6 local full runtime/recovery | LOCAL_PASS — reviewed candidate `5c51584826876fe344337b9a0c19b83b4bb84a74`; independent exact-head review `APPROVE`; focused RuntimeSupervisor `19/19`, focused OrderWriter `25/25`, full `444/444`, check/build/diff-check PASS; local/replay only, no live execution claimed |
@@ -123,3 +123,14 @@ M-B6 proof receipt:
 - typecheck: `PASS`; build: `PASS`; diff-check: `PASS`.
 - scope: explicit `SHADOW`/`LOCAL_REPLAY` capability, immutable workflow records, CAS/version guards, fail-closed restore/start validation, deterministic trigger idempotency, semantic state binding, terminal/UNKNOWN recovery, writer-owned order lineage, and no blind retry.
 - evidence ceiling: `LOCAL_PASS` only for deterministic local/replay implementation and adversarial tests; no live/testnet execution, exchange writes, production durability, crash-recovery proof, exactly-once exchange behavior, or profitability claim.
+
+M-B7 proof receipt:
+
+- objective: sustained deterministic `SHADOW` replay campaign over the integrated council, compiler, mandate, evaluator, RuntimeSupervisor, OrderWriter, reconciliation, recovery, duplicate, out-of-order, authority, and cross-symbol boundaries.
+- reviewed integration/docs tree: `d3b78f2f29235baf2970436ef90f867a4a83a757`; runner implementation: `9c6357f1f71eb9e9c11540930a7605cfff6aeed2`; validator implementation: `473dea420b38d4f192dadec8723538f05ed090e5`.
+- campaign artifact: `docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json`; `artifactPayloadSha256`: `905566e0c9834efc0016f05f2239e8a3b625bff75e0f5541a41f5af81206f75b`; workflows: `20`.
+- independent exact-head review: `APPROVE`; `safe_to_integrate: true`.
+- receipts: focused M-B7 `12/12`; full suite `456/456`; check/build/campaign/validator/diff-check `PASS`.
+- metrics: council refusals `1`; approvals `7`; mandates `19`; refusals `9`; ACK `4`; partial `1`; filled `2`; rejected `1`; UNKNOWN `1`; recovered `1`; NOT_EXERCISED `0`; all critical invariant counters `0`; deterministic runs `2`.
+- evidence ceiling: deterministic local replay only; no live market/account truth, exchange execution, credentials, wallet/funds behavior, production durability, profitability, or M-B2-G recovery. M-B2-G remains `BLOCKED_EXTERNAL`.
+

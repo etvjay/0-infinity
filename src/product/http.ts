@@ -19,6 +19,7 @@ export async function handleRequest(service: ZeroInfinityService, method: string
     match = path.match(/^\/v1\/workflows\/([^/]+)\/thesis$/);
     if (method === "GET" && match) { const value = service.getTradeThesis(match[1]); return value ? { status: 200, body: value } : notFound(); }
     if (method === "POST" && path === "/v1/shadow") return { status: 200, body: await service.runShadowWorkflow(bodyObject(body ?? {})) };
+    if (method === "POST" && path === "/v1/paper-live") return { status: 200, body: await service.runPaperLiveWorkflow(bodyObject(body ?? {})) };
     return { status: 404, body: { error: "NOT_FOUND" } };
   } catch (error) { return { status: error instanceof ValidationError ? 400 : 500, body: { error: error instanceof Error ? error.name : "ERROR", message: error instanceof Error ? error.message : "request failed" } }; }
 }

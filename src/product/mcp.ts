@@ -1,6 +1,6 @@
 import { ZeroInfinityService } from "./service.js";
 import { exactOwnPlain, ValidationError } from "./types.js";
-export const MCP_TOOLS = ["get_capabilities", "get_readiness", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "get_workflow"] as const;
+export const MCP_TOOLS = ["get_capabilities", "get_readiness", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "run_paper_live", "get_workflow"] as const;
 export const MCP_RESOURCES = [
   { uri: "zero-infinity://capabilities", name: "Capabilities", mimeType: "application/json" },
   { uri: "zero-infinity://readiness", name: "Readiness", mimeType: "application/json" },
@@ -19,6 +19,7 @@ export async function handleMcp(service: ZeroInfinityService, query: unknown): P
     if (method === "get_readiness") return { jsonrpc: "2.0", id, result: service.getReadiness() };
     if (method === "create_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: service.createWorkflow(opportunity) }; }
     if (method === "run_shadow_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runShadowWorkflow(opportunity) }; }
+    if (method === "run_paper_live") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runPaperLiveWorkflow(opportunity) }; }
     if (method === "submit_opportunity") return { jsonrpc: "2.0", id, result: await service.submitOpportunity(String(p.workflowId)) };
     if (method === "get_workflow") return { jsonrpc: "2.0", id, result: service.getWorkflow(String(p.workflowId)) };
     if (method === "get_reasoning_receipt") return { jsonrpc: "2.0", id, result: service.getReasoningReceipt(String(p.workflowId)) };

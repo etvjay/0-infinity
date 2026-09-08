@@ -35,12 +35,48 @@ test("paper writer rejects forged, mutable, accessor, and incomplete intents", a
   await assert.rejects(() => writer.submit(accessor as unknown as BoundedIntent), /invalid/);
 });
 
+test("paper writer validates the configured fill model and snapshots it", async () => {
+  for (const model of [
+    { status: "BOGUS", version: "v1" },
+    { status: "FILLED", version: "v1", price: Infinity },
+    { status: "FILLED", version: "v1", price: 0 },
+  ]) assert.throws(() => new PaperOrderWriter("a", 1000, model as never), /invalid/);
+  const model = { status: "FILLED" as const, version: "v1", price: 101 };
+  const writer = new PaperOrderWriter("a", 1000, model);
+  model.price = 999;
+  const receipt = await writer.submit(intent());
+  assert.equal(receipt.accountTransition.fills[0]?.price, 101);
+});
+
 test("registerStack requires own canonical role bindings and nested adapters", () => {
   const service = new ZeroInfinityService();
   const b = new BuiltinWorkerAdapter();
   const bindings = Object.create({ ADVOCATE: b });
   Object.assign(bindings, { OPPOSER: b, MARKET_ANALYST: b, COUNCIL: b });
   assert.throws(() => service.registerStack({ name: "bad", version: "1", bindings, capabilities: ["reasoning"] } as never), /canonical|binding/);
+  const inherited = Object.create({ invoke: b.invoke.bind(b) });
+  Object.assign(inherited, { name: "x", independence: "injected" });
+  assert.throws(() => service.registerStack({ name: "bad2", version: "1", bindings: { ADVOCATE: inherited, OPPOSER: inherited, MARKET_ANALYST: inherited, COUNCIL: inherited }, capabilities: ["reasoning"] } as never), /canonical|binding/);
+});
+
+test("external adapter rejects nonfinite and chronologically invalid numbers", async () => {
+  for (const payload of [
+    { expectedMoveBps: Infinity, confidence: .8, observedAt: 1, expiresAt: 2 },
+    { expectedMoveBps: 1, confidence: NaN, observedAt: 1, expiresAt: 2 },
+    { expectedMoveBps: 1, confidence: .8, observedAt: 2, expiresAt: 1 },
+  ]) {
+    const adapter = new HttpAgentAdapter("agent", async () => ({ workflowId: "w", invocationId: "i", role: "ADVOCATE", kind: "ADVOCATE", payload: { kind: "ADVOCATE", ref: "i", hash: "h", symbol: "BTCUSDT", direction: "LONG", ...payload } }));
+    await assert.rejects(() => adapter.invoke({ workflowId: "w", invocationId: "i", role: "ADVOCATE", opportunity: {}, timeoutMs: 100 }), /schema invalid/);
+  }
+});
+
+test("PAPER_LIVE is wired through REST and MCP", async () => {
+  const service = new ZeroInfinityService();
+  assert.ok((service.getCapabilities() as any).modes.includes("PAPER_LIVE"));
+  const rest = await handleRequest(service, "POST", "/v1/paper-live", { symbol: "BTCUSDT" });
+  assert.equal(rest.status, 200); assert.equal((rest.body as any).mode, "PAPER_LIVE");
+  const mcp = await handleMcp(service, { jsonrpc: "2.0", id: 1, method: "run_paper_live", params: { opportunity: { symbol: "BTCUSDT" } } });
+  assert.equal((mcp.result as any).mode, "PAPER_LIVE");
 });
 
 test("MCP rejects malformed opportunities and exposes canonical resources", async () => {

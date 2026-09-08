@@ -1,14 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { runCampaign } from "../src/shadow/mb7Campaign.js";
 import { validateEvidence } from "../src/shadow/mb7Evidence.js";
+
+test("M-B7 provenance is scoped to the campaign implementation source", () => {
+  const source = readFileSync("src/shadow/mb7Campaign.ts", "utf8");
+  const provenanceLine = source.split("\n").find(line => line.includes("const campaignSha")) ?? "";
+  assert.doesNotMatch(provenanceLine, /mb7Evidence\.ts/);
+  assert.match(provenanceLine, /src\/shadow\/mb7Campaign\.ts/);
+});
 
 test("M-B7 binds to the latest implementation commit and ignores env overrides", async () => {
   const old = process.env.MB7_CODE_SHA;
   process.env.MB7_CODE_SHA = "0".repeat(40);
   try {
     const { artifact } = await runCampaign();
-    assert.equal(artifact.codeSha, "1b9f5cee4a93e0c8a9b1e994723356a74b7e2b36");
+    const expectedSha = execFileSync("git", ["log", "-1", "--format=%H", "--", "src/shadow/mb7Campaign.ts"], { encoding: "utf8" }).trim();
+    assert.equal(artifact.codeSha, expectedSha);
     assert.equal(artifact.implementationSha, artifact.codeSha);
     const council = artifact.receipts.find((r: any) => r.scenario === "council-refusal");
     assert.deepEqual({ status: council.status, code: council.refusalCode, source: council.provenance.stage }, { status: "REFUSED", code: "THRESHOLD_NOT_MET", source: "council" });

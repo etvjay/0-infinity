@@ -1,0 +1,11 @@
+{
+  "name": "zero-infinity-sdk-consumer-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "0-infinity": "file:../.."
+  },
+  "scripts": {
+    "smoke": "node smoke.mjs"
+  }
+}

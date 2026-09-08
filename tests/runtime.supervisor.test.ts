@@ -170,3 +170,35 @@ test("fresh process rejects Object and Array pollution before supervisor import"
   `;
   execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd() });
 });
+
+test("fresh evaluator rejects replacement of well-known Symbol.iterator identity", () => {
+  const moduleUrl = new URL("../src/evaluator/index.js", import.meta.url).href;
+  const script = `
+    const { isCanonicalFrozenArray } = await import(${JSON.stringify(moduleUrl)});
+    const prior = Object.getOwnPropertyDescriptor(Array.prototype, Symbol.iterator);
+    delete Array.prototype[Symbol.iterator];
+    Object.defineProperty(Array.prototype, Symbol("Symbol.iterator"), prior);
+    if (isCanonicalFrozenArray(Object.freeze([1]))) process.exit(1);
+  `;
+  execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd() });
+});
+
+test("restore rejects forged refusal codes", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  await x.supervisor.start({ workflowId: "wf", mandate, market: deepFreeze({ ...market, observedAt: 1_000, receivedAt: 1_001 }), account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  const original = ((x.supervisor as any).persistence as MemoryWorkflowPersistence).load("wf")!;
+  const persistence = { load: () => Object.freeze({ ...original, status: "REFUSED", refusalCode: "FORGED" }), save: async () => {}, compareAndSave: async () => {}, [WORKFLOW_PERSISTENCE_CAS_CAPABILITY]: true } as any;
+  const supervisor = new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence, clock: () => 2_600 });
+  await assert.rejects(() => supervisor.restore("wf"), /RECOVERY_BLOCKED/);
+});
+
+test("restore rejects workflow receipt with mismatched writer-owned order lineage", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  const receipt = await x.supervisor.trigger("wf");
+  const original = ((x.supervisor as any).persistence as MemoryWorkflowPersistence).load("wf")!;
+  const forged = Object.freeze({ ...original, orderOutcome: "FILLED", clientOrderId: receipt.clientOrderId });
+  const persistence = { load: () => forged, save: async () => {}, compareAndSave: async () => {}, [WORKFLOW_PERSISTENCE_CAS_CAPABILITY]: true } as any;
+  const supervisor = new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence, clock: () => 2_600 });
+  await assert.rejects(() => supervisor.restore("wf"), /RECOVERY_BLOCKED/);
+});

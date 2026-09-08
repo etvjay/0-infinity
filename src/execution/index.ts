@@ -218,6 +218,11 @@ export class OrderWriter {
     order = { ...order, outcome: result.kind === "TIMEOUT" ? "UNKNOWN" : result.kind, acceptanceProvenance: result.kind, events: [] }; await this.persistence.save(freeze(order)); return freeze(clone(order));
   }
   reconcile(clientOrderId: string, event: FillEvent): Promise<OrderReceipt> { return this.serial(() => this.reconcileOnce(clientOrderId, event)); }
+  readReceipt(clientOrderId: string): OrderReceipt | undefined {
+    const order = this.persistence.load(clientOrderId);
+    if (!order || !validStoredOrder(order) || !this.writerOwns(order, clientOrderId)) return undefined;
+    return freeze(clone(order)) as OrderReceipt;
+  }
   private async reconcileOnce(clientOrderId: string, event: FillEvent): Promise<OrderReceipt> {
     const prior = this.persistence.load(clientOrderId); if (!prior) fail("unknown writer-owned clientOrderId"); if (!validStoredOrder(prior)) fail("persisted receipt is invalid");
     if (!validEvent(event)) fail("invalid reconciliation event");

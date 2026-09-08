@@ -29,8 +29,17 @@ function pristinePrototypeContracts(): { object: PrototypeContract; array: Proto
     return { object: describe(Object.prototype), array: describe(Array.prototype) };
   })()`) as { object: PrototypeContract; array: PrototypeContract };
 }
+function canonicalSymbol(description: string): symbol | undefined {
+  if (description === "Symbol.iterator") return Symbol.iterator;
+  if (description === "Symbol.unscopables") return Symbol.unscopables;
+  return undefined;
+}
 function pristinePrototype(p: object, contract: PrototypeContract): boolean {
-  const keys = Reflect.ownKeys(p); if (keys.length !== contract.keys.length || keys.some((k) => !contract.keys.some((expected) => (typeof k === "symbol" && typeof expected === "symbol") ? k.description === expected.description : k === expected))) return false;
+  const keys = Reflect.ownKeys(p); if (keys.length !== contract.keys.length) return false;
+  if (!keys.every((k) => contract.keys.some((expected) => {
+    if (typeof expected === "symbol") return typeof k === "symbol" && canonicalSymbol(expected.description ?? "") === k;
+    return k === expected;
+  }))) return false;
   return keys.every((key) => {
     const name = typeof key === "symbol" ? "symbol:" + (key.description ?? "") : key;
     const expected = contract.descriptors[name]; const actual = Object.getOwnPropertyDescriptor(p, key);
@@ -121,6 +130,6 @@ export function evaluateMandate(workflow: EvaluationWorkflow, mandate: Execution
     if (loss > mandate.risk.maxLossBps) return refuse("RISK_LIMIT", "current account loss exceeds mandate risk ceiling");
     const notional = mandate.economics.maxNotional;
     if (current + notional > mandate.economics.maxNotional || notional > available) return refuse("EXPOSURE_LIMIT", "available or aggregate exposure exceeds mandate ceiling");
-    return Object.freeze({ kind: "EXECUTION_INTENT", mandateId: mandate.mandateId, workflowId: mandate.workflowId, symbol: mandate.symbol, side: mandate.side, method: mandate.execution.method, price: entryPrice, notional, executableEdgeBps: edge, marketStateVersion: market.version, accountStateVersion: account.version });
+    return Object.freeze({ kind: "EXECUTION_INTENT", mandateId: mandate.mandateId, workflowId: mandate.workflowId, symbol: mandate.symbol, side: mandate.side, method: mandate.execution.method, accountId: mandate.accountId, price: entryPrice, notional, executableEdgeBps: edge, marketStateVersion: market.version, accountStateVersion: account.version });
   } catch { return refuse("INVALID_BINDING", "malformed evaluation input"); }
 }

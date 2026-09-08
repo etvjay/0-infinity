@@ -1,6 +1,6 @@
 {
   "schema": "ZO-BIN-MB8-REASONING-VERIFIABILITY-V1",
-  "codeSha": "4cad72c2d92b607d3affca95741ee82157023e19",
+  "codeSha": "1c023c948bc23047af8657125df14f581e0d3712",
   "receiptRefs": [
     "ZO-BIN-MB8-reasoning-approve",
     "ZO-BIN-MB8-reasoning-refuse"

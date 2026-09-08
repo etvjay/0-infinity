@@ -1,5 +1,6 @@
 {
   "schema": "ZO-BIN-MB8-BINANCE-SKILLS-LIVE-V1",
+  "codeSha": "1c023c948bc23047af8657125df14f581e0d3712",
   "status": "BINANCE_SKILLS_PUBLIC_READ_BLOCKED_EXTERNAL",
   "provider": "BINANCE",
   "surface": "SKILLS_HUB",

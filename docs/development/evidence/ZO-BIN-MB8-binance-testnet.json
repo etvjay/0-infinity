@@ -1,5 +1,6 @@
 {
   "evidenceId": "ZO-BIN-MB8-BINANCE-TESTNET",
+  "codeSha": "1c023c948bc23047af8657125df14f581e0d3712",
   "capability": "BINANCE_TESTNET",
   "status": "BLOCKED_EXTERNAL",
   "mode": "BINANCE_TESTNET",

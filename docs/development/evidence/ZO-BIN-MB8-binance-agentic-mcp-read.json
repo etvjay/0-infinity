@@ -1,5 +1,6 @@
 {
   "evidenceId": "ZO-BIN-MB8-BINANCE-AGENTIC-MCP-READ",
+  "codeSha": "1c023c948bc23047af8657125df14f581e0d3712",
   "endpoint": "https://agent.binance.com/mcp/agentic",
   "rawProbe": {
     "classification": "UNAUTHENTICATED_PROBE",

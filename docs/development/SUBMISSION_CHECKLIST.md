@@ -13,7 +13,7 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | Hosted Web | GitHub Pages workflow | BLOCKED_EXTERNAL | `docs/DEPLOYMENT.md` | 0-infinity | Pages hosting not independently verified |
 | REST | Local HTTP server | LOCAL_PASS | `npm run api`, `npm run check` | 0-infinity | No public host |
 | MCP | Local line-delimited JSON-RPC | LOCAL_PASS | `npm run mcp`, `docs/MCP.md` | 0-infinity | No public host |
-| SDK docs | TypeScript client and consumer fixture | LOCAL_PASS | `src/product/sdk.ts`, `examples/consumer` | 0-infinity | Consumer proof pending final run |
+| SDK docs | TypeScript client and consumer fixture | CONSUMER_PASS | `src/product/sdk.ts`, `examples/consumer`; clean `npm ci` + `npm run smoke` passed | 0-infinity | Hosted SDK target unavailable |
 | Binance Skills | Adapter and evidence | BLOCKED_EXTERNAL | `docs/development/evidence/ZO-BIN-MB8-binance-skills-live.json` | 0-infinity | Binance eligibility restriction |
 | Agentic MCP | Authorization boundary | AUTH_BLOCKED_EXTERNAL | `docs/development/evidence/ZO-BIN-MB8-binance-agentic-mcp-read.json` | 0-infinity | Official OAuth/client registration block |
 | SHADOW | Deterministic replay | SHADOW_PASS | `npm run demo`, M-B7 evidence | 0-infinity | None |
@@ -22,7 +22,7 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | README | Product explanation and runbook | PASS | `README.md` | 0-infinity | Keep claims current |
 | Security | Hostile-boundary tests and scans | LOCAL_PASS | `npm test`, `npm run secret-scan` | 0-infinity | External deployment security unproven |
 | Clean clone | `npm ci` and full gates | PENDING | Release evidence to be recorded | 0-infinity | Must run from fresh clone |
-| Cold review | External-only surface review | PENDING | Review receipt | Reviewer | Public Web/REST/MCP unavailable |
+| Cold review | Local cold REST/MCP/SDK smoke | LOCAL_PASS | Fresh process/client receipts recorded in release review | Reviewer | Public Web/REST/MCP unavailable |
 
 ## Prepared X submission
 

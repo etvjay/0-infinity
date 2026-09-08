@@ -1,0 +1,36 @@
+{
+  "schema": "ZO-BIN-REASONING-RECEIPT-V1",
+  "decision": "APPROVE",
+  "evidenceRefs": [
+    "adv-BTCUSDT",
+    "opp-BTCUSDT",
+    "ev-BTCUSDT"
+  ],
+  "supportingRefs": [
+    "adv-BTCUSDT",
+    "ev-BTCUSDT"
+  ],
+  "opposingRefs": [
+    "opp-BTCUSDT"
+  ],
+  "claims": [
+    {
+      "id": "threshold",
+      "text": "bounded council threshold met",
+      "refs": [
+        "adv-BTCUSDT"
+      ]
+    }
+  ],
+  "assumptions": [
+    "replay references are available"
+  ],
+  "unresolved": [
+    "account and MCP reads are blocked"
+  ],
+  "invalidation": [
+    "stale evidence",
+    "edge collapse"
+  ],
+  "canonicalSha256": "23cc44b24c751c5ec1c3253c797623d4a192d6e054cae22e714ae65d170444f9"
+}

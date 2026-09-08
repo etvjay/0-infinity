@@ -8,7 +8,10 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/tests/*.test.js",
     "shadow:campaign": "npm run build && node dist/src/shadow/mb7Campaign.js",
-    "evidence:mb7": "npm run build && node dist/src/shadow/mb7Evidence.js"
+    "evidence:mb7": "npm run build && node dist/src/shadow/mb7Evidence.js",
+    "demo": "npm run build && node dist/src/readiness/cli.js demo",
+    "readiness:validate": "npm run build && node dist/src/readiness/cli.js validate",
+    "secret-scan": "npm run build && node dist/src/readiness/cli.js secret-scan"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

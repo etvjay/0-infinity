@@ -1,0 +1,29 @@
+{
+  "schema": "ZO-BIN-REASONING-RECEIPT-V1",
+  "decision": "REFUSE",
+  "evidenceRefs": [
+    "adv-edge",
+    "opp-edge"
+  ],
+  "supportingRefs": [],
+  "opposingRefs": [
+    "opp-edge"
+  ],
+  "claims": [
+    {
+      "id": "edge",
+      "text": "economics edge is below the configured floor",
+      "refs": [
+        "opp-edge"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "unresolved": [
+    "no executable trade is authorized"
+  ],
+  "invalidation": [
+    "freshness recovery and a new council receipt are required"
+  ],
+  "canonicalSha256": "9201314829aa2033c75247a7c32f57747ffbbd09c148613442100c7ed96deaa5"
+}

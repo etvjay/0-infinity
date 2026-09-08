@@ -1,0 +1,13 @@
+{
+  "schema": "ZO-BIN-MB8-REASONING-VERIFIABILITY-V1",
+  "codeSha": "b47db0a2657da1db81ddebc0398ccf803b2f2019",
+  "receiptRefs": [
+    "ZO-BIN-MB8-reasoning-approve",
+    "ZO-BIN-MB8-reasoning-refuse"
+  ],
+  "approveSha256": "23cc44b24c751c5ec1c3253c797623d4a192d6e054cae22e714ae65d170444f9",
+  "refuseSha256": "9201314829aa2033c75247a7c32f57747ffbbd09c148613442100c7ed96deaa5",
+  "receiptBeforeThesis": true,
+  "chainOfThoughtIncluded": false,
+  "evidenceCeiling": "LOCAL_PASS; verifiable references and bounded claims only; no chain-of-thought"
+}

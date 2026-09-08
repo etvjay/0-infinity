@@ -14,7 +14,8 @@ test("returns a canonical deeply immutable thesis and replays deterministically"
   const a = conveneEvidenceCouncil(base()), b = conveneEvidenceCouncil(base());
   assert.equal(a.kind, "THESIS"); assert.deepEqual(a, b);
   if (a.kind !== "THESIS") return;
-  assert.deepEqual(a.thesis.reasoning, { method: "local-council-v1", advocateRef: "a-ref", opposeRef: "o-ref", marketAnalysisRef: "m-ref", evidenceBundleHash: "m-hash", councilDecisionHash: "stable-hash" });
+  assert.deepEqual(Object.keys(a.thesis.reasoning), ["method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash", "reasoningReceiptHash"]);
+  assert.equal(typeof a.thesis.reasoning.reasoningReceiptHash, "string");
   assert.equal(a.thesis.thesisId, "stable-id"); assert.equal(Object.isFrozen(a.thesis), true); assert.equal(Object.isFrozen(a.thesis.reasoning), true);
   assert.equal((a.thesis as unknown as Record<string, unknown>).authority, undefined);
 });

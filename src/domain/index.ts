@@ -8,7 +8,7 @@ export interface TradeThesis {
   readonly thesisId: string; readonly thesisHash?: string; readonly venue: Venue; readonly instrument: Instrument; readonly symbol: string;
   readonly direction: Direction; readonly side?: Side; readonly horizonMs: number; readonly confidence: number;
   readonly expectedMove: { readonly bps: number; readonly lowerBps: number; readonly upperBps: number };
-  readonly reasoning: { readonly method: string; readonly advocateRef: string; readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string };
+  readonly reasoning: { readonly method: string; readonly advocateRef: string; readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly reasoningReceiptHash?: string };
   readonly createdAt: number; readonly expiresAt: number;
 }
 
@@ -28,7 +28,7 @@ export interface AnchorState {
 
 export interface MandateProvenance {
   readonly thesisId: string; readonly thesisHash?: string; readonly method: string; readonly advocateRef: string;
-  readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string;
+  readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly reasoningReceiptHash?: string;
 }
 
 export interface ExecutionMandate {
@@ -48,7 +48,7 @@ export interface ExecutionMandate {
   readonly version: 1; readonly maxUses: 1;
 }
 
-const CANONICAL_REASONING_KEYS = ["method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash"] as const;
+const CANONICAL_REASONING_KEYS = ["method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash", "reasoningReceiptHash"] as const;
 
 function freezeDeep<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -119,6 +119,7 @@ export function compileMandate(
   if (thesis.expiresAt <= thesis.createdAt) throw new RangeError("thesis validity is incoherent");
   for (const key of enumerableKeysIncludingPrototype(thesis.reasoning)) if (!CANONICAL_REASONING_KEYS.includes(key as typeof CANONICAL_REASONING_KEYS[number])) throw new RangeError(`reasoning field ${key} would expand authority`);
   for (const key of CANONICAL_REASONING_KEYS) {
+    if (key === "reasoningReceiptHash" && thesis.reasoning[key] === undefined) continue;
     if (!Object.prototype.propertyIsEnumerable.call(thesis.reasoning, key)) throw new TypeError(`reasoning.${key} must be an own enumerable property`);
     requiredString(thesis.reasoning[key], `reasoning.${key}`);
   }

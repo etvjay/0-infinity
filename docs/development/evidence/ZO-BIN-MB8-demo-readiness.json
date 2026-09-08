@@ -1,0 +1,40 @@
+{
+  "status": "READINESS_PREPARED",
+  "codeSha": "b47db0a2657da1db81ddebc0398ccf803b2f2019",
+  "mode": "submission-ready-shadow/readiness",
+  "capabilities": {
+    "mode": "submission-ready-shadow/readiness",
+    "venue": "Binance",
+    "product": "USD_M_FUTURES",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ],
+    "marketRead": true,
+    "accountRead": false,
+    "mcpRead": false,
+    "liveWrite": false,
+    "cancelWrite": false,
+    "transferWrite": false,
+    "withdrawalWrite": false,
+    "requiresConfirmation": true,
+    "evidenceCeiling": "LOCAL_PASS plus bounded LIVE_READ_PASS market bookTicker only; no account, MCP, or live-write proof"
+  },
+  "scenarioIds": [
+    "economics-edge-collapse",
+    "valid-shadow-execution",
+    "unknown-recovery"
+  ],
+  "receiptRefs": [
+    "shadow-receipt-01",
+    "shadow-receipt-02",
+    "shadow-receipt-03"
+  ],
+  "mb7Ref": "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1",
+  "mcpEvidenceRef": "ZO-BIN-MCP-401-AGENTIC-READ-ONLY",
+  "externalBlockers": [
+    "M-B2-G HTTP 451",
+    "MCP HTTP 401 bearer authentication required"
+  ],
+  "liveWriteStatus": "DISABLED"
+}

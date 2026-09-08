@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ExecutionEconomicsResult } from "../economics/index.js";
+import { createReasoningReceipt } from "./receipt.js";
 import type { Direction, TradeThesis as DomainTradeThesis } from "../domain/index.js";
 
 export type CouncilDirection = Exclude<Direction, "FLAT">;
@@ -154,7 +155,8 @@ export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {
     const decisionHash = p.thesisHash ?? hash({ advocate: a.hash, oppose: o.hash, evidence: e.hash, policy: p });
     const thesisId = p.thesisId ?? `thesis-${hash({ symbol: a.symbol, direction: a.direction, decisionHash }).slice(0, 32)}`;
     const createdAt = Math.max(a.observedAt, o.observedAt, e.observedAt); const expiresAt = Math.min(a.expiresAt, o.expiresAt, e.expiresAt);
-    const thesis: TradeThesis = { thesisId, thesisHash: decisionHash, venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: a.symbol, direction: a.direction, side: a.direction === "LONG" ? "BUY" : "SELL", horizonMs: expiresAt - createdAt, confidence: a.confidence, expectedMove: { bps: a.expectedMoveBps, lowerBps: a.expectedMoveBps, upperBps: a.expectedMoveBps }, reasoning: { method: p.method, advocateRef: a.ref, opposeRef: o.ref, marketAnalysisRef: e.ref, evidenceBundleHash: e.hash, councilDecisionHash: decisionHash }, createdAt, expiresAt };
+    const receipt = createReasoningReceipt({ decision: "APPROVE", evidenceRefs: [a.ref, o.ref, e.ref], supportingRefs: [a.ref, e.ref], opposingRefs: [o.ref], claims: [{ id: "threshold", text: "council thresholds are met", refs: [a.ref] }, { id: "evidence", text: "market and account evidence are trusted", refs: [e.ref] }], assumptions: ["evidence references are externally resolvable"], unresolved: ["authenticated account and MCP reads remain bounded externally"], invalidation: ["stale evidence", "contradictory evidence", "economics edge collapse"] });
+    const thesis: TradeThesis = { thesisId, thesisHash: decisionHash, venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: a.symbol, direction: a.direction, side: a.direction === "LONG" ? "BUY" : "SELL", horizonMs: expiresAt - createdAt, confidence: a.confidence, expectedMove: { bps: a.expectedMoveBps, lowerBps: a.expectedMoveBps, upperBps: a.expectedMoveBps }, reasoning: { method: p.method, advocateRef: a.ref, opposeRef: o.ref, marketAnalysisRef: e.ref, evidenceBundleHash: e.hash, councilDecisionHash: decisionHash, reasoningReceiptHash: receipt.canonicalSha256 }, createdAt, expiresAt };
     return freeze({ kind: "THESIS", thesis });
   } catch { return refusal("MALFORMED_INPUT", "input is malformed"); }
 }

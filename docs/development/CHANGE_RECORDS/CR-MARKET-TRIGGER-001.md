@@ -23,7 +23,7 @@ invariants:
   - HOT_PATH_MODEL_INVOCATIONS = 0
   - One OrderWriter remains the only execution writer.
   - No observation can create a mandate or intent without an existing mandate.
-  - Stale, mismatched, or malformed observations refuse before writer submission.
+  - Lower-version, stale, future, mismatched, or malformed observations fail closed.
 allowed_files:
   - src/runtime/supervisor.ts
   - tests/runtime.supervisor.test.ts
@@ -35,10 +35,24 @@ forbidden_files:
   - src/testnet/index.ts
   - credentials/deployment configuration
 implementation_plan:
-  - Add RED tests for arm, observation replacement, trigger, writer receipt, and bindings.
+  - Add RED tests for arm, observation replacement, trigger, writer receipt, bindings, and lower-version rejection.
   - Implement arm through the existing RuntimeSupervisor persistence boundary.
   - Implement observeMarket through existing CAS persistence and triggerOnce.
   - Run focused/full gates and exact-head review.
-evidence_ceiling:
-  LOCAL_PASS only; injected deterministic market/account envelopes and local/replay writer. No live exchange execution or production latency claim.
+tests_required:
+  - runtime supervisor composition suite
+  - market connectivity suite
+  - full npm test suite
+  - typecheck/build/diff-check
+evidence_produced:
+  - RED missing-arm test demonstrated the absent composition surface.
+  - GREEN focused supervisor suite: 22/22.
+  - GREEN full suite: 520/520.
+  - implementation commits: bdeff86, ccd3dbb.
+  - final exact-head review pending.
+evidence_ceiling: >
+  LOCAL_PASS only; injected deterministic market/account envelopes and local/replay writer.
+  No live exchange execution, production durability, synchronized live market truth,
+  or production latency claim.
+open_questions: []
 ```

@@ -11,7 +11,7 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | GitHub | `https://github.com/etvjay/0-infinity` | PASS | Public repository; final candidate SHA is pushed only after final review | 0-infinity | Verify origin/main after push |
 | Survey | Prepared answers | USER_INPUT_REQUIRED | `docs/submission/SURVEY_ANSWERS.md` | User | Account-specific fields |
 | Hosted Web | GitHub Pages workflow | BLOCKED_EXTERNAL | `docs/DEPLOYMENT.md` | 0-infinity | Pages hosting not independently verified |
-| REST | Local HTTP server | LOCAL_PASS | `npm run api`, `npm run check` | 0-infinity | No public host |
+| REST | Local HTTP server + bounded ephemeral preview attempt | LOCAL_ONLY | `npm run api`, `npm run check`; quick HTTPS preview briefly proved health/workflow then returned 502 and was stopped | 0-infinity | No persistent public host |
 | MCP | Local line-delimited JSON-RPC | LOCAL_PASS | `npm run mcp`, `docs/MCP.md` | 0-infinity | No public host |
 | SDK docs | TypeScript client and consumer fixture | CONSUMER_PASS | `src/product/sdk.ts`, `examples/consumer`; clean `npm ci` + `npm run smoke` passed | 0-infinity | Hosted SDK target unavailable |
 | Binance Skills | Adapter and evidence | BLOCKED_EXTERNAL | `docs/development/evidence/ZO-BIN-MB8-binance-skills-live.json` | 0-infinity | Binance eligibility restriction |
@@ -21,7 +21,7 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | TESTNET | Binance USDⓈ-M adapter | BLOCKED_EXTERNAL | `ZO-BIN-MB8-binance-testnet.json` | 0-infinity | Dedicated credentials unavailable |
 | README | Product explanation and runbook | PASS | `README.md` | 0-infinity | Keep claims current |
 | Security | Hostile-boundary tests and scans | LOCAL_PASS | `npm test`, `npm run secret-scan` | 0-infinity | External deployment security unproven |
-| Clean clone | `npm ci` and full gates | PENDING | Release evidence to be recorded | 0-infinity | Must run from fresh clone |
+| Clean clone | `npm ci` and full gates | PASS | Fresh clone at `c0917a2`: npm ci, check, 521/521 tests, build, demo, evidence validation, web check, consumer npm ci | 0-infinity | None |
 | Cold review | Local cold REST/MCP/SDK smoke | LOCAL_PASS | Fresh process/client receipts recorded in release review | Reviewer | Public Web/REST/MCP unavailable |
 
 ## Prepared X submission

@@ -1,10 +1,10 @@
 {
   "campaignId": "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1",
   "mode": "SHADOW",
-  "startingSha": "3a8d5948d4394b29f96a55f222241c92677b5973",
-  "implementationSha": "3a8d5948d4394b29f96a55f222241c92677b5973",
-  "codeSha": "3a8d5948d4394b29f96a55f222241c92677b5973",
-  "finalSha": "3a8d5948d4394b29f96a55f222241c92677b5973",
+  "startingSha": "9c6357f1f71eb9e9c11540930a7605cfff6aeed2",
+  "runnerImplementationSha": "9c6357f1f71eb9e9c11540930a7605cfff6aeed2",
+  "validatorImplementationSha": "9c6357f1f71eb9e9c11540930a7605cfff6aeed2",
+  "finalSha": "9c6357f1f71eb9e9c11540930a7605cfff6aeed2",
   "workflowCount": 20,
   "scenarios": [
     "approval-ack",
@@ -775,5 +775,5 @@
     "M-B2-G HTTP 451 bypass",
     "push"
   ],
-  "artifactPayloadSha256": "e7bd92762d62ea1c6d891d8175bfb5ad8d95304bd5811c8ad7c24ff0d4fb4898"
+  "artifactPayloadSha256": "4666d1faca5e59c9602631caa28b191d11fa990cb617acf712e7fa50584b31d0"
 }

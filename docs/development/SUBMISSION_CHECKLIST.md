@@ -17,7 +17,7 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | Binance Skills | Adapter and evidence | BLOCKED_EXTERNAL | `docs/development/evidence/ZO-BIN-MB8-binance-skills-live.json` | 0-infinity | Binance eligibility restriction |
 | Agentic MCP | Authorization boundary | AUTH_BLOCKED_EXTERNAL | `docs/development/evidence/ZO-BIN-MB8-binance-agentic-mcp-read.json` | 0-infinity | Official OAuth/client registration block |
 | SHADOW | Deterministic replay | SHADOW_PASS | `npm run demo`, M-B7 evidence | 0-infinity | None |
-| PAPER | Deterministic simulation | PAPER_SIM_PASS | `npm run demo`, PaperOrderWriter tests | 0-infinity | No synchronized depth claim |
+| PAPER | Deterministic simulation | PAPER_MARKET_PASS | `ZO-BIN-MB8-paper-market-input.json`, `ZO-BIN-MB8-paper-market-session.json`; native bookTicker input, top-of-book model, simulated FILLED and edge-collapse refusal | 0-infinity | No synchronized depth/private account claim |
 | TESTNET | Binance USDⓈ-M adapter | BLOCKED_EXTERNAL | `ZO-BIN-MB8-binance-testnet.json` | 0-infinity | Dedicated credentials unavailable |
 | README | Product explanation and runbook | PASS | `README.md` | 0-infinity | Keep claims current |
 | Security | Hostile-boundary tests and scans | LOCAL_PASS | `npm test`, `npm run secret-scan` | 0-infinity | External deployment security unproven |

@@ -1,0 +1,157 @@
+{
+  "schema": "ZO-BIN-MB8-PAPER-MARKET-INPUT-V1",
+  "status": "LIVE_READ_PASS",
+  "source": {
+    "endpoint": "wss://fstream.binance.com/ws/btcusdt@bookTicker",
+    "transport": "native Binance public WebSocket",
+    "stream": "bookTicker",
+    "symbol": "BTCUSDT",
+    "product": "USD_M_FUTURES"
+  },
+  "sessionStartedAt": 1788874048350,
+  "sessionEndedAt": 1788874053417,
+  "observationCount": 5,
+  "observations": [
+    {
+      "raw": {
+        "e": "bookTicker",
+        "u": 11505068683026,
+        "s": "BTCUSDT",
+        "ps": "BTCUSDT",
+        "b": "78350.20",
+        "B": "6.988",
+        "a": "78350.30",
+        "A": "16.529",
+        "T": 1788874048357,
+        "E": 1788874048357,
+        "st": 1
+      },
+      "receivedAt": 1788874048407,
+      "normalized": {
+        "venue": "BINANCE",
+        "instrument": "USD_M_FUTURES",
+        "symbol": "BTCUSDT",
+        "bidPrice": 78350.2,
+        "bidQuantity": 6.988,
+        "askPrice": 78350.3,
+        "askQuantity": 16.529,
+        "eventTime": 1788874048357,
+        "transactionTime": 1788874048357,
+        "updateVersion": "11505068683026"
+      }
+    },
+    {
+      "raw": {
+        "e": "bookTicker",
+        "u": 11505068683263,
+        "s": "BTCUSDT",
+        "ps": "BTCUSDT",
+        "b": "78350.20",
+        "B": "6.573",
+        "a": "78350.30",
+        "A": "16.529",
+        "T": 1788874048359,
+        "E": 1788874048359,
+        "st": 1
+      },
+      "receivedAt": 1788874048408,
+      "normalized": {
+        "venue": "BINANCE",
+        "instrument": "USD_M_FUTURES",
+        "symbol": "BTCUSDT",
+        "bidPrice": 78350.2,
+        "bidQuantity": 6.573,
+        "askPrice": 78350.3,
+        "askQuantity": 16.529,
+        "eventTime": 1788874048359,
+        "transactionTime": 1788874048359,
+        "updateVersion": "11505068683263"
+      }
+    },
+    {
+      "raw": {
+        "e": "bookTicker",
+        "u": 11505068683368,
+        "s": "BTCUSDT",
+        "ps": "BTCUSDT",
+        "b": "78350.20",
+        "B": "6.572",
+        "a": "78350.30",
+        "A": "16.529",
+        "T": 1788874048360,
+        "E": 1788874048360,
+        "st": 1
+      },
+      "receivedAt": 1788874048409,
+      "normalized": {
+        "venue": "BINANCE",
+        "instrument": "USD_M_FUTURES",
+        "symbol": "BTCUSDT",
+        "bidPrice": 78350.2,
+        "bidQuantity": 6.572,
+        "askPrice": 78350.3,
+        "askQuantity": 16.529,
+        "eventTime": 1788874048360,
+        "transactionTime": 1788874048360,
+        "updateVersion": "11505068683368"
+      }
+    },
+    {
+      "raw": {
+        "e": "bookTicker",
+        "u": 11505068683394,
+        "s": "BTCUSDT",
+        "ps": "BTCUSDT",
+        "b": "78350.20",
+        "B": "6.948",
+        "a": "78350.30",
+        "A": "16.529",
+        "T": 1788874048360,
+        "E": 1788874048360,
+        "st": 1
+      },
+      "receivedAt": 1788874048410,
+      "normalized": {
+        "venue": "BINANCE",
+        "instrument": "USD_M_FUTURES",
+        "symbol": "BTCUSDT",
+        "bidPrice": 78350.2,
+        "bidQuantity": 6.948,
+        "askPrice": 78350.3,
+        "askQuantity": 16.529,
+        "eventTime": 1788874048360,
+        "transactionTime": 1788874048360,
+        "updateVersion": "11505068683394"
+      }
+    },
+    {
+      "raw": {
+        "e": "bookTicker",
+        "u": 11505068683648,
+        "s": "BTCUSDT",
+        "ps": "BTCUSDT",
+        "b": "78350.20",
+        "B": "6.949",
+        "a": "78350.30",
+        "A": "16.529",
+        "T": 1788874048361,
+        "E": 1788874048361,
+        "st": 1
+      },
+      "receivedAt": 1788874048411,
+      "normalized": {
+        "venue": "BINANCE",
+        "instrument": "USD_M_FUTURES",
+        "symbol": "BTCUSDT",
+        "bidPrice": 78350.2,
+        "bidQuantity": 6.949,
+        "askPrice": 78350.3,
+        "askQuantity": 16.529,
+        "eventTime": 1788874048361,
+        "transactionTime": 1788874048361,
+        "updateVersion": "11505068683648"
+      }
+    }
+  ],
+  "evidenceCeiling": "Bounded public native market read only; no depth/account/write claim."
+}

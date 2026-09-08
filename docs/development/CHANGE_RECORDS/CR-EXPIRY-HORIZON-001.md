@@ -73,8 +73,9 @@ negative_tests_required:
 evidence_produced:
   - RED focused run demonstrated the pre-fix boundary failures
   - GREEN focused expiry/store/domain/supervisor run: 34/34
-  - GREEN full suite before final metadata review: 516/516
-  - implementation commits: fc9dea9, 8de9f59, 8056a43
+  - GREEN full suite after restore-guard reconciliation: 518/518
+  - focused runtime/store/domain/supervisor suite: 34/34
+  - implementation commits: fc9dea9, 8de9f59, 8056a43, d39cfcc
   - final exact-head review pending
 ground_truth_before:
   - evaluator used now >= expiresAt

@@ -133,4 +133,3 @@ M-B7 proof receipt:
 - receipts: focused M-B7 `12/12`; full suite `456/456`; check/build/campaign/validator/diff-check `PASS`.
 - metrics: council refusals `1`; approvals `7`; mandates `19`; refusals `9`; ACK `4`; partial `1`; filled `2`; rejected `1`; UNKNOWN `1`; recovered `1`; NOT_EXERCISED `0`; all critical invariant counters `0`; deterministic runs `2`.
 - evidence ceiling: deterministic local replay only; no live market/account truth, exchange execution, credentials, wallet/funds behavior, production durability, profitability, or M-B2-G recovery. M-B2-G remains `BLOCKED_EXTERNAL`.
-

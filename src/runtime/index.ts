@@ -7,3 +7,4 @@
 export * from "./mandateState.js";
 export * from "./mandateEvents.js";
 export * from "./mandateRuntime.js";
+export * from "./supervisor.js";

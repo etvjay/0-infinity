@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { HttpAgentAdapter } from "../src/product/adapters.js";
 import { ZeroInfinityService } from "../src/product/service.js";
 import { handleMcp } from "../src/product/mcp.js";
-import { handleRequest } from "../src/product/http.js";
+import { handleRequest, createHttpServer } from "../src/product/http.js";
 import { PaperOrderWriter } from "../src/product/paper.js";
 import { BuiltinWorkerAdapter } from "../src/product/adapters.js";
 import type { BoundedIntent } from "../src/execution/index.js";
@@ -86,6 +86,27 @@ test("PAPER_LIVE is wired through REST and MCP", async () => {
   const mcp = await handleMcp(service, { jsonrpc: "2.0", id: 1, method: "run_paper_live", params: { opportunity: { symbol: "BTCUSDT" } } });
   assert.equal((mcp.result as any).mode, "PAPER_LIVE");
 });
+
+test("HTTP server serializes bigint workflow state for external clients", async () => {
+  const server = createHttpServer(new ZeroInfinityService());
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const port = typeof address === "object" && address ? address.port : 0;
+  try {
+    const create = await fetch(`http://127.0.0.1:${port}/v1/workflows`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ symbol: "BTCUSDT", venue: "BINANCE", product: "USD_M_FUTURES" }) });
+    const workflow = await create.json() as { workflowId: string };
+    const submit = await fetch(`http://127.0.0.1:${port}/v1/workflows/${workflow.workflowId}/submit`, { method: "POST" });
+    assert.equal(submit.status, 200);
+    const read = await fetch(`http://127.0.0.1:${port}/v1/workflows/${workflow.workflowId}`);
+    assert.equal(read.status, 200);
+    const paper = await fetch(`http://127.0.0.1:${port}/v1/paper-live`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ symbol: "BTCUSDT" }) });
+    assert.equal(paper.status, 200);
+    await paper.json();
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  }
+});
+
 
 test("MCP rejects malformed opportunities and exposes canonical resources", async () => {
   const service = new ZeroInfinityService();

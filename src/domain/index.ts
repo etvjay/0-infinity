@@ -8,7 +8,7 @@ export interface TradeThesis {
   readonly thesisId: string; readonly thesisHash?: string; readonly venue: Venue; readonly instrument: Instrument; readonly symbol: string;
   readonly direction: Direction; readonly side?: Side; readonly horizonMs: number; readonly confidence: number;
   readonly expectedMove: { readonly bps: number; readonly lowerBps: number; readonly upperBps: number };
-  readonly reasoning: { readonly method: string; readonly advocateRef: string; readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly reasoningReceiptHash?: string };
+  readonly reasoning: { readonly method: string; readonly advocateRef: string; readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly reasoningReceiptHash: string };
   readonly createdAt: number; readonly expiresAt: number;
 }
 
@@ -28,7 +28,7 @@ export interface AnchorState {
 
 export interface MandateProvenance {
   readonly thesisId: string; readonly thesisHash?: string; readonly method: string; readonly advocateRef: string;
-  readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly reasoningReceiptHash?: string;
+  readonly opposeRef: string; readonly marketAnalysisRef: string; readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly reasoningReceiptHash: string;
 }
 
 export interface ExecutionMandate {

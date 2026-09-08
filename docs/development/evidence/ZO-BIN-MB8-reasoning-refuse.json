@@ -1,29 +1,60 @@
 {
-  "schema": "ZO-BIN-REASONING-RECEIPT-V1",
-  "decision": "REFUSE",
-  "evidenceRefs": [
-    "adv-edge",
-    "opp-edge"
-  ],
-  "supportingRefs": [],
-  "opposingRefs": [
-    "opp-edge"
-  ],
-  "claims": [
-    {
-      "id": "edge",
-      "text": "economics edge is below the configured floor",
-      "refs": [
-        "opp-edge"
-      ]
-    }
-  ],
-  "assumptions": [],
-  "unresolved": [
-    "no executable trade is authorized"
-  ],
-  "invalidation": [
-    "freshness recovery and a new council receipt are required"
-  ],
-  "canonicalSha256": "9201314829aa2033c75247a7c32f57747ffbbd09c148613442100c7ed96deaa5"
+  "receiptVersion": "ZO-BIN-REASONING-RECEIPT-V2",
+  "workflowId": "demo-workflow",
+  "createdAt": 1700000000000,
+  "opportunity": {
+    "venue": "BINANCE",
+    "product": "USD_M_FUTURES",
+    "symbol": "BTCUSDT"
+  },
+  "evidence": {
+    "evidenceBundleHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "supporting": [],
+    "opposing": [
+      {
+        "ref": "opp-edge",
+        "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "workflowId": "demo-workflow",
+        "venue": "BINANCE",
+        "product": "USD_M_FUTURES",
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "analyses": {
+    "advocate": "adv-edge",
+    "oppose": "opp-edge",
+    "market": "market-edge"
+  },
+  "council": {
+    "decision": "REFUSE",
+    "direction": "LONG",
+    "confidence": 0.1,
+    "expectedMoveBps": 0,
+    "horizonMs": 1,
+    "strongestSupport": "no-support",
+    "strongestOpposition": "opp-edge",
+    "invalidation": [],
+    "unresolved": [
+      "no executable trade is authorized"
+    ]
+  },
+  "rationale": {
+    "method": "bounded-council",
+    "claims": [
+      {
+        "claimId": "edge",
+        "statement": "economics edge is below the configured floor",
+        "supportedBy": [],
+        "opposedBy": [
+          "opp-edge"
+        ],
+        "assumptions": []
+      }
+    ]
+  },
+  "output": {
+    "councilDecisionHash": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+  },
+  "canonicalSha256": "25b55369d6deee71b772da872152c2aad8e772426a3f778a65d5fc77ee7931ea"
 }

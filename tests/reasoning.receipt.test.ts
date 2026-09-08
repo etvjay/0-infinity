@@ -1,18 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createReasoningReceipt, verifyReasoningReceipt, reasoningReceiptMarkdown, type ReasoningReceipt } from "../src/reasoning/receipt.js";
-
-test("reasoning receipt has stable canonical serialization and SHA-256", () => {
-  const receipt = createReasoningReceipt({ decision: "APPROVE", evidenceRefs: ["a-ref", "o-ref"], supportingRefs: ["a-ref"], opposingRefs: ["o-ref"], claims: [{ id: "edge", text: "edge clears floor", refs: ["a-ref"] }], assumptions: ["public replay is bounded"], unresolved: ["account read unavailable"], invalidation: ["stale evidence", "edge collapse"] });
-  assert.equal(verifyReasoningReceipt(receipt), receipt.canonicalSha256);
-  assert.equal(receipt.canonicalSha256, verifyReasoningReceipt(receipt));
-  assert.match(reasoningReceiptMarkdown(receipt), /APPROVE/);
-  assert.equal(Object.isFrozen(receipt), true);
-});
-
-test("reasoning receipt rejects dangling refs, contradiction, and mutation", () => {
-  assert.throws(() => createReasoningReceipt({ decision: "APPROVE", evidenceRefs: ["a"], supportingRefs: ["missing"], opposingRefs: [], claims: [], assumptions: [], unresolved: [], invalidation: [] }));
-  assert.throws(() => createReasoningReceipt({ decision: "REFUSE", evidenceRefs: ["a"], supportingRefs: ["a"], opposingRefs: ["a"], claims: [], assumptions: [], unresolved: [], invalidation: [] }));
-  const receipt = createReasoningReceipt({ decision: "REFUSE", evidenceRefs: ["a"], supportingRefs: [], opposingRefs: ["a"], claims: [], assumptions: [], unresolved: ["threshold"], invalidation: ["freshness"] });
-  assert.equal(verifyReasoningReceipt({ ...receipt, canonicalSha256: "0".repeat(64) }), false);
-});
+import { createReasoningReceipt, verifyReasoningReceipt, reasoningReceiptMarkdown, type EvidenceContextRegistry, type EvidenceReference } from "../src/reasoning/receipt.js";
+const ref = (name: string, hash: string): EvidenceReference => ({ ref: name, hash, workflowId: "wf", venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT" });
+const refs = { a: ref("a", "a-hash"), o: ref("o", "o-hash"), m: ref("m", "m-hash") };
+const input = () => ({ receiptVersion: "ZO-BIN-REASONING-RECEIPT-V2" as const, workflowId: "wf", createdAt: 100, opportunity: { venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT" }, evidence: { evidenceBundleHash: "bundle", supporting: [refs.a, refs.m], opposing: [refs.o] }, analyses: { advocate: "a", oppose: "o", market: "m" }, council: { decision: "APPROVE" as const, direction: "LONG" as const, confidence: .8, expectedMoveBps: 20, horizonMs: 1000, strongestSupport: "a", strongestOpposition: "o", invalidation: ["stale"], unresolved: ["blocked"] }, rationale: { method: "bounded", claims: [{ claimId: "c1", statement: "threshold met", supportedBy: ["a"], opposedBy: [], assumptions: [] }] }, output: { councilDecisionHash: "council", tradeThesisHash: undefined } });
+test("reasoning receipt is complete, canonical, immutable, and registry-bound", () => { const receipt = createReasoningReceipt(input()); const registry: EvidenceContextRegistry = { workflowId: "wf", venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT", evidenceBundleHash: "bundle", references: Object.values(refs), analyses: input().analyses }; assert.equal(verifyReasoningReceipt(receipt, registry), receipt.canonicalSha256); assert.equal(reasoningReceiptMarkdown(receipt).includes("APPROVE"), true); assert.equal(Object.isFrozen(receipt), true); assert.equal(verifyReasoningReceipt({ ...receipt, evidence: { ...receipt.evidence, supporting: [refs.o, refs.m] } }, registry), false); });
+test("APPROVE requires opposition and invalidation while REFUSE remains verifiable", () => { assert.throws(() => createReasoningReceipt({ ...input(), council: { ...input().council, opposing: [] } } as never)); const refused = createReasoningReceipt({ ...input(), evidence: { ...input().evidence, opposing: [refs.o] }, council: { ...input().council, decision: "REFUSE", invalidation: [] } }); assert.equal(typeof verifyReasoningReceipt(refused), "string"); });

@@ -9,7 +9,7 @@ import { createMandateRuntime, transition } from "../src/runtime/mandateRuntime.
 import { MandateStore, JsonFilePersistence, MemoryPersistence, authorityKey, StoreError } from "../src/store/index.js";
 import { evaluateMandate, type EvaluationPolicy, type LiveAccountState, type LiveMarketState, type StateEnvelope } from "../src/evaluator/index.js";
 
-const thesis: TradeThesis = { thesisId: "e-thesis", thesisHash: "e-hash", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .8, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c" }, createdAt: 1_000, expiresAt: 61_000 };
+const thesis: TradeThesis = { thesisId: "e-thesis", thesisHash: "e-hash", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .8, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c", reasoningReceiptHash: "r" }, createdAt: 1_000, expiresAt: 61_000 };
 const compilerPolicy: CompilerPolicy = { accountId: "e-account", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 6, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_975, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
 const anchor: AnchorState = { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 };
 const policy: EvaluationPolicy = { maxMarketAgeMs: 1_000, maxAccountAgeMs: 1_000, maxAnchorVersionLag: 3n };

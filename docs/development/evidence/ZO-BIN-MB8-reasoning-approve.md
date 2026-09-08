@@ -1,19 +1,9 @@
 # Reasoning receipt: APPROVE
-- Schema: ZO-BIN-REASONING-RECEIPT-V1
-- SHA-256: `23cc44b24c751c5ec1c3253c797623d4a192d6e054cae22e714ae65d170444f9`
-- Evidence: adv-BTCUSDT, opp-BTCUSDT, ev-BTCUSDT
-- Supporting: adv-BTCUSDT, ev-BTCUSDT
-- Opposing: opp-BTCUSDT
+- Version: ZO-BIN-REASONING-RECEIPT-V2
+- SHA-256: `a2472e891c88c871f854581721031e1ea8f117c8fdae9b90fb06fc8229216743`
+- Workflow: demo-workflow
+- Opportunity: BINANCE/USD_M_FUTURES/BTCUSDT
+- Evidence bundle: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 
 ## Claims
-- **threshold**: bounded council threshold met (refs: adv-BTCUSDT)
-
-## Assumptions
-- replay references are available
-
-## Unresolved
-- account and MCP reads are blocked
-
-## Invalidation
-- stale evidence
-- edge collapse
+- **threshold**: bounded council threshold met

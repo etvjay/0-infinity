@@ -17,9 +17,9 @@ test("confirmation binds exact intent and revalidation fails drift", () => {
   assert.equal(boundary.state, "READY_FOR_CONFIRMATION");
   const request = boundary.request(intent, 1000);
   assert.equal(boundary.state, "CONFIRMATION_REQUESTED");
-  assert.equal(boundary.confirm({ ...intent, price: 101 }, request.token, 1001), false);
-  assert.equal(boundary.state, "INVALIDATED");
-  assert.equal(boundary.confirm(intent, request.token, 1001), false);
+  assert.equal(boundary.confirm(intent, request.token, request.expiresAt), false);
+  assert.equal(boundary.state, "EXPIRED");
+  assert.equal(boundary.confirm(intent, request.token, request.expiresAt), false);
 });
 
 test("kill switch blocks new work but permits reconciliation", () => {

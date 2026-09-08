@@ -1,36 +1,82 @@
 {
-  "schema": "ZO-BIN-REASONING-RECEIPT-V1",
-  "decision": "APPROVE",
-  "evidenceRefs": [
-    "adv-BTCUSDT",
-    "opp-BTCUSDT",
-    "ev-BTCUSDT"
-  ],
-  "supportingRefs": [
-    "adv-BTCUSDT",
-    "ev-BTCUSDT"
-  ],
-  "opposingRefs": [
-    "opp-BTCUSDT"
-  ],
-  "claims": [
-    {
-      "id": "threshold",
-      "text": "bounded council threshold met",
-      "refs": [
-        "adv-BTCUSDT"
-      ]
-    }
-  ],
-  "assumptions": [
-    "replay references are available"
-  ],
-  "unresolved": [
-    "account and MCP reads are blocked"
-  ],
-  "invalidation": [
-    "stale evidence",
-    "edge collapse"
-  ],
-  "canonicalSha256": "23cc44b24c751c5ec1c3253c797623d4a192d6e054cae22e714ae65d170444f9"
+  "receiptVersion": "ZO-BIN-REASONING-RECEIPT-V2",
+  "workflowId": "demo-workflow",
+  "createdAt": 1700000000000,
+  "opportunity": {
+    "venue": "BINANCE",
+    "product": "USD_M_FUTURES",
+    "symbol": "BTCUSDT"
+  },
+  "evidence": {
+    "evidenceBundleHash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "supporting": [
+      {
+        "ref": "adv-BTCUSDT",
+        "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "workflowId": "demo-workflow",
+        "venue": "BINANCE",
+        "product": "USD_M_FUTURES",
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ref": "ev-BTCUSDT",
+        "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "workflowId": "demo-workflow",
+        "venue": "BINANCE",
+        "product": "USD_M_FUTURES",
+        "symbol": "BTCUSDT"
+      }
+    ],
+    "opposing": [
+      {
+        "ref": "opp-BTCUSDT",
+        "hash": "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo",
+        "workflowId": "demo-workflow",
+        "venue": "BINANCE",
+        "product": "USD_M_FUTURES",
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "analyses": {
+    "advocate": "adv-BTCUSDT",
+    "oppose": "opp-BTCUSDT",
+    "market": "ev-BTCUSDT"
+  },
+  "council": {
+    "decision": "APPROVE",
+    "direction": "LONG",
+    "confidence": 0.8,
+    "expectedMoveBps": 20,
+    "horizonMs": 60000,
+    "strongestSupport": "adv-BTCUSDT",
+    "strongestOpposition": "opp-BTCUSDT",
+    "invalidation": [
+      "stale evidence",
+      "edge collapse"
+    ],
+    "unresolved": [
+      "account and MCP reads are blocked"
+    ]
+  },
+  "rationale": {
+    "method": "bounded-council",
+    "claims": [
+      {
+        "claimId": "threshold",
+        "statement": "bounded council threshold met",
+        "supportedBy": [
+          "adv-BTCUSDT"
+        ],
+        "opposedBy": [],
+        "assumptions": [
+          "replay references are available"
+        ]
+      }
+    ]
+  },
+  "output": {
+    "councilDecisionHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "canonicalSha256": "a2472e891c88c871f854581721031e1ea8f117c8fdae9b90fb06fc8229216743"
 }

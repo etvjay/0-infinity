@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { compileMandate, type AnchorState, type CompilerPolicy, type TradeThesis, type ExecutionMandate } from "../src/domain/index.js";
 import { MandateStore, JsonFilePersistence, MemoryPersistence, StoreError, authorityKey, type AuthorityKey, type PersistedSnapshot } from "../src/store/index.js";
 
-const thesis: TradeThesis = { thesisId: "thesis-r", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .8, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c" }, createdAt: 1_000, expiresAt: 61_000 };
+const thesis: TradeThesis = { thesisId: "thesis-r", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .8, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c", reasoningReceiptHash: "r" }, createdAt: 1_000, expiresAt: 61_000 };
 const policy: CompilerPolicy = { accountId: "acct-r", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 5, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_000, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
 const anchor: AnchorState = { stateVersion: 7n, observedAt: 1_000, receivedAt: 1_001, markPrice: 100_000 };
 const mandate = (id = "r-1"): ExecutionMandate => ({ ...compileMandate({ workflowId: "wf-r" }, thesis, policy, anchor, 2_000), mandateId: id });

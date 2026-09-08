@@ -1,31 +1,52 @@
 import { createHash } from "node:crypto";
 
 export type ReasoningDecision = "APPROVE" | "REFUSE";
-export interface ReasoningClaim { readonly id: string; readonly text: string; readonly refs: readonly string[]; }
-export interface ReasoningReceiptInput { readonly decision: ReasoningDecision; readonly evidenceRefs: readonly string[]; readonly supportingRefs: readonly string[]; readonly opposingRefs: readonly string[]; readonly claims: readonly ReasoningClaim[]; readonly assumptions: readonly string[]; readonly unresolved: readonly string[]; readonly invalidation: readonly string[]; }
-export interface ReasoningReceipt extends ReasoningReceiptInput { readonly schema: "ZO-BIN-REASONING-RECEIPT-V1"; readonly canonicalSha256: string; }
-const freeze = <T>(v: T): T => { if (v && typeof v === "object" && !Object.isFrozen(v)) { Object.freeze(v); for (const child of Object.values(v as Record<string, unknown>)) freeze(child); } return v; };
+export type CouncilDirection = "LONG" | "SHORT";
+export interface EvidenceReference {
+  readonly ref: string; readonly hash: string; readonly workflowId: string;
+  readonly venue: string; readonly product: string; readonly symbol: string;
+}
+export interface ReasoningReceiptInput {
+  readonly receiptVersion: "ZO-BIN-REASONING-RECEIPT-V2";
+  readonly workflowId: string; readonly createdAt: number;
+  readonly opportunity: { readonly venue: string; readonly product: string; readonly symbol: string };
+  readonly evidence: { readonly evidenceBundleHash: string; readonly supporting: readonly EvidenceReference[]; readonly opposing: readonly EvidenceReference[] };
+  readonly analyses: { readonly advocate: string; readonly oppose: string; readonly market: string };
+  readonly council: { readonly decision: ReasoningDecision; readonly direction: CouncilDirection; readonly confidence: number; readonly expectedMoveBps: number; readonly horizonMs: number; readonly strongestSupport: string; readonly strongestOpposition: string; readonly invalidation: readonly string[]; readonly unresolved: readonly string[] };
+  readonly rationale: { readonly method: string; readonly claims: readonly { readonly claimId: string; readonly statement: string; readonly supportedBy: readonly string[]; readonly opposedBy: readonly string[]; readonly assumptions: readonly string[] }[] };
+  readonly output: { readonly councilDecisionHash: string; readonly tradeThesisHash?: string };
+}
+export interface ReasoningReceipt extends ReasoningReceiptInput { readonly canonicalSha256: string; }
+export interface EvidenceContextRegistry {
+  readonly workflowId: string; readonly venue: string; readonly product: string; readonly symbol: string;
+  readonly evidenceBundleHash: string; readonly references: readonly EvidenceReference[];
+  readonly analyses: { readonly advocate: string; readonly oppose: string; readonly market: string };
+}
+const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
 const text = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
-const canonical = (v: unknown): string => v === null || typeof v === "string" || typeof v === "boolean" || typeof v === "number" ? JSON.stringify(v) : Array.isArray(v) ? `[${v.map(canonical).join(",")}]` : v && typeof v === "object" ? `{${Object.keys(v as object).sort().map(k => `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`).join(",")}}` : "null";
-const digest = (v: unknown): string => createHash("sha256").update(canonical(v)).digest("hex");
-const asStrings = (v: unknown): v is readonly string[] => Array.isArray(v) && v.length === new Set(v).size && v.every(text);
-const ownExact = (v: unknown, keys: readonly string[]): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype && Reflect.ownKeys(v).length === keys.length && keys.every(k => Object.prototype.hasOwnProperty.call(v, k) && Object.getOwnPropertyDescriptor(v, k)?.enumerable === true && "value" in Object.getOwnPropertyDescriptor(v, k)!);
-const INPUT_KEYS = ["decision", "evidenceRefs", "supportingRefs", "opposingRefs", "claims", "assumptions", "unresolved", "invalidation"] as const;
-function validateInput(value: unknown): value is ReasoningReceiptInput {
-  if (!ownExact(value, INPUT_KEYS)) return false; const x = value as unknown as ReasoningReceiptInput;
-  if (x.decision !== "APPROVE" && x.decision !== "REFUSE") return false;
-  if (![x.evidenceRefs, x.supportingRefs, x.opposingRefs, x.assumptions, x.unresolved, x.invalidation].every(asStrings)) return false;
-  const refs = new Set(x.evidenceRefs); if (![...x.supportingRefs, ...x.opposingRefs].every(r => refs.has(r)) || x.supportingRefs.some(r => x.opposingRefs.includes(r))) return false;
-  if (x.decision === "APPROVE" && x.opposingRefs.length === 0) return false;
-  if (x.decision === "REFUSE" && x.opposingRefs.length === 0) return false;
-  if (!Array.isArray(x.claims) || x.claims.some(c => !ownExact(c, ["id", "text", "refs"]) || !text(c.id) || !text(c.text) || !asStrings(c.refs) || c.refs.some(r => !refs.has(r)))) return false;
-  return new Set(x.claims.map(c => c.id)).size === x.claims.length;
+const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const canonical = (v: unknown): string => v === null || typeof v === "string" || typeof v === "boolean" || typeof v === "number" ? JSON.stringify(v) : Array.isArray(v) ? `[${v.map(canonical).join(",")}]` : isObject(v) ? `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}` : "null";
+const freeze = <T>(v: T, seen = new Set<object>()): T => { if (v && typeof v === "object" && !seen.has(v as object)) { seen.add(v as object); Object.freeze(v); for (const c of Object.values(v as Record<string, unknown>)) freeze(c, seen); } return v; };
+const ownExact = (v: unknown, keys: readonly string[]): v is Record<string, unknown> => isObject(v) && Reflect.ownKeys(v).length === keys.length && keys.every(k => Object.prototype.hasOwnProperty.call(v, k) && Object.getOwnPropertyDescriptor(v, k)?.enumerable === true && "value" in Object.getOwnPropertyDescriptor(v, k)!);
+const refKeys = ["ref", "hash", "workflowId", "venue", "product", "symbol"] as const;
+const validRef = (v: unknown): v is EvidenceReference => ownExact(v, refKeys) && refKeys.every(k => text(v[k]));
+const strings = (v: unknown): v is readonly string[] => Array.isArray(v) && new Set(v).size === v.length && v.every(text);
+const validInput = (v: unknown): v is ReasoningReceiptInput => {
+  if (!ownExact(v, ["receiptVersion","workflowId","createdAt","opportunity","evidence","analyses","council","rationale","output"])) return false;
+  const x = v as unknown as ReasoningReceiptInput, o = x.opportunity, e = x.evidence, a = x.analyses, c = x.council, r = x.rationale, out = x.output;
+  if (x.receiptVersion !== "ZO-BIN-REASONING-RECEIPT-V2" || !text(x.workflowId) || !finite(x.createdAt) || x.createdAt < 0 || !ownExact(o,["venue","product","symbol"]) || ![o.venue,o.product,o.symbol].every(text)) return false;
+  if (!ownExact(e,["evidenceBundleHash","supporting","opposing"]) || !text(e.evidenceBundleHash) || !Array.isArray(e.supporting) || !Array.isArray(e.opposing) || ![...e.supporting,...e.opposing].every(validRef)) return false;
+  const refs = [...e.supporting,...e.opposing]; if (new Set(refs.map(z=>z.ref)).size !== refs.length || refs.some(z=>z.workflowId!==x.workflowId||z.venue!==o.venue||z.product!==o.product||z.symbol!==o.symbol)) return false;
+  if (!ownExact(a,["advocate","oppose","market"]) || ![a.advocate,a.oppose,a.market].every(text)) return false;
+  if (!ownExact(c,["decision","direction","confidence","expectedMoveBps","horizonMs","strongestSupport","strongestOpposition","invalidation","unresolved"]) || !["APPROVE","REFUSE"].includes(c.decision) || !["LONG","SHORT"].includes(c.direction) || !finite(c.confidence)||c.confidence<0||c.confidence>1||!finite(c.expectedMoveBps)||!finite(c.horizonMs)||c.horizonMs<=0||![c.strongestSupport,c.strongestOpposition].every(text)||!strings(c.invalidation)||!strings(c.unresolved)) return false;
+  if (c.decision === "APPROVE" && (e.opposing.length===0 || c.invalidation.length===0)) return false;
+  if (!ownExact(r,["method","claims"]) || !text(r.method) || !Array.isArray(r.claims) || r.claims.some(cl=>!ownExact(cl,["claimId","statement","supportedBy","opposedBy","assumptions"])||![cl.claimId,cl.statement].every(text)||!strings(cl.supportedBy)||!strings(cl.opposedBy)||!strings(cl.assumptions)||[...cl.supportedBy,...cl.opposedBy].some(id=>!refs.some(z=>z.ref===id)))) return false;
+  if (new Set(r.claims.map(cl=>cl.claimId)).size!==r.claims.length || !ownExact(out,["councilDecisionHash","tradeThesisHash"]) || !text(out.councilDecisionHash) || (out.tradeThesisHash!==undefined&&!text(out.tradeThesisHash))) return false;
+  return true;
+};
+export function canonicalReasoningJson(value: ReasoningReceiptInput): string { if (!validInput(value)) throw new TypeError("reasoning receipt is malformed"); return canonical(value); }
+export function createReasoningReceipt(input: ReasoningReceiptInput): ReasoningReceipt { const json=canonicalReasoningJson(input); return freeze({...input,canonicalSha256:createHash("sha256").update(json).digest("hex")}); }
+export function verifyReasoningReceipt(value: unknown, registry?: EvidenceContextRegistry): string | false {
+  try { if (!ownExact(value,["receiptVersion","workflowId","createdAt","opportunity","evidence","analyses","council","rationale","output","canonicalSha256"])) return false; const x=value as unknown as ReasoningReceipt; if (!/^[0-9a-f]{64}$/.test(x.canonicalSha256)||!validInput(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")))) return false; if (registry) { if (registry.workflowId!==x.workflowId||registry.venue!==x.opportunity.venue||registry.product!==x.opportunity.product||registry.symbol!==x.opportunity.symbol||registry.evidenceBundleHash!==x.evidence.evidenceBundleHash||canonical(registry.analyses)!==canonical(x.analyses)) return false; const known=new Map(registry.references.map(r=>[r.ref,r])); for(const ref of [...x.evidence.supporting,...x.evidence.opposing]) { const k=known.get(ref.ref); if(!k||canonical(k)!==canonical(ref)) return false; } } return createHash("sha256").update(canonical(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")))).digest("hex")===x.canonicalSha256?x.canonicalSha256:false; } catch { return false; }
 }
-export function canonicalReasoningJson(value: ReasoningReceiptInput): string { if (!validateInput(value)) throw new TypeError("reasoning receipt is malformed or has dangling references"); return canonical(value); }
-export function createReasoningReceipt(input: ReasoningReceiptInput): ReasoningReceipt {
-  const json = canonicalReasoningJson(input); return freeze({ schema: "ZO-BIN-REASONING-RECEIPT-V1", ...input, canonicalSha256: createHash("sha256").update(json).digest("hex") });
-}
-export function verifyReasoningReceipt(value: unknown): string | false {
-  try { if (!ownExact(value, ["schema", ...INPUT_KEYS, "canonicalSha256"])) return false; const x = value as unknown as ReasoningReceipt; if (x.schema !== "ZO-BIN-REASONING-RECEIPT-V1" || !/^[0-9a-f]{64}$/.test(x.canonicalSha256)) return false; const { schema: _schema, canonicalSha256: _hash, ...input } = x; if (!validateInput(input)) return false; return digest(input) === x.canonicalSha256 ? x.canonicalSha256 : false; } catch { return false; }
-}
-export function reasoningReceiptMarkdown(receipt: ReasoningReceipt): string { if (!verifyReasoningReceipt(receipt)) throw new TypeError("cannot project unverifiable receipt"); return [`# Reasoning receipt: ${receipt.decision}`, `- Schema: ${receipt.schema}`, `- SHA-256: \`${receipt.canonicalSha256}\``, `- Evidence: ${receipt.evidenceRefs.join(", ")}`, `- Supporting: ${receipt.supportingRefs.join(", ") || "none"}`, `- Opposing: ${receipt.opposingRefs.join(", ") || "none"}`, "", "## Claims", ...receipt.claims.map(c => `- **${c.id}**: ${c.text} (refs: ${c.refs.join(", ")})`), "", "## Assumptions", ...receipt.assumptions.map(x => `- ${x}`), "", "## Unresolved", ...receipt.unresolved.map(x => `- ${x}`), "", "## Invalidation", ...receipt.invalidation.map(x => `- ${x}`)].join("\n"); }
+export function reasoningReceiptMarkdown(receipt: ReasoningReceipt): string { if(!verifyReasoningReceipt(receipt)) throw new TypeError("cannot project unverifiable receipt"); return [`# Reasoning receipt: ${receipt.council.decision}`,`- Version: ${receipt.receiptVersion}`,`- SHA-256: \`${receipt.canonicalSha256}\``,`- Workflow: ${receipt.workflowId}`,`- Opportunity: ${receipt.opportunity.venue}/${receipt.opportunity.product}/${receipt.opportunity.symbol}`,`- Evidence bundle: ${receipt.evidence.evidenceBundleHash}`,"","## Claims",...receipt.rationale.claims.map(c=>`- **${c.claimId}**: ${c.statement}`)].join("\n"); }

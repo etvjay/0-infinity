@@ -37,13 +37,13 @@ export class ConfirmationBoundary {
     return freeze({ token: this.token, intentFingerprint: bound, expiresAt: this.expiresAt });
   }
   confirm(intent: ConfirmationIntent, token: string, now: number): boolean {
-    if (this.current !== "CONFIRMATION_REQUESTED" || token !== this.token || now > this.expiresAt || fingerprint(intent) !== this.bound) { this.current = now > this.expiresAt ? "EXPIRED" : "INVALIDATED"; return false; }
+    if (this.current !== "CONFIRMATION_REQUESTED" || token !== this.token || now >= this.expiresAt || fingerprint(intent) !== this.bound) { this.current = now >= this.expiresAt ? "EXPIRED" : "INVALIDATED"; return false; }
     this.current = "CONFIRMED"; return true;
   }
   deny(): void { if (this.current === "CONFIRMATION_REQUESTED") this.current = "DENIED"; }
   revalidate(intent: ConfirmationIntent, now: number, check: () => boolean): boolean {
     if (this.current !== "CONFIRMED") return false;
-    if (now > this.expiresAt || fingerprint(intent) !== this.bound || !check()) { this.current = now > this.expiresAt ? "EXPIRED" : "INVALIDATED"; return false; }
+    if (now >= this.expiresAt || fingerprint(intent) !== this.bound || !check()) { this.current = now >= this.expiresAt ? "EXPIRED" : "INVALIDATED"; return false; }
     return true;
   }
 }

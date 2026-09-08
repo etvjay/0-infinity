@@ -108,5 +108,25 @@ export function validateReasoningProfileConfig(config: ReasoningProfileConfig): 
 }
 
 export interface StructuralOpportunity { readonly venue: string; readonly instrument: string; readonly symbol: string; readonly direction?: string; readonly thesisId?: string; }
-export function structuralOpportunityPrefilter(value: unknown): value is StructuralOpportunity { if (!value || typeof value !== "object" || Array.isArray(value)) return false; const x = value as Record<string, unknown>; return [x.venue, x.instrument, x.symbol].every((v) => typeof v === "string" && v.trim().length > 0); }
-export function opportunityDedupKey(value: StructuralOpportunity): string { if (!structuralOpportunityPrefilter(value)) throw new TypeError("opportunity does not pass structural prefilter"); return [value.venue, value.instrument, value.symbol, value.direction ?? "", value.thesisId ?? ""].join(":"); }
+const STRUCTURAL_OPPORTUNITY_KEYS = new Set(["venue", "instrument", "symbol", "direction", "thesisId"]);
+export function structuralOpportunityPrefilter(value: unknown): value is StructuralOpportunity {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  try {
+    const x = value as Record<string, unknown>;
+    if (Object.getPrototypeOf(x) !== Object.prototype) return false;
+    const keys = Reflect.ownKeys(x);
+    if (keys.some((key) => typeof key !== "string" || !STRUCTURAL_OPPORTUNITY_KEYS.has(key))) return false;
+    for (const key of keys) {
+      const descriptor = Object.getOwnPropertyDescriptor(x, key);
+      if (!descriptor || !descriptor.enumerable || !("value" in descriptor)) return false;
+    }
+    if (![x.venue, x.instrument, x.symbol].every((v) => typeof v === "string" && v.trim().length > 0)) return false;
+    return [x.direction, x.thesisId].every((v) => v === undefined || typeof v === "string");
+  } catch {
+    return false;
+  }
+}
+export function opportunityDedupKey(value: StructuralOpportunity): string {
+  if (!structuralOpportunityPrefilter(value)) throw new TypeError("opportunity does not pass structural prefilter");
+  return JSON.stringify([value.venue, value.instrument, value.symbol, value.direction ?? "", value.thesisId ?? ""]);
+}

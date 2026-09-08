@@ -23,8 +23,29 @@ test("FAST profile retains every mandatory role and structural dedup is bounded"
   assert.throws(() => validateReasoningProfileConfig({ ...profile, mandatoryRoles: ["ADVOCATE", "MARKET_ANALYST", "COUNCIL"] } as never), /mandatory/);
   const opportunity = { venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: "BTCUSDT", direction: "LONG" } as const;
   assert.equal(structuralOpportunityPrefilter(opportunity), true);
-  assert.equal(opportunityDedupKey(opportunity), "BINANCE:USD_M_FUTURES:BTCUSDT:LONG:");
+  assert.equal(opportunityDedupKey(opportunity), JSON.stringify(["BINANCE", "USD_M_FUTURES", "BTCUSDT", "LONG", ""]));
   assert.equal(structuralOpportunityPrefilter({ symbol: "BTCUSDT" }), false);
+});
+
+test("opportunity dedup keys remain distinct when fields contain separators", () => {
+  const first = { venue: "V", instrument: "I", symbol: "S", direction: "L:X", thesisId: "Y" };
+  const second = { venue: "V", instrument: "I", symbol: "S", direction: "L", thesisId: "X:Y" };
+  assert.notEqual(opportunityDedupKey(first), opportunityDedupKey(second));
+});
+
+test("structural opportunity prefilter requires a plain canonical data shape", () => {
+  const inherited = Object.create({ venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: "BTCUSDT" });
+  assert.equal(structuralOpportunityPrefilter(inherited), false);
+
+  const accessor = {} as Record<string, unknown>;
+  Object.defineProperty(accessor, "venue", { enumerable: true, get: () => "BINANCE" });
+  accessor.instrument = "USD_M_FUTURES";
+  accessor.symbol = "BTCUSDT";
+  assert.equal(structuralOpportunityPrefilter(accessor), false);
+
+  const symbolKey = { venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: "BTCUSDT", [Symbol("unsupported")]: "x" };
+  assert.equal(structuralOpportunityPrefilter(symbolKey), false);
+  assert.equal(structuralOpportunityPrefilter({ venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: "BTCUSDT", unsupported: "x" }), false);
 });
 
 test("canonical hot closure has no reasoning or network dependencies", () => {

@@ -6,8 +6,8 @@ Status: remediation candidate; independent approval is not claimed.
 - Mode: `SHADOW`
 - Workflows: 20; exact required scenario set exercised once
 - Artifact: `docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json`
-- Artifact payload SHA-256 (`artifactPayloadSha256`): `13501614e503861fa7b41f56b1ecca798260b471d7f2afee35ab388b12fb16cd`
-- Reviewed implementation SHA (latest commit touching campaign and validator sources): `1b9f5cee4a93e0c8a9b1e994723356a74b7e2b36`
+- Artifact payload SHA-256 (`artifactPayloadSha256`): `e7bd92762d62ea1c6d891d8175bfb5ad8d95304bd5811c8ad7c24ff0d4fb4898`
+- Reviewed implementation SHA (latest commit touching campaign and validator sources): `3a8d5948d4394b29f96a55f222241c92677b5973`
 - Docs commit SHA (separate from reviewed implementation SHA): recorded in the follow-up documentation commit
 - Outcomes: 4 ACKNOWLEDGED, 1 PARTIALLY_FILLED, 2 FILLED, 1 FAILED/REJECTED, 1 UNKNOWN, 9 REFUSED, 1 EXPIRED, 1 RECOVERY_BLOCKED
 - Metrics: approvals 7; mandates 19; council refusals 1; recovered 1; not exercised 0; deterministic runs 2

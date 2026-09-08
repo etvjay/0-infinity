@@ -1,49 +1,68 @@
 # 0-infinity Demo Video Script
 
-## Final narration
+## Final narration — locked
 
-> Binance Agentic OS gives trading agents a way to reason, coordinate, and act across market infrastructure.
+> 0 → ∞
 >
-> 0-infinity is the control layer between those agents and execution.
+> That’s the idea behind 0-infinity.
 >
-> An agent can be bullish.
-> The Council can approve.
-> And the trade can still be refused.
+> An agent can start with zero authority.
 >
-> Why?
+> It can observe the market. Form a thesis. Gather evidence. Argue for a trade. Challenge that trade. Reach a decision.
 >
-> Because reasoning is not authority, and authority is not execution.
+> But none of that should automatically mean it gets to act.
 >
-> 0-infinity takes a trading opportunity through:
+> 0-infinity is the layer that governs everything between: “I think we should trade” and “this trade is actually allowed to happen.”
 >
-> Evidence, Opposition, Council, Reasoning Receipt, short-lived Execution Mandate, live market revalidation, Trade or Refuse.
+> A BTC opportunity enters the system.
 >
-> In the demo, the agent expects a plus 31 basis point BTC move.
+> The Advocate builds the strongest case for it.
 >
-> The Council approves the thesis.
+> The Opposer tries to break that case.
 >
-> But spread, slippage, fees, and funding reduce the executable edge below the required threshold.
+> The Market Analyst checks what the market is actually saying.
 >
-> Result:
+> Then the Council adjudicates the evidence.
 >
-> REFUSED — EDGE_COLLAPSED.
+> If the thesis survives, 0-infinity creates a structured Reasoning Receipt: what supported the decision, what opposed it, what uncertainty remained, and what would invalidate it.
 >
-> No second LLM call is needed when the trigger fires. The Council has already compiled its decision into bounded, temporary authority, so the market-facing path stays deterministic.
+> But even a Council approval still isn’t a trade.
 >
-> 0-infinity also exposes the same runtime through MCP, REST, and SDK interfaces, with support for bringing your own models and agents into Advocate, Opposer, Market Analyst, and Council roles.
+> That reasoning is compiled into a short-lived Execution Mandate: bounded authority over symbol, side, size, price, spread, slippage, minimum edge, time and use.
+>
+> Then the agents are done.
+>
+> The market-facing path becomes deterministic.
+>
+> In this demo, the Council approves a BTC long with an expected move of plus 31 basis points.
+>
+> The mandate is valid. The trigger arrives.
+>
+> But execution reality has changed.
+>
+> Spread. Slippage. Fees. Funding.
+>
+> The remaining executable edge falls below the required threshold.
+>
+> So 0-infinity refuses the trade.
+>
+> EDGE_COLLAPSED.
+>
+> The agent was allowed to reason. The Council was allowed to approve. Neither was allowed to override reality.
+>
+> That is 0-infinity: Evidence before authority. Dissent before approval. Execution only while the trade still makes sense.
+>
+> And because the intelligence layer is replaceable, traders and developers can bring their own agents and models through MCP, REST, SDK and adapter interfaces while the same authority rules remain intact.
 >
 > Built for the Binance Agent OS Mini Hackathon.
 >
-> Bring any intelligence.
+> 0 → ∞
 >
-> Authority rules stay the same.
+> From no authority, to bounded authority, to execution only when the conditions still justify it.
 
 ## Visual direction
 
-- Frame the film inside the Binance Agentic OS world, but keep 0-infinity's evidence-to-authority mechanism as the central subject.
-- Show the core invariant explicitly: reasoning is not authority, and authority is not execution.
-- Open with the failure mode, not the landing page.
-- Use animated mechanism cards for evidence, opposition, Council, receipt, mandate, revalidation, and refusal.
-- Use the actual Demo, Integrate, and Try pages as brief proof intercuts, not as the story itself.
-- Show MCP, REST, SDK, and adapter boundaries as first-class product surfaces.
-- End on `Bring any intelligence. Authority rules stay the same.`
+- Animate the transition from `0 AUTHORITY` to `BOUNDED AUTHORITY` to `EXECUTION CONDITIONED`.
+- Use moving mechanism cards, camera pushes, and crossfades—not static page holds.
+- Intercut the actual deployed Demo, Integrate, and Try pages as proof surfaces.
+- Show the Binance Agent OS context while keeping 0-infinity’s control mechanism central.

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const config = window.__ZERO_INFINITY_CONFIG__ || {};
-  const apiBase = typeof config.apiBase === 'string' ? config.apiBase.replace(/\/$/, '') : '';
+  const apiBase = typeof config.apiBase === 'string' ? config.apiBase.replace(/\/$/, '') : 'http://127.0.0.1:8787';
   const $ = (id) => document.getElementById(id);
   const demo = { version:'local-demo-v1', ready:false, mode:'demo-fixture', liveWrites:false, hostedEvidence:false };
   function setState(connected, readiness) {

@@ -112,6 +112,17 @@ test("HTTP server serializes bigint workflow state for external clients", async 
     const shadow = await fetch(`http://127.0.0.1:${port}/v1/shadow`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ symbol: "BTCUSDT" }) });
     assert.equal(shadow.status, 200);
 
+    const preflight = await fetch(`http://127.0.0.1:${port}/v1/shadow`, { method: "OPTIONS", headers: { Origin: "https://etvjay.github.io", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type" } });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get("access-control-allow-origin"), "https://etvjay.github.io");
+    assert.equal(preflight.headers.get("access-control-allow-methods"), "GET, POST, OPTIONS");
+    assert.equal(preflight.headers.get("access-control-allow-headers"), "content-type, accept");
+    assert.equal(preflight.headers.get("access-control-allow-credentials"), null);
+    const browserResponse = await fetch(`http://127.0.0.1:${port}/health`, { headers: { Origin: "https://etvjay.github.io" } });
+    assert.equal(browserResponse.headers.get("access-control-allow-origin"), "https://etvjay.github.io");
+    const untrusted = await fetch(`http://127.0.0.1:${port}/health`, { headers: { Origin: "https://evil.example" } });
+    assert.equal(untrusted.headers.get("access-control-allow-origin"), null);
+
   } finally {
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   }

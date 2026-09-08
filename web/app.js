@@ -1,12 +1,13 @@
 (() => {
   'use strict';
   const config = window.__ZERO_INFINITY_CONFIG__ || {};
-  const apiBase = typeof config.apiBase === 'string' ? config.apiBase.replace(/\/$/, '') : 'http://127.0.0.1:8787';
+  const HOSTED_RUNTIME = 'https://http--zero-infinity-runtime--tw56snbf4tjj.code.run';
+  const apiBase = typeof config.apiBase === 'string' ? config.apiBase.replace(/\/$/, '') : HOSTED_RUNTIME;
   const $ = (id) => document.getElementById(id);
   const state = { mode: 'SHADOW', side: 'LONG', workflowId: null, payload: null };
   const examples = {
     rest: { label: 'REST / POST /v1/shadow', text: `curl -X POST "$ZERO_INFINITY_API/v1/shadow" \\\n  -H 'content-type: application/json' \\\n  -d '{"symbol":"BTCUSDT","side":"LONG"}'` },
-    mcp: { label: 'MCP / actual tool methods', text: `get_capabilities\nget_readiness\ncreate_workflow\nsubmit_opportunity\nget_workflow\nget_reasoning_receipt\nget_trade_thesis\nrun_shadow_workflow\nrun_paper_live` },
+    mcp: { label: 'MCP / JSON-RPC tool documentation', text: `MCP endpoint: $ZERO_INFINITY_API/mcp\n\nTools exposed by the hosted network MCP surface:\nget_capabilities\nget_readiness\ncreate_workflow\nsubmit_opportunity\nget_workflow\nget_reasoning_receipt\nget_trade_thesis\nrun_shadow_workflow\nrun_paper_live\n\nThis tab documents the MCP contract; the browser does not pretend to be an MCP client.` },
     sdk: { label: 'SDK / ZeroInfinityClient', text: `const client = new ZeroInfinityClient(fetch, apiBase);\nconst workflow = await client.createWorkflow({ symbol: "BTCUSDT", side: "LONG" });\nconst receipt = await client.getReasoningReceipt(workflow.workflowId);\nconst result = await client.runPaperLiveWorkflow({ symbol: "BTCUSDT", side: "LONG" });` }
   };
   function setStatus(text, kind = 'neutral') { const el = $('api-state'); el.textContent = text; el.className = `status ${kind}`; }

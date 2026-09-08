@@ -15,7 +15,7 @@
     sdk: { label: 'SDK / ZeroInfinityClient', text: `const client = new ZeroInfinityClient(fetch, apiBase);\nawait client.createWorkflow(opportunity);\nawait client.submitOpportunity(workflowId);\nawait client.getWorkflow(workflowId);\nawait client.getReasoningReceipt(workflowId);\nawait client.getTradeThesis(workflowId);\nawait client.runShadowWorkflow(opportunity);\nawait client.runPaperLiveWorkflow(opportunity);\nawait client.capabilities();\nawait client.readiness();` },
     adapters: { label: 'Adapters / role boundary', text: `Role names: ADVOCATE · OPPOSER · MARKET_ANALYST · COUNCIL\nArtifact kinds: ADVOCATE · OPPOSE · MARKET_ACCOUNT\nIndependence: builtin · injected · external\n\nAdapters produce bounded artifacts. External adapters are limited to pre-Council roles; the browser does not invoke them.` }
   };
-  function route() { const raw = location.hash.replace(/^#/, '') || location.pathname; return raw.replace(/\/$/, '') || '/'; }
+  function route() { const hash = location.hash.replace(/^#/, ''); if (hash) return hash.replace(/\/$/, '') || '/'; const path = location.pathname.replace(/^\/0-infinity/, '').replace(/\/$/, '') || '/'; return path; }
   function setActiveRoute(name) { document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === name)); }
   function renderRoute() {
     const current = route();

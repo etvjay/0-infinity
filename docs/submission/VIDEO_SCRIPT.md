@@ -1,35 +1,126 @@
 # 0-infinity Demo Video Script
 
-Target duration: 60–90 seconds. Every shown state must come from the current static UI or an independently verified no-write response. No live exchange success is shown. The existing 125-second console recording is historical and should not be presented as the current public UI.
+Target duration: 90–120 seconds. The voiceover is direct and product-led. The screen shows the current public interface and returned structured artifacts; it does not narrate a limitations list.
 
-1. **0–08s — LANDING**
-   - Show `0-infinity` and: `A control layer between trading agents and execution.`
-   - Caption: `Agents propose trades. 0-infinity checks evidence before execution.`
+## Opening — the problem (0–10s)
 
-2. **08–18s — ARCHITECTURE**
-   - Show the single vertical path: Agent / Trader → Opportunity → Evidence + Opposition → Council → Reasoning Receipt → Execution Mandate → Market Revalidation → TRADE / REFUSE.
-   - Caption: `Evidence, opposition, Council, short-lived authority, then market revalidation.`
+**Screen:** Landing page. Cut from the hero into the opening statement.
 
-3. **18–28s — CONCRETE REFUSAL**
-   - Show the edge-collapse example: expected move `+31 bps`, spread `-5`, slippage `-11`, fees `-4`, funding `-2`, executable edge `+9`, required `12`.
-   - Caption: `The Council can approve while execution still refuses a collapsed edge.`
+**Voiceover:**
 
-4. **28–48s — TRY**
-   - Select `BTCUSDT`, `LONG`, and `SHADOW` or `PAPER`.
-   - Run the configured no-write REST workflow.
-   - Show the linear sequence: Advocate, Opposer, Market Analyst, Council, Reasoning Receipt, Execution Mandate, Execution Check.
-   - Show the actual returned outcome and economics. Never replace the response with fixture data.
+> Agents can reason. Agents can act. The dangerous gap is everything between those two things.
+>
+> A trading agent sees BTC moving and says: LONG BTCUSDT. Confidence: 72 percent. Expected move: plus 31 basis points.
+>
+> Most agent systems now move toward execution. 0-infinity does not.
 
-5. **48–60s — RECEIPT CONTROLS**
-   - Open only `View reasoning receipt`, `View mandate`, or `View raw JSON`.
-   - Keep private chain-of-thought out of the recording.
+## Act 1 — intelligence enters 0-infinity (10–24s)
 
-6. **60–78s — INTEGRATE**
-   - Show the MCP, REST, and SDK tabs with their actual implemented names and runtime-configurable endpoint.
-   - Caption: `Agents connect through the existing MCP, REST, and SDK surfaces.`
+**Screen:** Open App → Demo. Show the workflow sequence: Opportunity, Evidence, Advocate, Opposer, Market Analyst.
 
-7. **78–90s — PROOF / CLOSE**
-   - Show `SHADOW_PASS`, `PAPER_MARKET_PASS`, `LIVE_READ_PASS`, `TESTNET CREDENTIAL_REQUIRED`, `AUTH_BLOCKED_EXTERNAL`, and `LIVE NOT_AUTHORIZED`.
-   - End card: `0-infinity — evidence before action.`
+**Voiceover:**
 
-Before recording, run `npm run web:check`, `npm test`, `npm run demo`, `npm run readiness:validate`, and `npm run secret-scan`. Record only states reproduced by those checks or by the verified no-write API response.
+> 0-infinity takes an opportunity from a trader or another agent and routes it through distinct reasoning roles.
+>
+> The Advocate makes the strongest case for the trade. The Opposer tries to break it. The Market Analyst evaluates current market structure.
+>
+> Then all three go to the Council.
+
+## Act 2 — the Council (24–36s)
+
+**Screen:** Council section. Show the actual decision, direction, confidence, strongest support, and strongest opposition.
+
+**Voiceover:**
+
+> The Council is not an execution engine. It is the adjudication layer. It decides whether the reasoning is strong enough to deserve bounded authority.
+>
+> Council approval is not the trade. It is the decision that makes a bounded execution check possible.
+
+## Act 3 — verifiable reasoning (36–49s)
+
+**Screen:** Expand Reasoning Receipt. Reveal supporting evidence, opposing evidence, assumptions, uncertainty, invalidation, and hashes.
+
+**Voiceover:**
+
+> 0-infinity records what supported the decision, what opposed it, what uncertainty remained, and what would invalidate it.
+>
+> This is not private model chain-of-thought. It is a structured, verifiable rationale that can be inspected by a trader, another agent, or an auditor.
+
+## Act 4 — reasoning becomes bounded authority (49–62s)
+
+**Screen:** Execution Mandate. Show symbol, side, quantity boundary, price boundary, spread, slippage, minimum edge, validity, uses, and receipt reference.
+
+**Voiceover:**
+
+> An approved thesis is compiled into a short-lived Execution Mandate.
+>
+> The mandate is the bridge between slow reasoning and fast execution.
+>
+> Reasoning is complete. The mandate is armed. There is no second reasoning call on the hot path.
+
+## Act 5 — market reality wins (62–78s)
+
+**Screen:** Execution Economics. Reveal expected move, spread, slippage, fees, funding, executable edge, required edge, then the refusal result.
+
+**Voiceover:**
+
+> The Council was bullish. The mandate was valid. But by the time execution conditions were checked, the trade no longer cleared the required economic threshold.
+>
+> So 0-infinity refused it.
+
+**On-screen result:**
+
+```text
+REFUSED
+EDGE_COLLAPSED
+```
+
+## Act 6 — what the product is (78–90s)
+
+**Screen:** Pull back to the product flow, then the Demo / Integrate / Try app tabs.
+
+**Voiceover:**
+
+> That is 0-infinity.
+>
+> It sits between agent intelligence and financial execution.
+>
+> Agents can propose. Models can reason. Market infrastructure can provide the signal.
+>
+> 0-infinity governs when that intelligence is allowed to become a market decision.
+
+## Act 7 — the operating surfaces (90–104s)
+
+**Screen:** Briefly show Try, then Integrate tabs: MCP, REST, SDK, Adapters.
+
+**Voiceover:**
+
+> Run the workflow through the application, or connect your own system through MCP, REST, or the TypeScript SDK.
+>
+> Bring your Alpha Agent, your Risk Agent, your Quant Worker, or your own Council model.
+>
+> Bring any intelligence. Authority rules stay the same.
+
+## Closing (104–115s)
+
+**Screen:** Integrate page, then end card.
+
+**Voiceover:**
+
+> 0-infinity is a control layer for autonomous trading: evidence before authority, dissent before approval, and execution only while the trade still makes sense.
+
+**End card:**
+
+```text
+0-infinity
+Between intelligence
+and execution.
+```
+
+## Capture notes
+
+- Use the current deployed public UI as the recording source.
+- Use actual returned structured artifacts for the Demo and Try result.
+- Keep the recording focused on the product story rather than status narration.
+- Do not expose private chain-of-thought, credentials, or editable authority controls.
+- Generate the voiceover from the script above, word for word, then align the motion beats to the spoken sections.

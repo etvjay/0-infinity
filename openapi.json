@@ -1,1 +1,38 @@
-{"openapi":"3.0.3","info":{"title":"Zero Infinity Product Access","version":"v1"},"paths":{"/health":{"get":{}},"/capabilities":{"get":{}},"/readiness":{"get":{}},"/v1/workflows":{"post":{}},"/v1/workflows/{workflowId}":{"get":{}},"/v1/workflows/{workflowId}/submit":{"post":{}},"/v1/workflows/{workflowId}/receipt":{"get":{}},"/v1/workflows/{workflowId}/thesis":{"get":{}},"/v1/shadow":{"post":{}}},"x-runtime-modes":{"SHADOW":true,"PAPER_LIVE":true,"BINANCE_TESTNET":false,"LIVE_CONFIRMED":false},"x-writes":[]}
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Zero Infinity Product Access", "version": "v1" },
+  "paths": {
+    "/health": { "get": { "responses": { "200": { "$ref": "#/components/responses/Health" } } } },
+    "/capabilities": { "get": { "responses": { "200": { "$ref": "#/components/responses/Capabilities" } } } },
+    "/readiness": { "get": { "responses": { "200": { "$ref": "#/components/responses/Readiness" } } } },
+    "/v1/workflows": { "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Opportunity" } } } }, "responses": { "201": { "$ref": "#/components/responses/Workflow" }, "400": { "$ref": "#/components/responses/Error" } } } },
+    "/v1/workflows/{workflowId}": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "get": { "responses": { "200": { "$ref": "#/components/responses/Workflow" }, "404": { "$ref": "#/components/responses/Error" } } } },
+    "/v1/workflows/{workflowId}/submit": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "post": { "responses": { "200": { "$ref": "#/components/responses/WorkflowResult" }, "404": { "$ref": "#/components/responses/Error" } } } },
+    "/v1/workflows/{workflowId}/receipt": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "get": { "responses": { "200": { "description": "Reasoning receipt", "content": { "application/json": { "schema": { "type": "object" } } } }, "404": { "$ref": "#/components/responses/Error" } } } },
+    "/v1/workflows/{workflowId}/thesis": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "get": { "responses": { "200": { "description": "Trade thesis", "content": { "application/json": { "schema": { "type": "object" } } } }, "404": { "$ref": "#/components/responses/Error" } } } },
+    "/v1/shadow": { "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Opportunity" } } } }, "responses": { "200": { "$ref": "#/components/responses/WorkflowResult" }, "400": { "$ref": "#/components/responses/Error" } } } }
+  },
+  "components": {
+    "parameters": { "WorkflowId": { "name": "workflowId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } } },
+    "schemas": {
+      "Opportunity": { "type": "object", "additionalProperties": true, "description": "Plain JSON object. Must not be an array, contain accessors, or rely on inherited fields." },
+      "Health": { "type": "object", "required": ["ok", "version"], "properties": { "ok": { "type": "boolean", "const": true }, "version": { "type": "string" } } },
+      "Capabilities": { "type": "object", "required": ["version", "roles", "capabilities", "writes", "authority"], "properties": { "version": { "type": "string" }, "roles": { "type": "array", "items": { "type": "string" } }, "capabilities": { "type": "array", "items": { "type": "string" } }, "writes": { "type": "array", "items": {} }, "authority": { "type": "boolean" } } },
+      "Readiness": { "type": "object", "required": ["version", "ready", "mode", "liveWrites", "hostedEvidence"], "properties": { "version": { "type": "string" }, "ready": { "type": "boolean" }, "mode": { "type": "string" }, "liveWrites": { "type": "boolean" }, "hostedEvidence": { "type": "boolean" } } },
+      "Error": { "type": "object", "required": ["error"], "properties": { "error": { "type": "string" }, "message": { "type": "string" } } },
+      "Workflow": { "type": "object", "required": ["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition"], "properties": { "workflowId": { "type": "string" }, "stackName": { "type": "string" }, "stackVersion": { "type": "string" }, "createdAt": { "type": "number" }, "status": { "type": "string", "enum": ["CREATED", "COMPLETE", "REASONING_INCOMPLETE", "REFUSE"] }, "opportunity": { "$ref": "#/components/schemas/Opportunity" }, "composition": { "type": "array", "items": { "type": "object" } } } },
+      "WorkflowResult": { "type": "object", "required": ["workflow"], "properties": { "workflow": { "$ref": "#/components/schemas/Workflow" }, "thesis": { "type": "object" } } }
+    },
+    "responses": {
+      "Health": { "description": "Healthy", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } } },
+      "Capabilities": { "description": "Bounded capabilities", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Capabilities" } } } },
+      "Readiness": { "description": "Local bounded readiness", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Readiness" } } } },
+      "Workflow": { "description": "Workflow record", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workflow" } } } },
+      "WorkflowResult": { "description": "Workflow result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkflowResult" } } } },
+      "Error": { "description": "Error contract", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    }
+  },
+  "x-mcp": { "tools": ["tools/list", "get_capabilities", "get_readiness", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "get_workflow"], "resources": ["resources/list", "resources/read"] },
+  "x-runtime-modes": { "SHADOW": true, "PAPER_LIVE": true, "BINANCE_TESTNET": false, "LIVE_CONFIRMED": false },
+  "x-writes": []
+}

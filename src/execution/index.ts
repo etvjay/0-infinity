@@ -136,7 +136,7 @@ function exactProductEquals(left: number, right: number, product: number): boole
   const [a, as] = decimalParts(left); const [b, bs] = decimalParts(right); const [c, cs] = decimalParts(product);
   const scale = Math.max(as + bs, cs); return a * b * 10n ** BigInt(scale - as - bs) === c * 10n ** BigInt(scale - cs);
 }
-function validIntent(value: unknown): value is BoundedIntent {
+export function isCanonicalBoundedIntent(value: unknown): value is BoundedIntent {
   if (!value || typeof value !== "object" || !Object.isFrozen(value) || !canonicalOwnData(value, INTENT_KEYS, INTENT_KEYS.slice(0, 11))) return false;
   const x = value as Record<string, unknown>;
   if (x.kind !== "EXECUTION_INTENT" || typeof x.mandateId !== "string" || x.mandateId.length === 0 || typeof x.workflowId !== "string" || x.workflowId.length === 0 || typeof x.symbol !== "string" || (x.side !== "BUY" && x.side !== "SELL") || (x.method !== "LIMIT" && x.method !== "MARKET")) return false;
@@ -179,7 +179,7 @@ function validStoredOrder(value: unknown): value is StoredOrder {
   if (x.filledQuantity === 0 && x.averagePrice !== undefined) return false;
   if (x.filledQuantity > 0 && x.averagePrice === undefined) return false;
   if (x.filledQuantity > 0 && !exactProductEquals(x.averagePrice, x.filledQuantity, x.filledNotional)) return false;
-  if (typeof x.intentFingerprint !== "string" || !validIntent(x.intent)) return false;
+  if (typeof x.intentFingerprint !== "string" || !isCanonicalBoundedIntent(x.intent)) return false;
   if (x.quantity !== quantityOf(x.intent)) return false;
   if (x.clientOrderId !== OrderWriter.clientOrderId(x.intent, x.attempt) || x.intentFingerprint !== intentFingerprint(x.intent)) return false;
   if (x.mandateId !== x.intent.mandateId || x.workflowId !== x.intent.workflowId || x.symbol !== x.intent.symbol || x.side !== x.intent.side || x.method !== x.intent.method || x.price !== x.intent.price || x.notional !== x.intent.notional || x.executableEdgeBps !== x.intent.executableEdgeBps || x.marketStateVersion !== x.intent.marketStateVersion || x.accountStateVersion !== x.intent.accountStateVersion || x.accountId !== x.intent.accountId) return false;
@@ -203,7 +203,7 @@ export class OrderWriter {
   static clientOrderId(intent: Pick<BoundedIntent, "mandateId" | "workflowId">, attempt: number): string { if (!Number.isInteger(attempt) || attempt < 0) throw new RangeError("attempt must be a non-negative integer"); return `mb5-${createHash("sha256").update(JSON.stringify([intent.mandateId, intent.workflowId, attempt])).digest("hex").slice(0, 48)}`; }
   submit(intent: BoundedIntent, attempt: number): Promise<OrderReceipt> { return this.serial(() => this.submitOnce(intent, attempt)); }
   private async submitOnce(intent: BoundedIntent, attempt: number): Promise<OrderReceipt> {
-    if (!validIntent(intent)) fail("intent is invalid, untrusted, or mutable");
+    if (!isCanonicalBoundedIntent(intent)) fail("intent is invalid, untrusted, or mutable");
     const clientOrderId = OrderWriter.clientOrderId(intent, attempt); const prior = this.persistence.load(clientOrderId); const fingerprint = intentFingerprint(intent);
     if (prior) { if (!validStoredOrder(prior)) fail("persisted receipt is invalid"); if (prior.intentFingerprint !== fingerprint) fail("conflicting clientOrderId binding"); if (prior.outcome === "UNKNOWN") fail("unknown submission cannot be blindly retried"); return freeze(clone(prior)); }
     const quantity = quantityOf(intent); if (quantity * intent.price > intent.notional + 1e-9 || quantity <= 0) fail("quantity/price expands intent");
@@ -265,7 +265,7 @@ export class OrderWriter {
   private writerOwns(order: StoredOrder, clientOrderId: string): boolean {
     if (order.clientOrderId !== clientOrderId || order.clientOrderId !== OrderWriter.clientOrderId(order.intent, order.attempt)) return false;
     const persistedIntent = freeze(clone(order.intent));
-    if (!validIntent(persistedIntent) || order.intentFingerprint !== intentFingerprint(persistedIntent)) return false;
+    if (!isCanonicalBoundedIntent(persistedIntent) || order.intentFingerprint !== intentFingerprint(persistedIntent)) return false;
     return order.mandateId === persistedIntent.mandateId && order.workflowId === persistedIntent.workflowId && order.cancelState !== undefined;
   }
   private serial<T>(operation: () => Promise<T>): Promise<T> { const result = this.tail.then(operation); this.tail = result.then(() => undefined, () => undefined); return result; }

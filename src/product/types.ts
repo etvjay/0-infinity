@@ -13,6 +13,7 @@ export interface WorkflowRecord { readonly workflowId: string; readonly stackNam
 export interface WorkflowResult { readonly workflow: WorkflowRecord; readonly thesis?: unknown; }
 export class ProductAccessError extends Error { constructor(public readonly code: string, message: string) { super(message); this.name = "ProductAccessError"; } }
 export class ValidationError extends ProductAccessError { constructor(message: string) { super("VALIDATION_ERROR", message); } }
+export class NotFoundError extends ProductAccessError { constructor(message = "resource not found") { super("NOT_FOUND", message); } }
 export class ReplayConflictError extends ProductAccessError { constructor(message: string) { super("REPLAY_CONFLICT", message); } }
 export class RefusalError extends ProductAccessError { constructor(message: string) { super("REFUSE", message); } }
 export function freezeDeep<T>(value: T, seen = new Set<object>()): T { if (value && typeof value === "object" && !seen.has(value as object)) { seen.add(value as object); Object.freeze(value); for (const key of Reflect.ownKeys(value as object)) { const d = Object.getOwnPropertyDescriptor(value as object, key); if (d && "value" in d) freezeDeep(d.value, seen); } } return value; }

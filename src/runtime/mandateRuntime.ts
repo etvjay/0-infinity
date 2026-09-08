@@ -122,6 +122,9 @@ export function createMandateRuntime(input: MandateRuntimeInput): MandateRuntime
   if (!Number.isFinite(expiresAt)) {
     throw new TypeError(`expiresAt must be a finite number, got ${String(expiresAt)}`);
   }
+  if (expiresAt < 0) {
+    throw new RangeError(`expiresAt must be non-negative, got ${String(expiresAt)}`);
+  }
   return freezeMachine({ state: "ARMED", expiresAt, history: [] });
 }
 
@@ -132,6 +135,8 @@ export function getHistory(machine: MandateRuntime): readonly TransitionRecord[]
 
 /** Deterministic expiry check on any structural mandate input: expired iff now >= expiresAt. */
 export function isExpired(mandate: { readonly expiresAt: number }, now: number): boolean {
+  if (!Number.isFinite(mandate.expiresAt) || !Number.isFinite(now)) throw new TypeError("expiry timestamps must be finite");
+  if (mandate.expiresAt < 0 || now < 0) throw new RangeError("expiry timestamps must be non-negative");
   return now >= mandate.expiresAt;
 }
 
@@ -143,6 +148,9 @@ export function isExpired(mandate: { readonly expiresAt: number }, now: number):
 export function assertExpiry(machine: MandateRuntime, now: number): void {
   if (!Number.isFinite(now)) {
     throw new TypeError(`now must be a finite number, got ${String(now)}`);
+  }
+  if (now < 0) {
+    throw new RangeError(`now must be non-negative, got ${String(now)}`);
   }
   if (machine.state === "ARMED" && now >= machine.expiresAt) {
     const rejection: TransitionRejection = Object.freeze({
@@ -169,6 +177,9 @@ export function transition(
   const at = options.at;
   if (!Number.isFinite(at)) {
     throw new TypeError(`transition 'at' must be a finite number, got ${String(at)}`);
+  }
+  if (at < 0) {
+    throw new RangeError(`transition 'at' must be non-negative, got ${String(at)}`);
   }
   const attemptedState = eventTargetState(event);
   const fromState = machine.state;

@@ -134,3 +134,20 @@ test("assertExpiry rejects non-finite injected now", () => {
   assert.throws(() => assertExpiry(machine, Number.NaN), TypeError);
   assert.throws(() => assertExpiry(machine, Number.POSITIVE_INFINITY), TypeError);
 });
+
+test("isExpired rejects non-finite or negative timestamps", () => {
+  assert.throws(() => isExpired({ expiresAt: 100 }, Number.NaN), TypeError);
+  assert.throws(() => isExpired({ expiresAt: 100 }, Number.POSITIVE_INFINITY), TypeError);
+  assert.throws(() => isExpired({ expiresAt: 100 }, -1), RangeError);
+  assert.throws(() => isExpired({ expiresAt: -1 }, 0), RangeError);
+});
+
+test("runtime creation rejects negative expiry", () => {
+  assert.throws(() => createMandateRuntime({ expiresAt: -1 }), RangeError);
+});
+
+test("runtime transition rejects negative timestamps", () => {
+  const machine = createMandateRuntime({ expiresAt: EXPIRES_AT });
+  assert.throws(() => transition(machine, { type: "TRIGGER" }, { at: -1 }), RangeError);
+});
+

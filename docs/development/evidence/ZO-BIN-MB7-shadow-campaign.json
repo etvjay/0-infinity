@@ -3,7 +3,7 @@
   "mode": "SHADOW",
   "startingSha": "9c6357f1f71eb9e9c11540930a7605cfff6aeed2",
   "runnerImplementationSha": "9c6357f1f71eb9e9c11540930a7605cfff6aeed2",
-  "validatorImplementationSha": "9d6ed2703e87baf198c40ae939027389dd19ecad",
+  "validatorImplementationSha": "473dea420b38d4f192dadec8723538f05ed090e5",
   "finalSha": "9c6357f1f71eb9e9c11540930a7605cfff6aeed2",
   "workflowCount": 20,
   "scenarios": [
@@ -775,5 +775,5 @@
     "M-B2-G HTTP 451 bypass",
     "push"
   ],
-  "artifactPayloadSha256": "b89697f9c4c3fd6b0221d31c35c79481a5278cf824b82b5cd903960ac21c1392"
+  "artifactPayloadSha256": "905566e0c9834efc0016f05f2239e8a3b625bff75e0f5541a41f5af81206f75b"
 }

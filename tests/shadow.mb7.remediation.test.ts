@@ -8,7 +8,7 @@ test("M-B7 binds to the latest implementation commit and ignores env overrides",
   process.env.MB7_CODE_SHA = "0".repeat(40);
   try {
     const { artifact } = await runCampaign();
-    assert.equal(artifact.codeSha, "81fbeff09034582bd03ec197b7f6474121453dc6");
+    assert.equal(artifact.codeSha, "1b9f5cee4a93e0c8a9b1e994723356a74b7e2b36");
     assert.equal(artifact.implementationSha, artifact.codeSha);
     const council = artifact.receipts.find((r: any) => r.scenario === "council-refusal");
     assert.deepEqual({ status: council.status, code: council.refusalCode, source: council.provenance.stage }, { status: "REFUSED", code: "THRESHOLD_NOT_MET", source: "council" });

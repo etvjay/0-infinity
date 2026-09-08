@@ -29,6 +29,7 @@ Current:
 | Shadow workflow | UNVERIFIED |
 | Live bounded execution | UNVERIFIED |
 | M-B5 local OrderWriter + reconciliation | PROVISIONAL_LOCAL_PASS — final docs/review tree `46c3e9f80294a426ffb765d7c042b216e1b7e39c`; code remediation `536071d76f70908d258606cf1f9f6d7c176bc74c`; independent review found no code blockers and REVISE was receipt-only; focused execution `23/23`, full `423/423`, check/build/diff-check PASS; no live execution claimed |
+| M-B6 local full runtime/recovery | LOCAL_PASS — reviewed candidate `5c51584826876fe344337b9a0c19b83b4bb84a74`; independent exact-head review `APPROVE`; focused RuntimeSupervisor `19/19`, focused OrderWriter `25/25`, full `444/444`, check/build/diff-check PASS; local/replay only, no live execution claimed |
 
 Promotion record must include commit, commands/tests, negative mutations, runtime receipts and review verdict.
 
@@ -108,8 +109,17 @@ M-B4 proof receipt:
 M-B5 proof receipt:
 
 - objective: bounded local/replay OrderWriter around existing mandate consumption plus explicit submission/reconciliation outcomes.
-- remediation_code_head: `536071d76f70908d258606cf1f9f6d7c176bc74c`; final docs/review tree: `46c3e9f80294a426ffb765d7c042b216e1b7e39c`.
-- review verdict: `REVISE` for stale receipt attribution only; code findings were clear; receipt-only reconciliation remains pending.
+- remediation_code_head: `536071d76f70908d258606cf1f9f6d7c176bc74c`; reviewed code tree: `46c3e9f80294a426ffb765d7c042b216e1b7e39c`; final receipt/docs tree: `e7fcc6e734a4e2e097c331258649ab4a18aa904c`.
+- review verdict: exact-head code review clear; final receipt-only review `APPROVE`.
 - receipt: deterministic IDs, canonical own-data intent/event validation, complete intent fingerprint idempotency, immutable audit-bound receipts, persist-before-adapter, timeout `UNKNOWN`, no blind retry, FILLED cumulative quantity >= requested, monotonic duplicate-safe cumulative fills with out-of-order handling and weighted VWAP, writer-owned cancel with durable REQUESTED/UNKNOWN/CANCELLED state, refusal of cancellation for REJECTED/FAILED submissions before adapter invocation, and refusal of fills after REJECTED/FAILED submission or CANCELLED/UNKNOWN cancellation without receipt mutation.
 - TDD/verification: persisted receipt coherence, canonical array pollution and method-replacement, adapter-result, and partial-cancellation regressions RED before implementation; focused execution `23/23`; full suite `423/423`; check/build/diff-check `PASS`.
-- evidence ceiling: provisional local supplied/replay evidence only; no LOCAL_PASS approval, live, testnet, production durability, exchange write, network, MCP, or credential claim.
+- evidence ceiling: provisional local supplied/replay evidence only; no live, testnet, production durability, exchange write, network, MCP, credential, or profitability claim.
+
+M-B6 proof receipt:
+
+- objective: integrated deterministic local/replay runtime from accepted mandate/evaluator boundaries through injected OrderWriter and reconciliation with workflow-level recovery.
+- reviewed candidate: `5c51584826876fe344337b9a0c19b83b4bb84a74`; independent exact-head review: `APPROVE`; safe to integrate: `true`.
+- focused RuntimeSupervisor: `19/19`; focused OrderWriter: `25/25`; full suite: `444/444`.
+- typecheck: `PASS`; build: `PASS`; diff-check: `PASS`.
+- scope: explicit `SHADOW`/`LOCAL_REPLAY` capability, immutable workflow records, CAS/version guards, fail-closed restore/start validation, deterministic trigger idempotency, semantic state binding, terminal/UNKNOWN recovery, writer-owned order lineage, and no blind retry.
+- evidence ceiling: `LOCAL_PASS` only for deterministic local/replay implementation and adversarial tests; no live/testnet execution, exchange writes, production durability, crash-recovery proof, exactly-once exchange behavior, or profitability claim.

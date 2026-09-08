@@ -43,6 +43,11 @@ test("rejects reasoning objects missing a canonical field", () => {
   assert.throws(() => compileMandate(input(), { ...thesis, reasoning: missingMethod } as TradeThesis, policy, anchor, 2_000), /reasoning.*method|required|non-empty string/i);
 });
 
+test("rejects a missing reasoning receipt hash before mandate emission", () => {
+  const { reasoningReceiptHash: _hash, ...missingHash } = thesis.reasoning;
+  assert.throws(() => compileMandate(input(), { ...thesis, reasoning: missingHash } as TradeThesis, policy, anchor, 2_000), /reasoning\.reasoningReceiptHash|required/i);
+});
+
 test("rejects authority widening, invalid thesis, and non-finite input", () => {
   assert.throws(() => compileMandate(input(), { ...thesis, venue: "OTHER" as never }, policy, anchor, 2_000), /BINANCE/);
   assert.throws(() => compileMandate(input(), { ...thesis, direction: "FLAT" }, policy, anchor, 2_000), /FLAT/);

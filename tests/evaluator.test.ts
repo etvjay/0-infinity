@@ -25,6 +25,12 @@ const evaluate = (overrides: Partial<{ workflow: unknown; mandate: unknown; runt
   if (first.kind === "EXECUTION_INTENT") { assert.equal(first.mandateId, mandate.mandateId); assert.equal(first.marketStateVersion, 7n); assert.equal(first.accountStateVersion, 4n); assert.equal(first.notional, 1_000); }
 });
 
+test("expires exactly at the mandate boundary", () => {
+  const result = evaluateMandate(active, mandate, createMandateRuntime({ expiresAt: mandate.expiresAt }), market, account, policy, mandate.expiresAt);
+  assert.equal(result.kind, "EXECUTION_REFUSAL");
+  if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, "MANDATE_EXPIRED");
+});
+
 test("refuses stale market state before producing an intent", () => {
   const result = evaluateMandate(active, mandate, createMandateRuntime({ expiresAt: mandate.expiresAt }), { ...market, observedAt: 1_000, receivedAt: 1_001 }, account, policy, 2_600);
   assert.equal(result.kind, "EXECUTION_REFUSAL");

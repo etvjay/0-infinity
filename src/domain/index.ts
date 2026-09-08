@@ -119,7 +119,6 @@ export function compileMandate(
   if (thesis.expiresAt <= thesis.createdAt) throw new RangeError("thesis validity is incoherent");
   for (const key of enumerableKeysIncludingPrototype(thesis.reasoning)) if (!CANONICAL_REASONING_KEYS.includes(key as typeof CANONICAL_REASONING_KEYS[number])) throw new RangeError(`reasoning field ${key} would expand authority`);
   for (const key of CANONICAL_REASONING_KEYS) {
-    if (key === "reasoningReceiptHash" && thesis.reasoning[key] === undefined) continue;
     if (!Object.prototype.propertyIsEnumerable.call(thesis.reasoning, key)) throw new TypeError(`reasoning.${key} must be an own enumerable property`);
     requiredString(thesis.reasoning[key], `reasoning.${key}`);
   }

@@ -101,7 +101,11 @@ test("HTTP server serializes bigint workflow state for external clients", async 
     assert.equal(read.status, 200);
     const paper = await fetch(`http://127.0.0.1:${port}/v1/paper-live`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ symbol: "BTCUSDT" }) });
     assert.equal(paper.status, 200);
-    await paper.json();
+    const paperBody = await paper.json() as any;
+    assert.equal(typeof paperBody.paperReceipt.marketStateVersion, "string");
+    assert.match(paperBody.paperReceipt.marketStateVersion, /^\d+n$/);
+    const local = await handleRequest(new ZeroInfinityService(), "POST", "/v1/paper-live", { symbol: "BTCUSDT" });
+    assert.equal(typeof (local.body as any).paperReceipt.marketStateVersion, "bigint");
   } finally {
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   }

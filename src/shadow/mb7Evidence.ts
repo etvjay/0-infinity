@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import type { MB7Artifact } from "./mb7Campaign.js";
 
 const sha = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 const scenarios = ["approval-ack", "approval-partial", "approval-fill", "submission-reject", "unknown-recovery", "council-refusal", "stale-market", "stale-account", "cost-ceiling", "risk-limit", "revoked-authority", "superseded-authority", "expiry", "duplicate-trigger-event-suppression", "duplicate-order-events", "out-of-order-terminal-refusal", "restart-restore", "unknown-recovery-order-absent", "contradictory-authority", "symbol-isolation"] as const;
 const invariantKeys = ["duplicateEconomicConsequences", "illegalStateRegressions", "contradictoryExecutionsPermitted", "crossSymbolContamination", "blindRetryCount", "newAuthorityAfterAmbiguousConsequence"] as const;
-const topKeys = ["campaignId", "mode", "startingSha", "implementationSha", "codeSha", "finalSha", "workflowCount", "scenarios", "workflows", "receipts", "metrics", "deterministicReplayDigest", "testCommands", "evidenceCeiling", "exclusions", "artifactPayloadSha256"];
+const topKeys = ["campaignId", "mode", "startingSha", "runnerImplementationSha", "validatorImplementationSha", "finalSha", "workflowCount", "scenarios", "workflows", "receipts", "metrics", "deterministicReplayDigest", "testCommands", "evidenceCeiling", "exclusions", "artifactPayloadSha256"];
 const workflowKeys = ["workflowId", "scenario", "status", "provenance"];
 const receiptKeys = ["receiptId", "workflowId", "scenario", "status", "provenance", "orderOutcome", "recoveryStatus", "refusalCode", "refusalMessage", "versionBefore", "versionAfter", "unchanged", "prevented", "restoredVersion", "symbols", "distinct", "recoveryError"];
 const provenanceKeys = ["stage", "source", "lineage"];
@@ -43,12 +44,21 @@ function validSha(value: unknown): value is string { return typeof value === "st
 
 const statusByScenario: Record<string, string> = { "approval-ack": "ACKNOWLEDGED", "approval-partial": "PARTIALLY_FILLED", "approval-fill": "FILLED", "submission-reject": "FAILED", "unknown-recovery": "UNKNOWN", "council-refusal": "REFUSED", "stale-market": "REFUSED", "stale-account": "REFUSED", "cost-ceiling": "REFUSED", "risk-limit": "REFUSED", "revoked-authority": "REFUSED", "superseded-authority": "REFUSED", expiry: "EXPIRED", "duplicate-trigger-event-suppression": "ACKNOWLEDGED", "duplicate-order-events": "FILLED", "out-of-order-terminal-refusal": "REFUSED", "restart-restore": "ACKNOWLEDGED", "unknown-recovery-order-absent": "RECOVERY_BLOCKED", "contradictory-authority": "REFUSED", "symbol-isolation": "ACKNOWLEDGED" };
 const refusalByScenario: Record<string, string | undefined> = { "council-refusal": "THRESHOLD_NOT_MET", "stale-market": "MARKET_STATE_STALE", "stale-account": "ACCOUNT_STATE_STALE", "cost-ceiling": "COST_CEILING", "risk-limit": "RISK_LIMIT", "revoked-authority": "AUTHORITY_STATUS", "superseded-authority": "AUTHORITY_STATUS", expiry: "MANDATE_EXPIRED" };
+const receiptSemantics: Record<string, Record<string, unknown>> = {
+  "approval-ack": { orderOutcome: "ACKNOWLEDGED" }, "approval-partial": { orderOutcome: "PARTIALLY_FILLED" }, "approval-fill": { orderOutcome: "FILLED" },
+  "submission-reject": { orderOutcome: "REJECTED" }, "unknown-recovery": { orderOutcome: "ACKNOWLEDGED", recoveryStatus: "RECONCILED" },
+  "council-refusal": { refusalCode: "THRESHOLD_NOT_MET", refusalMessage: "council thresholds are not met" }, "stale-market": { refusalCode: "MARKET_STATE_STALE" }, "stale-account": { refusalCode: "ACCOUNT_STATE_STALE" }, "cost-ceiling": { refusalCode: "COST_CEILING" }, "risk-limit": { refusalCode: "RISK_LIMIT" }, "revoked-authority": { refusalCode: "AUTHORITY_STATUS" }, "superseded-authority": { refusalCode: "AUTHORITY_STATUS" }, expiry: { refusalCode: "MANDATE_EXPIRED" },
+  "duplicate-trigger-event-suppression": { versionBefore: 1, versionAfter: 1, unchanged: true }, "duplicate-order-events": { unchanged: true }, "out-of-order-terminal-refusal": { prevented: true }, "restart-restore": { restoredVersion: 1 },
+  "unknown-recovery-order-absent": { recoveryStatus: "RECOVERY_BLOCKED", recoveryError: { code: "RECOVERY_BLOCKED", message: "workflow is not persisted" } }, "contradictory-authority": { prevented: true }, "symbol-isolation": { symbols: ["run-isolation-btc-BTCUSDT:thesis-BTCUSDT:1", "run-isolation-eth-ETHUSDT:thesis-ETHUSDT:1"], distinct: true }
+};
+const runnerSha=()=>execFileSync("git",["log","-1","--format=%H","--","src/shadow/mb7Campaign.ts"],{encoding:"utf8"}).trim();
+const validatorSha=()=>execFileSync("git",["log","-1","--format=%H","--","src/shadow/mb7Evidence.ts"],{encoding:"utf8"}).trim();
 
 export function validateEvidence(value: unknown): boolean {
   try {
     if (!exactObject(value, topKeys)) return fail();
     const a = value as unknown as MB7Artifact;
-    if (a.campaignId !== "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1" || a.mode !== "SHADOW" || ![a.startingSha, a.implementationSha, a.codeSha, a.finalSha].every(validSha) || a.startingSha !== a.implementationSha || a.implementationSha !== a.codeSha || a.codeSha !== a.finalSha) return fail();
+    if (a.campaignId !== "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1" || a.mode !== "SHADOW" || ![a.startingSha, a.runnerImplementationSha, a.validatorImplementationSha, a.finalSha].every(validSha) || a.startingSha !== a.runnerImplementationSha || a.finalSha !== a.runnerImplementationSha || a.runnerImplementationSha !== runnerSha() || a.validatorImplementationSha !== validatorSha()) return fail();
     if (!finiteInt(a.workflowCount) || a.workflowCount !== scenarios.length || !exactArray(a.scenarios, scenarios.length) || JSON.stringify(a.scenarios) !== JSON.stringify(scenarios) || !exactArray(a.workflows, scenarios.length) || !exactArray(a.receipts, scenarios.length) || !exactArray(a.testCommands, 5) || !exactArray(a.exclusions, 8)) return fail();
     const workflows = a.workflows as any[], receipts = a.receipts as any[];
     const ids = new Set<string>();
@@ -60,9 +70,11 @@ export function validateEvidence(value: unknown): boolean {
     const rids = new Set<string>();
     for (const r of receipts) {
       const w = workflows.find(x => x.workflowId === r.workflowId);
-      if (!allowedObject(r, receiptKeys) || typeof r.receiptId !== "string" || rids.has(r.receiptId) || !w || r.scenario !== w.scenario || r.status !== w.status || !exactObject(r.provenance, provenanceKeys) || r.provenance.stage !== w.provenance.stage || refusalByScenario[r.scenario as string] !== r.refusalCode) return fail();
-      if (r.scenario === "unknown-recovery-order-absent" && (!exactObject(r.recoveryError, errorKeys) || r.recoveryError.code !== "RECOVERY_BLOCKED")) return false;
-      if (r.scenario === "council-refusal" && (typeof r.refusalMessage !== "string" || r.provenance.stage !== "council")) return false;
+      const expected = receiptSemantics[r.scenario as string];
+      const semanticKeys = ["orderOutcome", "recoveryStatus", "refusalCode", "refusalMessage", "versionBefore", "versionAfter", "unchanged", "prevented", "restoredVersion", "symbols", "distinct", "recoveryError"];
+      if (!allowedObject(r, receiptKeys) || typeof r.receiptId !== "string" || rids.has(r.receiptId) || !w || r.scenario !== w.scenario || r.status !== w.status || !exactObject(r.provenance, provenanceKeys) || JSON.stringify(r.provenance) !== JSON.stringify(w.provenance) || !expected || semanticKeys.some(k => JSON.stringify(r[k]) !== JSON.stringify(expected[k])) ) return fail();
+      if (r.scenario === "council-refusal" && r.provenance.stage !== "council") return false;
+      if (r.scenario === "unknown-recovery-order-absent" && (!exactObject(r.recoveryError, errorKeys))) return false;
       rids.add(r.receiptId);
     }
     if (new Set(receipts.map(r => r.scenario)).size !== scenarios.length || !exactObject(a.metrics, metricKeys)) return fail();

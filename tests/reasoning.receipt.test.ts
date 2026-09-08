@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createReasoningReceipt, verifyReasoningReceipt, reasoningReceiptMarkdown, type EvidenceContextRegistry, type EvidenceReference } from "../src/reasoning/receipt.js";
 const ref = (name: string, hash: string): EvidenceReference => ({ ref: name, hash, workflowId: "wf", venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT" });
 const refs = { a: ref("a", "a-hash"), o: ref("o", "o-hash"), m: ref("m", "m-hash") };
-const input = () => ({ receiptVersion: "ZO-BIN-REASONING-RECEIPT-V2" as const, workflowId: "wf", createdAt: 100, opportunity: { venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT" }, evidence: { evidenceBundleHash: "bundle", supporting: [refs.a, refs.m], opposing: [refs.o] }, analyses: { advocate: "a", oppose: "o", market: "m" }, council: { decision: "APPROVE" as const, direction: "LONG" as const, confidence: .8, expectedMoveBps: 20, horizonMs: 1000, strongestSupport: "a", strongestOpposition: "o", invalidation: ["stale"], unresolved: ["blocked"] }, rationale: { method: "bounded", claims: [{ claimId: "c1", statement: "threshold met", supportedBy: ["a"], opposedBy: [], assumptions: [] }] }, output: { councilDecisionHash: "council", tradeThesisHash: undefined } });
+const input = () => ({ receiptVersion: "ZO-BIN-REASONING-RECEIPT-V2" as const, workflowId: "wf", createdAt: 100, opportunity: { venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT" }, evidence: { evidenceBundleHash: "bundle", supporting: [refs.a, refs.m], opposing: [refs.o] }, analyses: { advocate: "a", oppose: "o", market: "m" }, council: { decision: "APPROVE" as const, direction: "LONG" as const, confidence: .8, expectedMoveBps: 20, horizonMs: 1000, strongestSupport: "a", strongestOpposition: "o", invalidation: ["stale"], unresolved: ["blocked"] }, rationale: { method: "bounded", claims: [{ claimId: "c1", statement: "threshold met", supportedBy: ["a"], opposedBy: [], assumptions: [] }] }, output: { councilDecisionHash: "council" } });
 test("reasoning receipt is complete, canonical, immutable, and registry-bound", () => { const receipt = createReasoningReceipt(input()); const registry: EvidenceContextRegistry = { workflowId: "wf", venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT", evidenceBundleHash: "bundle", references: Object.values(refs), analyses: input().analyses }; assert.equal(verifyReasoningReceipt(receipt, registry), receipt.canonicalSha256); assert.equal(reasoningReceiptMarkdown(receipt).includes("APPROVE"), true); assert.equal(Object.isFrozen(receipt), true); assert.equal(verifyReasoningReceipt({ ...receipt, evidence: { ...receipt.evidence, supporting: [refs.o, refs.m] } }, registry), false); });
 test("APPROVE requires opposition and invalidation while REFUSE remains verifiable", () => { assert.throws(() => createReasoningReceipt({ ...input(), council: { ...input().council, opposing: [] } } as never)); const refused = createReasoningReceipt({ ...input(), evidence: { ...input().evidence, opposing: [refs.o] }, council: { ...input().council, decision: "REFUSE", invalidation: [] } }); assert.equal(typeof verifyReasoningReceipt(refused), "string"); });
 
@@ -14,4 +14,26 @@ test("receipt creation leaves caller-owned nested input mutable", () => { const 
 test("receipt creation rejects custom prototypes before cloning normalization", () => {
   const custom = Object.assign(Object.create({ inherited: true }), input().opportunity);
   assert.throws(() => createReasoningReceipt({ ...input(), opportunity: custom } as never), TypeError);
+});
+
+test("receipt arrays must be dense canonical arrays", () => {
+  const sparse = input();
+  delete (sparse.evidence.supporting as EvidenceReference[])[0];
+  assert.throws(() => createReasoningReceipt(sparse), TypeError);
+
+  const extra = input();
+  Object.defineProperty(extra.council.invalidation, "unexpected", { value: "x", enumerable: true });
+  assert.throws(() => createReasoningReceipt(extra), TypeError);
+});
+
+test("trade thesis hash may be omitted but explicit undefined is invalid", () => {
+  const withUndefined = input();
+  delete (withUndefined.output as { tradeThesisHash?: string }).tradeThesisHash;
+  const omitted = createReasoningReceipt(withUndefined);
+  assert.equal(typeof verifyReasoningReceipt(omitted), "string");
+
+  const explicit = { ...input(), output: { ...input().output, tradeThesisHash: undefined } };
+  assert.throws(() => createReasoningReceipt(explicit), TypeError);
+  const present = createReasoningReceipt({ ...withUndefined, output: { ...withUndefined.output, tradeThesisHash: "thesis" } });
+  assert.notEqual(omitted.canonicalSha256, present.canonicalSha256);
 });

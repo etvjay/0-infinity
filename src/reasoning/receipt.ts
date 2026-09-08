@@ -25,23 +25,36 @@ export interface EvidenceContextRegistry {
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
 const text = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
-const canonical = (v: unknown): string => v === null || typeof v === "string" || typeof v === "boolean" || typeof v === "number" ? JSON.stringify(v) : Array.isArray(v) ? `[${v.map(canonical).join(",")}]` : isObject(v) ? `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}` : "null";
+const canonical = (v: unknown): string => v === undefined ? "undefined" : v === null || typeof v === "string" || typeof v === "boolean" || typeof v === "number" ? JSON.stringify(v) : Array.isArray(v) ? `[${v.map(canonical).join(",")}]` : isObject(v) ? `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}` : "null";
 const freeze = <T>(v: T, seen = new Set<object>()): T => { if (v && typeof v === "object" && !seen.has(v as object)) { seen.add(v as object); Object.freeze(v); for (const c of Object.values(v as Record<string, unknown>)) freeze(c, seen); } return v; };
 const ownExact = (v: unknown, keys: readonly string[]): v is Record<string, unknown> => isObject(v) && Reflect.ownKeys(v).length === keys.length && keys.every(k => Object.prototype.hasOwnProperty.call(v, k) && Object.getOwnPropertyDescriptor(v, k)?.enumerable === true && "value" in Object.getOwnPropertyDescriptor(v, k)!);
 const refKeys = ["ref", "hash", "workflowId", "venue", "product", "symbol"] as const;
 const validRef = (v: unknown): v is EvidenceReference => ownExact(v, refKeys) && refKeys.every(k => text(v[k]));
-const strings = (v: unknown): v is readonly string[] => Array.isArray(v) && new Set(v).size === v.length && v.every(text);
+const canonicalArray = (v: unknown): v is readonly unknown[] => {
+  if (!Array.isArray(v) || Object.getPrototypeOf(v) !== Array.prototype) return false;
+  const keys = Reflect.ownKeys(v);
+  const length = v.length;
+  if (keys.length !== length + 1 || !keys.includes("length")) return false;
+  const lengthDescriptor = Object.getOwnPropertyDescriptor(v, "length");
+  if (!lengthDescriptor || !("value" in lengthDescriptor) || lengthDescriptor.value !== length) return false;
+  for (let i = 0; i < length; i++) {
+    const descriptor = Object.getOwnPropertyDescriptor(v, String(i));
+    if (!descriptor || !("value" in descriptor) || descriptor.enumerable !== true) return false;
+  }
+  return true;
+};
+const strings = (v: unknown): v is readonly string[] => canonicalArray(v) && new Set(v).size === v.length && v.every(text);
 const validInput = (v: unknown): v is ReasoningReceiptInput => {
   if (!ownExact(v, ["receiptVersion","workflowId","createdAt","opportunity","evidence","analyses","council","rationale","output"])) return false;
   const x = v as unknown as ReasoningReceiptInput, o = x.opportunity, e = x.evidence, a = x.analyses, c = x.council, r = x.rationale, out = x.output;
   if (x.receiptVersion !== "ZO-BIN-REASONING-RECEIPT-V2" || !text(x.workflowId) || !finite(x.createdAt) || x.createdAt < 0 || !ownExact(o,["venue","product","symbol"]) || ![o.venue,o.product,o.symbol].every(text)) return false;
-  if (!ownExact(e,["evidenceBundleHash","supporting","opposing"]) || !text(e.evidenceBundleHash) || !Array.isArray(e.supporting) || !Array.isArray(e.opposing) || ![...e.supporting,...e.opposing].every(validRef)) return false;
+  if (!ownExact(e,["evidenceBundleHash","supporting","opposing"]) || !text(e.evidenceBundleHash) || !canonicalArray(e.supporting) || !canonicalArray(e.opposing) || [...e.supporting,...e.opposing].every(validRef) === false) return false;
   const refs = [...e.supporting,...e.opposing]; if (new Set(refs.map(z=>z.ref)).size !== refs.length || refs.some(z=>z.workflowId!==x.workflowId||z.venue!==o.venue||z.product!==o.product||z.symbol!==o.symbol)) return false;
   if (!ownExact(a,["advocate","oppose","market"]) || ![a.advocate,a.oppose,a.market].every(text)) return false;
   if (!ownExact(c,["decision","direction","confidence","expectedMoveBps","horizonMs","strongestSupport","strongestOpposition","invalidation","unresolved"]) || !["APPROVE","REFUSE"].includes(c.decision) || !["LONG","SHORT"].includes(c.direction) || !finite(c.confidence)||c.confidence<0||c.confidence>1||!finite(c.expectedMoveBps)||!finite(c.horizonMs)||c.horizonMs<=0||![c.strongestSupport,c.strongestOpposition].every(text)||!strings(c.invalidation)||!strings(c.unresolved)) return false;
   if (c.decision === "APPROVE" && (e.opposing.length===0 || c.invalidation.length===0)) return false;
-  if (!ownExact(r,["method","claims"]) || !text(r.method) || !Array.isArray(r.claims) || r.claims.some(cl=>!ownExact(cl,["claimId","statement","supportedBy","opposedBy","assumptions"])||![cl.claimId,cl.statement].every(text)||!strings(cl.supportedBy)||!strings(cl.opposedBy)||!strings(cl.assumptions)||[...cl.supportedBy,...cl.opposedBy].some(id=>!refs.some(z=>z.ref===id)))) return false;
-  if (new Set(r.claims.map(cl=>cl.claimId)).size!==r.claims.length || !ownExact(out,["councilDecisionHash","tradeThesisHash"]) || !text(out.councilDecisionHash) || (out.tradeThesisHash!==undefined&&!text(out.tradeThesisHash))) return false;
+  if (!ownExact(r,["method","claims"]) || !text(r.method) || !canonicalArray(r.claims) || r.claims.some(cl=>!ownExact(cl,["claimId","statement","supportedBy","opposedBy","assumptions"])||![cl.claimId,cl.statement].every(text)||!strings(cl.supportedBy)||!strings(cl.opposedBy)||!strings(cl.assumptions)||[...cl.supportedBy,...cl.opposedBy].some(id=>!refs.some(z=>z.ref===id)))) return false;
+  if (new Set(r.claims.map(cl=>cl.claimId)).size!==r.claims.length || !isObject(out) || !((ownExact(out,["councilDecisionHash"]) || ownExact(out,["councilDecisionHash","tradeThesisHash"])) && text(out.councilDecisionHash) && (!Object.prototype.hasOwnProperty.call(out,"tradeThesisHash") || text(out.tradeThesisHash)))) return false;
   return true;
 };
 export function canonicalReasoningJson(value: ReasoningReceiptInput): string { if (!validInput(value)) throw new TypeError("reasoning receipt is malformed"); return canonical(value); }

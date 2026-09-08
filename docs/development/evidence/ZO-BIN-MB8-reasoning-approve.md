@@ -1,6 +1,6 @@
 # Reasoning receipt: APPROVE
 - Version: ZO-BIN-REASONING-RECEIPT-V2
-- SHA-256: `a2472e891c88c871f854581721031e1ea8f117c8fdae9b90fb06fc8229216743`
+- SHA-256: `fc0643d2431ad4f54cead7b4333fcb2c346c878c02596ffcf3f206b61af5148b`
 - Workflow: demo-workflow
 - Opportunity: BINANCE/USD_M_FUTURES/BTCUSDT
 - Evidence bundle: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee

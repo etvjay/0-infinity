@@ -48,6 +48,14 @@ test("paper writer validates the configured fill model and snapshots it", async 
   assert.equal(receipt.accountTransition.fills[0]?.price, 101);
 });
 
+test("paper writer rejects nonfinite cash transitions before mutating the account", async () => {
+  const writer = new PaperOrderWriter("a", 1000);
+  const extreme = { ...intent(), quantity: undefined, notional: 1e308, price: 1e308 };
+  await assert.rejects(() => writer.submit(extreme), /finite|overflow|invalid/);
+  assert.equal(writer.getAccount().cash, 1000);
+  assert.equal(writer.getAccount().fills.length, 0);
+});
+
 test("registerStack requires own canonical role bindings and nested adapters", () => {
   const service = new ZeroInfinityService();
   const b = new BuiltinWorkerAdapter();

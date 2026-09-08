@@ -7,7 +7,7 @@ objective: >
   Remove the evaluator/runtime/store temporal inconsistency and ensure a compiled
   ExecutionMandate cannot remain executable after its TradeThesis validity horizon.
 canonical_component: evaluator, runtime mandate lifecycle, RuntimeSupervisor, MandateStore, domain compiler
-status: CANDIDATE_PENDING_REVIEW
+status: ACCEPTED_LOCAL_PASS
 requirements:
   - Expiry is inclusive: now < expiresAt is active; now >= expiresAt is expired.
   - Runtime, evaluator, MandateStore, restore, lookup, and consumption use the same boundary.
@@ -76,7 +76,7 @@ evidence_produced:
   - GREEN full suite after restore-guard reconciliation: 518/518
   - focused runtime/store/domain/supervisor suite: 34/34
   - implementation commits: fc9dea9, 8de9f59, 8056a43, d39cfcc
-  - final exact-head review pending
+  - final exact-head review: APPROVE, safe_to_integrate=true at 828f4fa
 ground_truth_before:
   - evaluator used now >= expiresAt
   - runtime and store used now > expiresAt
@@ -87,7 +87,7 @@ ground_truth_after_candidate:
   - thesis validity is bounded by createdAt + horizonMs
   - mandate TTL remains independently shorter when policy validityMs is shorter
   - standalone runtime timestamps and forged runtime expiry fields fail closed
-review_verdict: PENDING
+review_verdict: APPROVE
 evidence_ceiling: LOCAL_PASS only; deterministic local authority/runtime tests and static review. No live exchange, deployment, production durability, profitability, or financial-write evidence.
 blockers:
   - No live financial write is authorized.

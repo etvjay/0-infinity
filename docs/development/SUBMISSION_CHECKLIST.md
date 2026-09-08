@@ -7,7 +7,7 @@ Status is evidence-bounded. `HOSTED_PASS`, `TESTNET_PASS`, and account-bound soc
 | Follow @Binance | Account action | USER_ACTION_REQUIRED | Not verifiable from repository | User | Logged-in Binance account required |
 | Repost announcement | Account action | USER_ACTION_REQUIRED | Not verifiable from repository | User | Logged-in X account required |
 | X submission | Prepared copy below | PREPARED | `docs/submission/X_SUBMISSION.md` | 0-infinity | User must post |
-| Demo video | Submission media | BLOCKED_EXTERNAL | No final rendered video artifact yet | 0-infinity | Render and upload destination |
+| Demo video | Submission media | LOCAL_ARTIFACT | `docs/submission/media/0-infinity-demo.mp4` — 1920×1080, 125s, burned-in captions, truthful blocked Testnet status | 0-infinity | Upload destination still required |
 | GitHub | `https://github.com/etvjay/0-infinity` | PASS | `origin/main` = final SHA | 0-infinity | None |
 | Survey | Prepared answers | USER_INPUT_REQUIRED | `docs/submission/SURVEY_ANSWERS.md` | User | Account-specific fields |
 | Hosted Web | GitHub Pages workflow | BLOCKED_EXTERNAL | `docs/DEPLOYMENT.md` | 0-infinity | Pages hosting not independently verified |

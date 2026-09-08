@@ -41,6 +41,18 @@ test("arms then composes a versioned market observation through deterministic ev
 });
 
 
+test("rejects a lower market version before CAS save or writer submission", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  const initialMarket = deepFreeze({ ...market, version: 3n });
+  const input = { workflowId: "wf", mandate, market: initialMarket, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" as const };
+  await (x.supervisor as any).arm(input);
+  const lower = deepFreeze({ ...market, version: 2n, observedAt: 2_550, receivedAt: 2_551 });
+  await assert.rejects(() => (x.supervisor as any).observeMarket("wf", lower), /version|stale|binding/i);
+  const stored = ((x.supervisor as any).persistence as MemoryWorkflowPersistence).load("wf")!;
+  assert.equal(stored.market.version, 3n);
+});
+
+
 test("unknown recovery reconciles and never retries", async () => {
   let calls = 0; const x = setup({ submit: async () => { calls++; return { kind: "TIMEOUT" }; } }); await x.mandates.issue(mandate);
   await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });

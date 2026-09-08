@@ -18,20 +18,47 @@ const nonNegative = (v: unknown): v is number => finite(v) && v >= 0;
 const text = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 const MAX_AGE = Number.MAX_SAFE_INTEGER;
 
+export function isCanonicalFrozenObject(value: unknown, keys: readonly string[], optional: readonly string[] = []): value is Record<string, unknown> {
+  if (!object(value) || Object.getPrototypeOf(value) !== Object.prototype || !Object.isFrozen(value)) return false;
+  const allowed = new Set([...keys, ...optional]);
+  const own = Reflect.ownKeys(value);
+  if (own.some((key) => typeof key !== "string" || !allowed.has(key)) || keys.some((key) => !own.includes(key))) return false;
+  return own.every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return !!descriptor && "value" in descriptor && descriptor.enumerable && !descriptor.writable && !descriptor.configurable;
+  });
+}
+
+export function isCanonicalFrozenArray(value: unknown): value is readonly unknown[] {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || !Object.isFrozen(value)) return false;
+  const own = Reflect.ownKeys(value);
+  if (own.length !== value.length + 1 || !own.includes("length")) return false;
+  const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
+  if (!lengthDescriptor || lengthDescriptor.value !== value.length || lengthDescriptor.writable || lengthDescriptor.enumerable || lengthDescriptor.configurable) return false;
+  for (let i = 0; i < value.length; i++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
+    if (!descriptor || !descriptor.enumerable || descriptor.writable || descriptor.configurable || !("value" in descriptor)) return false;
+  }
+  return own.every((key) => key === "length" || (typeof key === "string" && /^\d+$/.test(key) && Number(key) < value.length));
+}
+
 export function validMandate(value: unknown): value is ExecutionMandate {
-  if (!object(value) || !frozenTree(value) || value.version !== 1 || value.maxUses !== 1) return false;
-  const x = value;
+  try {
+  const mandateKeys = ["mandateId", "workflowId", "thesisId", "method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash", "provenance", "venue", "instrument", "symbol", "side", "accountId", "expiresAt", "validity", "anchor", "entry", "economics", "risk", "invalidation", "execution", "version", "maxUses"];
+  if (!isCanonicalFrozenObject(value, mandateKeys, ["thesisHash"]) || !frozenTree(value) || value.version !== 1 || value.maxUses !== 1) return false;
+  const x = value as Record<string, any>;
   const strings = [x.mandateId, x.workflowId, x.thesisId, x.method, x.advocateRef, x.opposeRef, x.marketAnalysisRef, x.evidenceBundleHash, x.councilDecisionHash, x.symbol, x.accountId];
   if (strings.some((v) => !text(v)) || (x.thesisHash !== undefined && !text(x.thesisHash)) || x.venue !== "BINANCE" || !["SPOT", "USD_M_FUTURES"].includes(String(x.instrument)) || !["BUY", "SELL"].includes(String(x.side))) return false;
   const validity = x.validity, anchor = x.anchor, entry = x.entry, economics = x.economics, risk = x.risk, invalidation = x.invalidation, execution = x.execution, provenance = x.provenance;
-  if (!object(validity) || !nonNegative(validity.issuedAt) || !nonNegative(x.expiresAt) || x.expiresAt <= validity.issuedAt) return false;
-  if (!object(anchor) || typeof anchor.stateVersion !== "bigint" || anchor.stateVersion < 0n || !nonNegative(anchor.observedAt) || !nonNegative(anchor.receivedAt) || anchor.receivedAt < anchor.observedAt || !finite(anchor.markPrice) || anchor.markPrice <= 0) return false;
-  if (!object(entry) || !positive(entry.minPrice) || !finite(entry.maxPrice) || entry.maxPrice < entry.minPrice || !["ABOVE", "BELOW"].includes(String(entry.trigger)) || !nonNegative(entry.maxSpreadBps) || !nonNegative(entry.maxSlippageBps)) return false;
-  if (!object(economics) || ["minExecutableEdgeBps", "maxFeeBps", "maxFundingCostBps"].some((k) => !nonNegative(economics[k])) || !positive(economics.maxNotional)) return false;
-  if (!object(risk) || !nonNegative(risk.maxLossBps) || !object(invalidation) || !["LONG", "SHORT"].includes(String(invalidation.direction)) || (invalidation.direction === "LONG" ? "BUY" : "SELL") !== x.side || !nonNegative(invalidation.thesisExpiry) || invalidation.thesisExpiry < x.expiresAt) return false;
-  if (!object(execution) || !["LIMIT", "MARKET"].includes(String(execution.method))) return false;
-  if (!object(provenance) || provenance.thesisId !== x.thesisId || provenance.thesisHash !== x.thesisHash || provenance.method !== x.method || provenance.advocateRef !== x.advocateRef || provenance.opposeRef !== x.opposeRef || provenance.marketAnalysisRef !== x.marketAnalysisRef || provenance.evidenceBundleHash !== x.evidenceBundleHash || provenance.councilDecisionHash !== x.councilDecisionHash) return false;
+  if (!isCanonicalFrozenObject(validity, ["issuedAt"]) || !nonNegative(validity.issuedAt) || !nonNegative(x.expiresAt) || x.expiresAt <= validity.issuedAt) return false;
+  if (!isCanonicalFrozenObject(anchor, ["stateVersion", "observedAt", "receivedAt", "markPrice"]) || typeof anchor.stateVersion !== "bigint" || anchor.stateVersion < 0n || !nonNegative(anchor.observedAt) || !nonNegative(anchor.receivedAt) || anchor.receivedAt < anchor.observedAt || !finite(anchor.markPrice) || anchor.markPrice <= 0) return false;
+  if (!isCanonicalFrozenObject(entry, ["minPrice", "maxPrice", "trigger", "maxSpreadBps", "maxSlippageBps"]) || !positive(entry.minPrice) || !finite(entry.maxPrice) || entry.maxPrice < entry.minPrice || !["ABOVE", "BELOW"].includes(String(entry.trigger)) || !nonNegative(entry.maxSpreadBps) || !nonNegative(entry.maxSlippageBps)) return false;
+  if (!isCanonicalFrozenObject(economics, ["minExecutableEdgeBps", "maxFeeBps", "maxFundingCostBps", "maxNotional"]) || ["minExecutableEdgeBps", "maxFeeBps", "maxFundingCostBps"].some((k) => !nonNegative(economics[k])) || !positive(economics.maxNotional)) return false;
+  if (!isCanonicalFrozenObject(risk, ["maxLossBps"]) || !nonNegative(risk.maxLossBps) || !isCanonicalFrozenObject(invalidation, ["thesisExpiry", "direction"]) || !["LONG", "SHORT"].includes(String(invalidation.direction)) || (invalidation.direction === "LONG" ? "BUY" : "SELL") !== x.side || !nonNegative(invalidation.thesisExpiry) || invalidation.thesisExpiry < x.expiresAt) return false;
+  if (!isCanonicalFrozenObject(execution, ["method"]) || !["LIMIT", "MARKET"].includes(String(execution.method))) return false;
+  if (!isCanonicalFrozenObject(provenance, ["thesisId", "method", "advocateRef", "opposeRef", "marketAnalysisRef", "evidenceBundleHash", "councilDecisionHash"], ["thesisHash"]) || provenance.thesisId !== x.thesisId || provenance.thesisHash !== x.thesisHash || provenance.method !== x.method || provenance.advocateRef !== x.advocateRef || provenance.opposeRef !== x.opposeRef || provenance.marketAnalysisRef !== x.marketAnalysisRef || provenance.evidenceBundleHash !== x.evidenceBundleHash || provenance.councilDecisionHash !== x.councilDecisionHash) return false;
   return true;
+  } catch { return false; }
 }
 function positive(v: unknown): v is number { return finite(v) && v > 0; }
 function validPolicy(value: unknown): value is EvaluationPolicy { return object(value) && finite(value.maxMarketAgeMs) && value.maxMarketAgeMs >= 0 && value.maxMarketAgeMs <= MAX_AGE && finite(value.maxAccountAgeMs) && value.maxAccountAgeMs >= 0 && value.maxAccountAgeMs <= MAX_AGE && typeof value.maxAnchorVersionLag === "bigint" && value.maxAnchorVersionLag >= 0n; }

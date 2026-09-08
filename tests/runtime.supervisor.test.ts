@@ -8,9 +8,10 @@ import { RuntimeSupervisor, MemoryWorkflowPersistence, type WorkflowMarketState,
 const thesis: TradeThesis = { thesisId: "t", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .9, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c" }, createdAt: 1_000, expiresAt: 61_000 };
 const policy: CompilerPolicy = { accountId: "acct", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 6, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_975, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
 const mandate = compileMandate({ workflowId: "wf" }, thesis, policy, { stateVersion: 1n, observedAt: 1_000, receivedAt: 1_001, markPrice: 99_975 }, 2_000);
-const market: WorkflowMarketState = { version: 1n, observedAt: 2_500, receivedAt: 2_501, value: { venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", bidPrice: 99_950, askPrice: 100_000, markPrice: 99_975, expectedMoveBps: 50, spreadBps: (50 / 99975) * 10000, slippageBps: 2, feeBps: 3, fundingCostBps: 0 } };
-const account: WorkflowAccountState = { version: 1n, observedAt: 2_500, receivedAt: 2_501, value: { accountId: "acct", availableNotional: 2_000, currentNotional: 0, currentLossBps: 0 } };
-const evalPolicy = { maxMarketAgeMs: 1_000, maxAccountAgeMs: 1_000, maxAnchorVersionLag: 3n };
+function deepFreeze<T>(value: T): T { if (value && typeof value === "object" && !Object.isFrozen(value)) { Object.freeze(value); for (const child of Object.values(value as object as Record<string, unknown>)) deepFreeze(child); } return value; }
+const market: WorkflowMarketState = deepFreeze({ version: 1n, observedAt: 2_500, receivedAt: 2_501, value: { venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", bidPrice: 99_950, askPrice: 100_000, markPrice: 99_975, expectedMoveBps: 50, spreadBps: (50 / 99975) * 10000, slippageBps: 2, feeBps: 3, fundingCostBps: 0 } });
+const account: WorkflowAccountState = deepFreeze({ version: 1n, observedAt: 2_500, receivedAt: 2_501, value: { accountId: "acct", availableNotional: 2_000, currentNotional: 0, currentLossBps: 0 } });
+const evalPolicy = deepFreeze({ maxMarketAgeMs: 1_000, maxAccountAgeMs: 1_000, maxAnchorVersionLag: 3n });
 function setup(adapter: ExchangeAdapter = { submit: async () => ({ kind: "ACKNOWLEDGED" }) }) {
   const mandates = new MandateStore(new MemoryPersistence(), () => 2_600);
   const persistence = new MemoryOrderPersistence();
@@ -37,7 +38,7 @@ test("unknown recovery reconciles and never retries", async () => {
 test("credentials cannot elevate explicit mode and stale state refuses", async () => {
   process.env.BINANCE_API_KEY = "must-not-be-read";
   const x = setup(); await x.mandates.issue(mandate);
-  const receipt = await x.supervisor.start({ workflowId: "wf", mandate, market: { ...market, observedAt: 1_000, receivedAt: 1_001 }, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  const receipt = await x.supervisor.start({ workflowId: "wf", mandate, market: deepFreeze({ ...market, observedAt: 1_000, receivedAt: 1_001 }), account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
   assert.equal(receipt.status, "REFUSED"); assert.equal(receipt.orderOutcome, undefined);
 });
 
@@ -81,4 +82,48 @@ test("restore rejects a forged frozen record with incoherent runtime", async () 
   const original = persistence.load("wf")!;
   await persistence.save(Object.freeze({ ...original, runtime: Object.freeze({ ...original.runtime, state: "FILLED" }) }));
   await assert.rejects(() => x.supervisor.restore("wf"), /RECOVERY_BLOCKED/);
+});
+
+test("start blocks any existing forged, mutable, or structurally hostile record", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  const original = ((x.supervisor as any).persistence as MemoryWorkflowPersistence).load("wf")!;
+  for (const forge of [
+    () => Object.freeze({ ...original, hidden: true }),
+    () => { const r = { ...original }; Object.defineProperty(r, "hidden", { value: true }); return Object.freeze(r); },
+    () => { const r = { ...original }; Object.defineProperty(r, "status", { get: () => original.status }); return Object.freeze(r); },
+    () => Object.freeze(Object.assign(Object.create({ hidden: true }), original)),
+    () => { const r = { ...original }; (r as any).runtime = { ...original.runtime }; return Object.freeze(r); },
+  ]) {
+    const hostile = forge();
+    const persistence = { load: () => hostile, save: async () => {}, compareAndSave: async () => {} };
+    const supervisor = new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence, clock: () => 2_600 });
+    await assert.rejects(() => supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" }), /RECOVERY_BLOCKED/);
+  }
+});
+
+test("workflow validation rejects symbols, accessors, custom prototypes, and mutable nested values", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  const cases = [
+    () => { const r = { ...mandate }; Object.defineProperty(r, "hidden", { value: 1 }); return Object.freeze(r); },
+    () => { const r = { ...mandate }; Object.defineProperty(r, "symbolic", { value: 1, enumerable: false }); Object.defineProperty(r, Symbol("x"), { value: 1 }); return Object.freeze(r); },
+    () => { const r = { ...mandate }; Object.defineProperty(r, "symbol", { get: () => mandate.symbol }); return Object.freeze(r); },
+    () => Object.freeze(Object.assign(Object.create({ workflowId: mandate.workflowId }), mandate)),
+    () => ({ ...mandate }),
+  ];
+  for (const make of cases) {
+    const bad = make();
+    await assert.rejects(() => x.supervisor.start({ workflowId: "wf", mandate: bad as any, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" }));
+  }
+});
+
+test("serial cleanup removes each completed workflow tail token", async () => {
+  const x = setup();
+  for (let i = 0; i < 25; i++) await assert.rejects(() => x.supervisor.trigger(`missing-${i}`), /RECOVERY_BLOCKED/);
+  assert.equal((x.supervisor as any).tails.size, 0);
+});
+
+test("custom persistence must explicitly implement compare-and-save CAS", () => {
+  const x = setup();
+  assert.throws(() => new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence: { load: () => undefined, save: async () => {} }, clock: () => 2_600 } as any), /compareAndSave/);
 });

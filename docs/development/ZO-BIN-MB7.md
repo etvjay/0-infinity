@@ -6,8 +6,8 @@ Status: provisional candidate evidence; deterministic local replay only.
 - Mode: `SHADOW`
 - Workflows: 20; all required scenario classes exercised or explicitly bounded
 - Artifact: `docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json`
-- Artifact SHA-256: `df801a7dca5f75cb8d69882c2c793b2cfe0652d46cb371f048c6459f5fd099ed`
-- Campaign code SHA: `8503c0a7b7fd514d740d7e3b5ea30df1520c58ca`
+- Artifact SHA-256: `4277b6a5e66580711703a90092892fb4cbb3fda94afc4970851d87ba181bdb5d`
+- Campaign code SHA: `3372389a6608a5fc58866724bcbaf0a38faf0d8b`
 - Outcomes: 4 ACKNOWLEDGED, 1 PARTIALLY_FILLED, 2 FILLED, 1 FAILED/REJECTED, 1 UNKNOWN, 10 REFUSED, 1 RECOVERY_BLOCKED
 - Recovery: order-found UNKNOWN reconciliation exercised; order-absent is explicitly bounded `RECOVERY_BLOCKED` because the injected OrderWriter has no order-lookup boundary
 - Duplicate coverage: duplicate trigger leaves version unchanged; duplicate FILLED event leaves receipt unchanged; out-of-order terminal event is refused

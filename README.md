@@ -1,67 +1,159 @@
 # 0-infinity
 
-**Evidence-bounded autonomous trading for Binance Agent OS.**
+**A control layer between trading agents and execution.**
 
-This repository separates OPINION from TRADE: observation → evidence → thesis → executable edge → authority → execution. A thesis or evaluator result is not a trade. M-B8 adds a local submission/readiness boundary without enabling financial writes.
+Agents can propose a market opportunity. 0-infinity runs bounded evidence and opposition through a Council, produces inspectable reasoning artifacts, checks executable economics, and returns a bounded decision result or refusal. A Council result is not a live order: the public product has no financial-write path.
 
-## Slow reasoning, fast deterministic hot path
+The public UI is intentionally small:
 
-Reasoning is intentionally bounded but not presented as a trading-speed loop. ADVOCATE, OPPOSER, and MARKET_ANALYST run before the service-owned COUNCIL; FAST changes explicit role timeout/research/tool budgets but never skips OPPOSER or COUNCIL. After a mandate is armed, one Council result can feed repeated pure `evaluateMandate` evaluations. The canonical hot closure has no role adapter, reasoning runtime, Council, OpenAI, MCP, or fetch dependency and makes no second LLM call. TTL is mandate validity, not thesis horizon or an HFT promise. Reasoning and execution use separate clocks; absent an API trace the UI says `NOT MEASURED`, never an invented percentile.
+- **LANDING** — what 0-infinity is and why it exists;
+- **TRY** — a no-write SHADOW/PAPER workflow for `BTCUSDT`;
+- **INTEGRATE** — the implemented REST, MCP, and SDK entry points;
+- **PROOF** — compact evidence and blocked-state labels.
 
-## M-B8 position
+It is not a trading dashboard, HFT system, profitability claim, or live-order console.
 
-- Mode: `submission-ready-shadow/readiness`; current state: `READINESS_PREPARED / REMOTE_NOT_SYNCHRONIZED / LIVE_WRITE_NOT_AUTHORIZED`.
-- Product and allowlist: Binance USD-M Futures, `BTCUSDT` and `ETHUSDT` only.
-- Market evidence: bounded public bookTicker read (`LIVE_READ_PASS`); this does not prove synchronized depth, account state, profitability, or production safety.
-- Account reads remain unavailable: account `BLOCKED_EXTERNAL`.
-- Binance Agentic MCP status is split accurately: the historical raw HTTP probe is `UNAUTHENTICATED_PROBE` (401); the supported `mcp-remote` OAuth attempt reached discovery but is `AUTH_BLOCKED_EXTERNAL` because the server does not support dynamic client registration. No credentials or browser session were used.
-- Official Binance Skills Hub source `binance/binance-skills-hub` was installed and inspected (skill v2.0.0; binance-cli 2.1.1). Credential-free BTCUSDT ticker/mark-price attempts are `BINANCE_SKILLS_PUBLIC_READ_BLOCKED_EXTERNAL` due Binance eligibility restrictions. No live Skills evidence is claimed.
-- Binance Futures Testnet public exchange metadata was read successfully (`HTTP 200`), but authenticated account/order lifecycle remains `BINANCE_TESTNET = BLOCKED_EXTERNAL` because dedicated testnet credentials are unavailable.
-- M-B2-G remains HTTP 451.
-- `liveWrite`, cancel, transfer, withdrawal, wallet mutation, and MCP financial actions are false. The local `LocalReplayOrderWriter` can only create deterministic shadow receipts.
-- Confirmation is mandatory and binds the exact immutable intent; stale, expired, anchor, or edge drift invalidates it. Denial never writes or retries.
+## Decision path
 
-```mermaid
-flowchart LR
-  M[Bounded public market read] --> E[Evidence / freshness / synchronized-book checks]
-  A[Account read: BLOCKED_EXTERNAL] --> G[Fail-closed gate]
-  MCP[Agentic MCP: 401, no auth] --> G
-  E --> T[Thesis / OPINION]
-  T --> V[Deterministic evaluator]
-  V --> I[Immutable ExecutionIntent]
-  I --> C[Explicit confirmation boundary]
-  C --> K{Kill switch ENABLED/HALTED}
-  K -->|local only| W[LocalReplayOrderWriter]
-  W --> R[Shadow receipt / reconciliation]
-  K -. never .-> X[Binance live writer]
+```text
+Opportunity → Evidence + Opposition → Council → Reasoning Receipt
+           → Workflow / Thesis → Economics → TRADE or REFUSE
 ```
 
-## Verifiable reasoning
+The deterministic service currently uses the roles `ADVOCATE`, `OPPOSER`, `MARKET_ANALYST`, and `COUNCIL`. The returned artifacts are inspectable references and bounded claims, not private chain-of-thought.
 
-M-B8 emits a canonical JSON reasoning receipt before thesis/mandate projection. Receipts contain only references, bounded claims, assumptions, unresolved items, and invalidation conditions—never chain-of-thought. `canonicalReasoningJson` sorts object properties deterministically; `createReasoningReceipt` records SHA-256; `verifyReasoningReceipt` rejects dangling references, supporting/opposing contradictions, mutation, and digest drift. The council binds `reasoningReceiptHash` into thesis reasoning and mandate provenance without changing authority, evaluator, economics, or writer semantics. The demo includes real `APPROVE` and `REFUSE` receipts and `ZO-BIN-MB8-reasoning-verifiability.json`.
+## Evidence and authority boundary
 
+| Surface | Current boundary |
+|---|---|
+| `SHADOW` | `SHADOW_PASS`: deterministic local replay; no exchange write |
+| `PAPER` | `PAPER_MARKET_PASS`: simulated execution; the API mode is `PAPER_LIVE`; no exchange write |
+| Binance public market read | `LIVE_READ_PASS` is bounded market input only; it does not prove private account state, synchronized depth, profitability, or production safety |
+| Hosted REST/MCP | The configured runtime responds to health, readiness, capabilities, workflow, SHADOW/PAPER, and JSON-RPC probes. Its readiness response still reports `hostedEvidence: false`; no durability claim is made |
+| SDK | `ZeroInfinityClient` and the `examples/consumer` fixture are implemented and tested against a configured REST base URL; this does not authenticate Binance or authorize writes |
+| Binance Agentic MCP | `AUTH_BLOCKED_EXTERNAL`: authorization was not completed. No authenticated read or financial tool evidence is claimed |
+| Binance Futures Testnet | `CREDENTIAL_REQUIRED` / `BLOCKED_EXTERNAL`: public metadata was readable, but no authenticated account, order, cancel, or reconciliation lifecycle is claimed |
+| `LIVE` / mainnet | `NOT_AUTHORIZED`: locked; no live financial write is exposed or claimed |
 
-M-B1–M-B7 remain the reviewed local components; M-B7 `SHADOW_PASS` is deterministic replay evidence only. M-B8 does not upgrade that ceiling. It does not claim live exchange execution, synchronized private state, account authorization, remote submission readiness, or financial outcome. Binance emergency-stop material is documentation only and is never invoked.
+The repository's readiness manifest keeps `accountRead`, `mcpRead`, and all write capabilities disabled. No API keys, tokens, cookies, private keys, or credentials belong in this repository.
 
-## Deterministic demo
+## Run locally
 
-Run with no credentials and no network:
+Requirements: Node.js 22 and npm.
 
 ```bash
+npm ci
+npm run check
+npm run web:check
+npm test
 npm run demo
 npm run readiness:validate
 npm run secret-scan
 ```
 
-The demo executes three canonical local scenarios: economics edge collapse → no trade; valid shadow execution → receipt; unknown outcome → reconciliation with no blind retry. It writes `docs/development/evidence/ZO-BIN-MB8-demo-readiness.json` and the preserved MCP receipt `docs/development/evidence/ZO-BIN-MCP-401-agentic-read-only.json`.
+`npm run demo` is credential-free and network-free. It exercises economics-edge refusal, a valid shadow receipt, and unknown-outcome reconciliation without blind retry. The validation and demo commands write/read bounded artifacts under `docs/development/evidence/`.
 
-## Submission/video script
+Run the local REST service and static UI in separate terminals:
 
-1. Show the architecture and the invariant **OPINION != TRADE**.
-2. Run `npm run demo`; point out the refusal, shadow receipt, and unknown recovery.
-3. Open the readiness artifact and capability manifest: writes are disabled, account/MCP are blocked, and the allowlist is explicit.
-4. Run `npm run readiness:validate`; close by stating the evidence ceiling and the M-B2/MCP blockers. Do not present local replay as a live Binance trade.
+```bash
+npm run api                         # http://127.0.0.1:8787
+python3 -m http.server 4173 --directory web
+```
 
-## Static Web UI and local entrypoints
+The static page defaults to `http://127.0.0.1:8787`. A hosted page can set the same value before loading `web/app.js`:
 
-The judge-facing UI lives in `web/` and is intentionally static. Run `npm run api` for the local REST surface, `npm run mcp` for line-delimited local JSON-RPC, and `npm run web:check` for static validation. GitHub Pages publishes only `web/`; it does not host REST/MCP. Hosted deployment remains blocked until a server host and operational evidence are configured. See [`docs/WEB_UI.md`](docs/WEB_UI.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), and [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
+```js
+window.__ZERO_INFINITY_CONFIG__ = {
+  apiBase: "https://your-configured-runtime"
+};
+```
+
+Run the local line-delimited JSON-RPC MCP entry point with:
+
+```bash
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"get_readiness","params":{}}' | npm run mcp
+```
+
+## REST entry points
+
+The currently verified hosted runtime is:
+
+```text
+https://http--zero-infinity-runtime--tw56snbf4tjj.code.run
+```
+
+Use a configured base URL rather than baking this deployment into a client. Implemented routes are:
+
+```text
+GET  /health
+GET  /readiness
+GET  /capabilities
+POST /v1/workflows
+POST /v1/workflows/:id/submit
+GET  /v1/workflows/:id
+GET  /v1/workflows/:id/receipt
+GET  /v1/workflows/:id/thesis
+POST /v1/shadow
+POST /v1/paper-live
+POST /mcp
+```
+
+Example no-write call:
+
+```bash
+export ZERO_INFINITY_API=http://127.0.0.1:8787
+curl -sS -X POST "$ZERO_INFINITY_API/v1/shadow" \
+  -H 'content-type: application/json' \
+  -d '{"symbol":"BTCUSDT","side":"LONG"}'
+```
+
+The REST and MCP surfaces share `ZeroInfinityService`; neither exposes live financial writes. See [`docs/API.md`](docs/API.md) for validation and error behavior.
+
+## MCP entry point
+
+The network JSON-RPC endpoint is `POST <configured-runtime>/mcp`. The local development transport is `npm run mcp` over stdin/stdout. `tools/list` advertises exactly:
+
+```text
+get_capabilities
+get_readiness
+create_workflow
+submit_opportunity
+get_reasoning_receipt
+get_trade_thesis
+run_shadow_workflow
+run_paper_live
+get_workflow
+```
+
+`resources/list` advertises `zero-infinity://capabilities` and `zero-infinity://readiness`. MCP provides read, reasoning, SHADOW, and deterministic PAPER operations only; it is not Binance Agentic MCP authentication or a live-write adapter. See [`docs/MCP.md`](docs/MCP.md).
+
+## SDK entry point
+
+The package export is `0-infinity/sdk`, implemented by `src/product/sdk.ts`:
+
+```ts
+import { ZeroInfinityClient } from "0-infinity/sdk";
+
+const zero = new ZeroInfinityClient(fetch, apiBase);
+const workflow = await zero.createWorkflow({
+  symbol: "BTCUSDT",
+  venue: "BINANCE",
+  product: "USD_M_FUTURES"
+});
+await zero.submitOpportunity(workflow.workflowId);
+const receipt = await zero.getReasoningReceipt(workflow.workflowId);
+```
+
+Available client methods are `createWorkflow`, `submitOpportunity`, `getWorkflow`, `getReasoningReceipt`, `getTradeThesis`, `runShadowWorkflow`, `runPaperLiveWorkflow`, `capabilities`, and `readiness`. The consumer fixture is in [`examples/consumer`](examples/consumer).
+
+## Evidence references
+
+- UI contract: [`docs/WEB_UI.md`](docs/WEB_UI.md)
+- REST contract: [`docs/API.md`](docs/API.md)
+- MCP contract: [`docs/MCP.md`](docs/MCP.md)
+- Deployment and hosted boundary: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- Submission evidence ceiling: [`docs/SUBMISSION.md`](docs/SUBMISSION.md)
+- Current demo script: [`docs/submission/VIDEO_SCRIPT.md`](docs/submission/VIDEO_SCRIPT.md)
+- Evidence artifacts: [`docs/development/evidence/`](docs/development/evidence/)
+
+The media under `docs/submission/media/` was made for the former console and is historical until a fresh capture of the simplified UI exists. The latest local closeout commits are `3967fc7`, `afbbfe8`, and `b52735`; they are local until explicitly pushed.

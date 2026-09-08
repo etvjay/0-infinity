@@ -9,7 +9,9 @@ const read = (name: string) => readFileSync(join(root, name), "utf8");
 test("judge UI exists with truthful operating states and workflow pipeline", () => {
   for (const file of ["web/index.html", "web/styles.css", "web/app.js", "docs/WEB_UI.md", "docs/DEPLOYMENT.md", "docs/SUBMISSION.md", ".github/workflows/pages.yml", "src/product/server.ts", "src/product/mcp-server.ts"]) assert.ok(existsSync(join(root, file)), file);
   const html = read("web/index.html");
-  for (const label of ["Workflow", "Try", "Integrate", "Proof", "PAPER", "SHADOW", "TESTNET", "LIVE", "Evidence", "Opposition", "Council", "ReasoningReceipt", "TradeThesis", "Mandate", "Economics", "Evaluation", "Intent / Refusal", "Receipt", "HOSTED REST", "HOSTED NETWORK MCP", "HOSTED SDK", "BINANCE PUBLIC MARKET READ", "AGENTIC MCP", "AUTH_BLOCKED_EXTERNAL", "CREDENTIAL_REQUIRED", "NOT AUTHORIZED", "hostedEvidence=false"]) assert.match(html, new RegExp(label.replace(/[ /]/g, "[ /]")), label);
+  const app = read("web/app.js");
+  const surface = `${html}\n${app}`;
+  for (const label of ["Workflow", "Try", "Integrate", "Proof", "PAPER", "SHADOW", "TESTNET", "LIVE", "Evidence", "Opposition", "Council", "ReasoningReceipt", "TradeThesis", "Mandate", "Economics", "Evaluation", "Intent / Refusal", "Receipt", "HOSTED REST", "HOSTED NETWORK MCP", "HOSTED SDK", "BINANCE PUBLIC MARKET READ", "AGENTIC MCP", "AUTH_BLOCKED_EXTERNAL", "CREDENTIAL_REQUIRED", "NOT AUTHORIZED", "hostedEvidence=false", "Advocate support", "Opposer challenge", "Market Analyst evidence", "Council decision / confidence", "Supporting evidence", "Opposing evidence", "Assumptions", "Unresolved uncertainty", "Invalidation", "Hashes", "Paper receipt"]) assert.match(surface, new RegExp(label.replace(/[ /]/g, "[ /]")), label);
 });
 
 test("static UI uses configurable API base and explicit demo opt-in", () => {
@@ -20,6 +22,16 @@ test("static UI uses configurable API base and explicit demo opt-in", () => {
   assert.doesNotMatch(app, /private[_-]?key|secret\s*[:=]/i);
 });
 
+test("result narrative is expandable and never renders private reasoning fields", () => {
+  const html = read("web/index.html");
+  const app = read("web/app.js");
+  assert.match(html, /<details|narrative-details/);
+  for (const banned of [/chainOfThought/i, /privateReasoning/i, /thoughtProcess/i]) {
+    assert.doesNotMatch(app, banned);
+  }
+  assert.match(app, /document\.createElement\('details'\)/);
+  assert.match(app, /textContent/);
+});
 test("Pages workflow publishes only the static web directory", () => {
   const workflow = read(".github/workflows/pages.yml");
   assert.match(workflow, /path:\s*web/);

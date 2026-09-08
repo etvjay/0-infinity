@@ -24,6 +24,51 @@
     for (const child of Object.values(value)) { const found = findText(child, keys); if (found !== null) return found; }
     return null;
   }
+  function findObject(value, keys) {
+    if (!value || typeof value !== 'object') return null;
+    for (const key of keys) if (value[key] && typeof value[key] === 'object') return value[key];
+    for (const child of Object.values(value)) { const found = findObject(child, keys); if (found) return found; }
+    return null;
+  }
+  function addDetail(parent, summary, entries) {
+    const detail = document.createElement('details');
+    const heading = document.createElement('summary'); heading.textContent = summary; detail.append(heading);
+    const list = document.createElement('dl');
+    for (const [label, value] of entries) {
+      if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) continue;
+      const term = document.createElement('dt'); term.textContent = label;
+      const description = document.createElement('dd'); description.textContent = Array.isArray(value) ? value.map(item => typeof item === 'object' ? JSON.stringify(item) : String(item)).join(' · ') : typeof value === 'object' ? JSON.stringify(value) : String(value);
+      list.append(term, description);
+    }
+    if (list.children.length) detail.append(list); else { const empty = document.createElement('p'); empty.textContent = 'No value returned.'; detail.append(empty); }
+    parent.append(detail);
+  }
+  function renderStructuredDetails(payload) {
+    const receipt = findObject(payload, ['receipt']);
+    const result = payload?.result && typeof payload.result === 'object' ? payload.result : {};
+    const thesis = result?.thesis && typeof result.thesis === 'object' ? result.thesis : findObject(payload, ['thesis']) || {};
+    const council = receipt?.council || {};
+    const evidence = receipt?.evidence || {};
+    const analyses = receipt?.analyses || {};
+    const output = receipt?.output || {};
+    const rationale = receipt?.rationale || {};
+    const container = $('narrative-details'); container.replaceChildren();
+    addDetail(container, 'Advocate support', [['artifact reference', analyses.advocate], ['strongest support', council.strongestSupport]]);
+    addDetail(container, 'Opposer challenge', [['artifact reference', analyses.oppose], ['strongest opposition', council.strongestOpposition]]);
+    addDetail(container, 'Market Analyst evidence', [['artifact reference', analyses.market]]);
+    addDetail(container, 'Council decision / confidence', [['decision', council.decision], ['direction', council.direction], ['confidence', council.confidence], ['expected move (bps)', council.expectedMoveBps], ['horizon (ms)', council.horizonMs]]);
+    const refLabel = (ref) => ref && typeof ref === 'object' ? `${ref.ref || 'reference'} · ${ref.hash || 'hash unavailable'}` : ref;
+    addDetail(container, 'Supporting evidence', [['references', (evidence.supporting || []).map(refLabel)], ['bundle hash', evidence.evidenceBundleHash]]);
+    addDetail(container, 'Opposing evidence', [['references', (evidence.opposing || []).map(refLabel)]]);
+    const claims = Array.isArray(rationale.claims) ? rationale.claims : [];
+    addDetail(container, 'Assumptions', [['claim assumptions', claims.flatMap(claim => claim.assumptions || [])]]);
+    addDetail(container, 'Unresolved uncertainty', [['items', council.unresolved]]);
+    addDetail(container, 'Invalidation', [['conditions', council.invalidation]]);
+    addDetail(container, 'Hashes', [['evidence bundle', evidence.evidenceBundleHash], ['council decision', output.councilDecisionHash], ['trade thesis', output.tradeThesisHash], ['reasoning receipt', receipt?.canonicalSha256]]);
+    addDetail(container, 'Economics', [['thesis economics', thesis.economics], ['returned edge (bps)', findText(payload, ['executableEdgeBps', 'edgeBps'])], ['returned costs (bps)', findText(payload, ['costBps', 'costsBps'])], ['required edge (bps)', findText(payload, ['requiredEdgeBps', 'requiredBps'])]]);
+    addDetail(container, 'Paper receipt', [['mode', payload?.mode], ['no-write', payload?.noWrite], ['outcome', payload?.paperReceipt?.outcome], ['client order', payload?.paperReceipt?.clientOrderId], ['intent fingerprint', payload?.paperReceipt?.intentFingerprint], ['economics', payload?.paperReceipt?.economics], ['simulated', payload?.paperReceipt?.simulated]]);
+    $('narrative').hidden = false;
+  }
   function renderResult(payload) {
     state.payload = payload;
     state.workflowId = findText(payload, ['workflowId']);
@@ -40,6 +85,7 @@
     $('edge-value').textContent = findText(payload, ['executableEdgeBps', 'edgeBps']) ?? '—';
     $('cost-value').textContent = findText(payload, ['costBps', 'costsBps']) ?? '—';
     $('threshold-value').textContent = findText(payload, ['requiredEdgeBps', 'requiredBps']) ?? '—';
+    renderStructuredDetails(payload);
     $('raw-json').textContent = JSON.stringify(payload, null, 2);
   }
   async function callWorkflow(event) {

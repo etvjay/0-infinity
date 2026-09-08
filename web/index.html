@@ -59,6 +59,11 @@
         <ol id="result-sequence"><li class="current"><span>01</span><b>Ready</b><small>Choose a mode to call the configured service.</small></li><li><span>02</span><b>Reasoning</b><small>Awaiting bounded workflow.</small></li><li><span>03</span><b>Outcome</b><small>No result yet.</small></li></ol>
         <div class="outcome" id="outcome"><span class="label">ACTUAL OUTCOME</span><strong>Nothing has run.</strong><p class="muted">No simulated result is shown before the API responds.</p></div>
         <div class="economics"><span class="label">ECONOMICS</span><div><b id="edge-value">—</b><small>executable edge</small></div><div><b id="cost-value">—</b><small>costs</small></div><div><b id="threshold-value">—</b><small>required</small></div></div>
+        <section id="narrative" class="narrative" aria-label="Structured result details" hidden>
+          <p class="label">STRUCTURED RESULT DETAILS</p>
+          <p class="muted">Expandable views of returned artifacts only. No private chain-of-thought is displayed.</p>
+          <div id="narrative-details"></div>
+        </section>
         <div class="result-links"><button type="button" class="text-button" id="receipt-link" disabled>Receipt ↗</button><button type="button" class="text-button" id="mandate-link" disabled>Mandate · NOT AUTHORIZED</button><button type="button" class="text-button" id="raw-link" disabled>Raw JSON ↗</button></div>
       </div>
     </div>

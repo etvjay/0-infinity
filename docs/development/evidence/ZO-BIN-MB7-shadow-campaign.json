@@ -1,0 +1,284 @@
+{
+  "campaignId": "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1",
+  "mode": "SHADOW",
+  "startingSha": "2b99f945a24bc8d9db15e64ffd635fd70e6fbe54",
+  "codeSha": "2b99f945a24bc8d9db15e64ffd635fd70e6fbe54",
+  "finalSha": "2b99f945a24bc8d9db15e64ffd635fd70e6fbe54",
+  "workflowCount": 17,
+  "scenarios": [
+    "approval-ack",
+    "approval-partial",
+    "submission-reject",
+    "unknown-recovery",
+    "council-refusal",
+    "stale-market",
+    "stale-account",
+    "cost-ceiling",
+    "risk-limit",
+    "revoked-authority",
+    "superseded-authority",
+    "expiry",
+    "duplicate-trigger-event-suppression",
+    "out-of-order-terminal-refusal",
+    "restart-restore",
+    "unknown-recovery-order-absent",
+    "contradictory-authority"
+  ],
+  "workflows": [
+    {
+      "workflowId": "mb7-01",
+      "scenario": "approval-ack",
+      "status": "ACKNOWLEDGED"
+    },
+    {
+      "workflowId": "mb7-02",
+      "scenario": "approval-partial",
+      "status": "ACKNOWLEDGED"
+    },
+    {
+      "workflowId": "mb7-03",
+      "scenario": "submission-reject",
+      "status": "FAILED"
+    },
+    {
+      "workflowId": "mb7-04",
+      "scenario": "unknown-recovery",
+      "status": "UNKNOWN"
+    },
+    {
+      "workflowId": "mb7-05",
+      "scenario": "council-refusal",
+      "status": "REFUSED"
+    },
+    {
+      "workflowId": "mb7-06",
+      "scenario": "stale-market",
+      "status": "ACKNOWLEDGED"
+    },
+    {
+      "workflowId": "mb7-07",
+      "scenario": "stale-account",
+      "status": "REFUSED"
+    },
+    {
+      "workflowId": "mb7-08",
+      "scenario": "cost-ceiling",
+      "status": "REFUSED"
+    },
+    {
+      "workflowId": "mb7-09",
+      "scenario": "risk-limit",
+      "status": "REFUSED"
+    },
+    {
+      "workflowId": "mb7-10",
+      "scenario": "revoked-authority",
+      "status": "REFUSED"
+    },
+    {
+      "workflowId": "mb7-11",
+      "scenario": "superseded-authority",
+      "status": "REFUSED"
+    },
+    {
+      "workflowId": "mb7-12",
+      "scenario": "expiry",
+      "status": "NOT_EXERCISED"
+    },
+    {
+      "workflowId": "mb7-13",
+      "scenario": "duplicate-trigger-event-suppression",
+      "status": "NOT_EXERCISED"
+    },
+    {
+      "workflowId": "mb7-14",
+      "scenario": "out-of-order-terminal-refusal",
+      "status": "NOT_EXERCISED"
+    },
+    {
+      "workflowId": "mb7-15",
+      "scenario": "restart-restore",
+      "status": "NOT_EXERCISED"
+    },
+    {
+      "workflowId": "mb7-16",
+      "scenario": "unknown-recovery-order-absent",
+      "status": "NOT_EXERCISED"
+    },
+    {
+      "workflowId": "mb7-17",
+      "scenario": "contradictory-authority",
+      "status": "NOT_EXERCISED"
+    }
+  ],
+  "receipts": [
+    {
+      "receiptId": "receipt-mb7-01",
+      "workflowId": "mb7-01",
+      "scenario": "approval-ack",
+      "status": "ACKNOWLEDGED",
+      "orderOutcome": "ACKNOWLEDGED"
+    },
+    {
+      "receiptId": "receipt-mb7-02",
+      "workflowId": "mb7-02",
+      "scenario": "approval-partial",
+      "status": "ACKNOWLEDGED",
+      "orderOutcome": "ACKNOWLEDGED"
+    },
+    {
+      "receiptId": "receipt-mb7-03",
+      "workflowId": "mb7-03",
+      "scenario": "submission-reject",
+      "status": "FAILED",
+      "orderOutcome": "REJECTED"
+    },
+    {
+      "receiptId": "receipt-mb7-04",
+      "workflowId": "mb7-04",
+      "scenario": "unknown-recovery",
+      "status": "UNKNOWN",
+      "orderOutcome": "UNKNOWN"
+    },
+    {
+      "receiptId": "recovery-mb7-04",
+      "workflowId": "mb7-04",
+      "scenario": "unknown-recovery-order-found",
+      "status": "UNKNOWN",
+      "recoveryStatus": "RECONCILED"
+    },
+    {
+      "receiptId": "receipt-mb7-05",
+      "workflowId": "mb7-05",
+      "scenario": "council-refusal",
+      "status": "REFUSED",
+      "refusalCode": "EXECUTABLE_EDGE_TOO_LOW"
+    },
+    {
+      "receiptId": "receipt-mb7-06",
+      "workflowId": "mb7-06",
+      "scenario": "stale-market",
+      "status": "ACKNOWLEDGED",
+      "orderOutcome": "ACKNOWLEDGED"
+    },
+    {
+      "receiptId": "receipt-mb7-07",
+      "workflowId": "mb7-07",
+      "scenario": "stale-account",
+      "status": "REFUSED",
+      "refusalCode": "RISK_LIMIT"
+    },
+    {
+      "receiptId": "receipt-mb7-08",
+      "workflowId": "mb7-08",
+      "scenario": "cost-ceiling",
+      "status": "REFUSED",
+      "refusalCode": "COST_CEILING"
+    },
+    {
+      "receiptId": "receipt-mb7-09",
+      "workflowId": "mb7-09",
+      "scenario": "risk-limit",
+      "status": "REFUSED",
+      "refusalCode": "RISK_LIMIT"
+    },
+    {
+      "receiptId": "receipt-mb7-10",
+      "workflowId": "mb7-10",
+      "scenario": "revoked-authority",
+      "status": "REFUSED",
+      "refusalCode": "AUTHORITY_STATUS"
+    },
+    {
+      "receiptId": "receipt-mb7-11",
+      "workflowId": "mb7-11",
+      "scenario": "superseded-authority",
+      "status": "REFUSED",
+      "refusalCode": "AUTHORITY_STATUS"
+    },
+    {
+      "receiptId": "receipt-mb7-12",
+      "workflowId": "mb7-12",
+      "scenario": "expiry",
+      "status": "NOT_EXERCISED",
+      "reason": "supervisor start fixture is bounded before expiry; evaluator expiry covered by existing accepted tests"
+    },
+    {
+      "receiptId": "receipt-mb7-13",
+      "workflowId": "mb7-13",
+      "scenario": "duplicate-trigger-event-suppression",
+      "status": "NOT_EXERCISED",
+      "reason": "writer/supervisor duplicate suppression is covered by accepted M-B5/M-B6 tests"
+    },
+    {
+      "receiptId": "receipt-mb7-14",
+      "workflowId": "mb7-14",
+      "scenario": "out-of-order-terminal-refusal",
+      "status": "NOT_EXERCISED",
+      "reason": "no new architecture; accepted writer boundary covers terminal refusal"
+    },
+    {
+      "receiptId": "receipt-mb7-15",
+      "workflowId": "mb7-15",
+      "scenario": "restart-restore",
+      "status": "NOT_EXERCISED",
+      "reason": "restore path covered by accepted supervisor tests"
+    },
+    {
+      "receiptId": "receipt-mb7-16",
+      "workflowId": "mb7-16",
+      "scenario": "unknown-recovery-order-absent",
+      "status": "NOT_EXERCISED",
+      "reason": "requires external order lookup unavailable in injected writer"
+    },
+    {
+      "receiptId": "receipt-mb7-17",
+      "workflowId": "mb7-17",
+      "scenario": "contradictory-authority",
+      "status": "NOT_EXERCISED",
+      "reason": "compileMandate rejects direction/side contradiction; no workflow created"
+    }
+  ],
+  "metrics": {
+    "councilRefusals": 1,
+    "approvals": 5,
+    "mandates": 5,
+    "refusals": 6,
+    "refusalByCode": {
+      "EXECUTABLE_EDGE_TOO_LOW": 1,
+      "RISK_LIMIT": 2,
+      "COST_CEILING": 1,
+      "AUTHORITY_STATUS": 2
+    },
+    "acknowledged": 3,
+    "partial": 0,
+    "filled": 0,
+    "rejected": 1,
+    "unknown": 1,
+    "recovered": 1,
+    "notExercised": 6,
+    "authorityViolations": 0,
+    "economicWrites": 0,
+    "liveClaims": 0,
+    "deterministicRuns": 2
+  },
+  "testCommands": [
+    "npm run shadow:campaign",
+    "npm run evidence:mb7",
+    "node --test dist/tests/shadow.mb7.test.js",
+    "npm test",
+    "npm run check"
+  ],
+  "evidenceCeiling": "Deterministic local replay evidence only: SHADOW supervisor, injected clocks, MemoryPersistence, MemoryOrderPersistence, and replay fixtures. No live market/account/exchange execution is proven.",
+  "exclusions": [
+    "network",
+    "credentials",
+    "wallets",
+    "funds",
+    "live writer",
+    "exchange writes/cancels",
+    "M-B2-G HTTP 451 bypass",
+    "push"
+  ],
+  "artifactHash": "7133329ac25bd4a726b59d7667cd3c2b36b12415386a5d4caaf801328f470766"
+}

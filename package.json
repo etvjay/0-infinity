@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/tests/*.test.js"
+    "test": "npm run build && node --test dist/tests/*.test.js",
+    "shadow:campaign": "npm run build && node dist/src/shadow/mb7Campaign.js",
+    "evidence:mb7": "npm run build && node dist/src/shadow/mb7Evidence.js"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

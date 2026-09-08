@@ -1,24 +1,84 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { MB7Artifact } from "./mb7Campaign.js";
-const sha=(v:unknown)=>createHash("sha256").update(JSON.stringify(v)).digest("hex");
-const scenarios=["approval-ack","approval-partial","approval-fill","submission-reject","unknown-recovery","council-refusal","stale-market","stale-account","cost-ceiling","risk-limit","revoked-authority","superseded-authority","expiry","duplicate-trigger-event-suppression","duplicate-order-events","out-of-order-terminal-refusal","restart-restore","unknown-recovery-order-absent","contradictory-authority","symbol-isolation"];
-const invariantKeys=["duplicateEconomicConsequences","illegalStateRegressions","contradictoryExecutionsPermitted","crossSymbolContamination","blindRetryCount","newAuthorityAfterAmbiguousConsequence"] as const;
-const topKeys=new Set(["campaignId","mode","startingSha","codeSha","finalSha","workflowCount","scenarios","workflows","receipts","metrics","deterministicReplayDigest","testCommands","evidenceCeiling","exclusions","artifactHash"]);
-const workflowKeys=new Set(["workflowId","scenario","status","provenance"]);
-const receiptKeys=new Set(["receiptId","workflowId","scenario","status","provenance","orderOutcome","recoveryStatus","refusalCode","refusalMessage","versionBefore","versionAfter","unchanged","prevented","restoredVersion","symbols","distinct","recoveryError"]);
-const provenanceKeys=new Set(["stage","source","lineage"]);const errorKeys=new Set(["code","message"]);
-const metricKeys=["councilRefusals","approvals","mandates","refusals","refusalByCode","acknowledged","partial","filled","rejected","unknown","recovered","notExercised",...invariantKeys,"authorityViolations","economicWrites","liveClaims","deterministicRuns"];
-const exactKeys=(o:unknown,keys:Set<string>)=>!!o&&typeof o==="object"&&!Object.getOwnPropertySymbols(o).length&&Object.keys(o as object).every(k=>keys.has(k));
-const count=(ws:any[],s:string)=>ws.filter(w=>w.status===s).length;
-export function validateEvidence(value:unknown):boolean{try{
- const a=value as MB7Artifact;if(!exactKeys(a,topKeys)||a.campaignId!=="ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1"||a.mode!=="SHADOW")throw Error("VALIDATION_FAIL");
- if(![a.startingSha,a.codeSha,a.finalSha].every(x=>typeof x==="string"&&/^[0-9a-f]{40}$/.test(x))||a.startingSha!==a.codeSha||a.finalSha!==a.codeSha)throw Error("VALIDATION_FAIL");
- if(!Number.isInteger(a.workflowCount)||a.workflowCount!==scenarios.length||JSON.stringify(a.scenarios)!==JSON.stringify(scenarios)||a.workflows.length!==scenarios.length||a.receipts.length!==scenarios.length)throw Error("VALIDATION_FAIL");
- const ids=new Set<string>();for(const w of a.workflows){if(!exactKeys(w,workflowKeys)||typeof w.workflowId!=="string"||ids.has(w.workflowId)||w.scenario!==scenarios.find(s=>s===w.scenario)||typeof w.status!=="string"||!exactKeys(w.provenance,provenanceKeys)||w.provenance.source!=="M-B7 deterministic fixture"||!Array.isArray(w.provenance.lineage)||w.provenance.lineage.join(",")!=="council,thesis,mandate,supervisor,order-receipt")throw Error("VALIDATION_FAIL");ids.add(w.workflowId);}
- const rids=new Set<string>();for(const r of a.receipts){const w=a.workflows.find(x=>x.workflowId===r.workflowId);if(!exactKeys(r,receiptKeys)||typeof r.receiptId!=="string"||rids.has(r.receiptId)||!w||r.scenario!==w.scenario||r.status!==w.status||!exactKeys(r.provenance,provenanceKeys)||r.provenance.stage!==w.provenance.stage)throw Error("VALIDATION_FAIL");rids.add(r.receiptId);if(r.status==="REFUSED"&&!r.refusalCode&&!(["out-of-order-terminal-refusal","contradictory-authority"] as string[]).includes(r.scenario))throw Error("VALIDATION_FAIL");}
- const by=(s:string)=>a.receipts.find(r=>r.scenario===s);const council=by("council-refusal"),expiry=by("expiry"),absent=by("unknown-recovery-order-absent");if(council?.provenance.stage!=="council"||council.refusalCode!=="THRESHOLD_NOT_MET"||typeof council.refusalMessage!=="string")throw Error("VALIDATION_FAIL");if(expiry?.status!=="EXPIRED"||expiry?.refusalCode!=="MANDATE_EXPIRED"||expiry.provenance.stage!=="supervisor")throw Error("VALIDATION_FAIL");if(absent?.status!=="RECOVERY_BLOCKED"||absent.recoveryStatus!=="RECOVERY_BLOCKED"||absent.provenance.stage!=="recovery"||absent.recoveryError?.code!=="RECOVERY_BLOCKED"||typeof absent.recoveryError.message!=="string")throw Error("VALIDATION_FAIL");
- const m=a.metrics;if(!exactKeys(m,new Set(metricKeys))||!metricKeys.every(k=>typeof m[k as keyof typeof m] === (k==="refusalByCode"?"object":"number")))throw Error("VALIDATION_FAIL");for(const k of invariantKeys)if(m[k]!==0)throw Error("VALIDATION_FAIL");const expected={councilRefusals:a.receipts.filter(r=>r.provenance.stage==="council").length,approvals:count(a.workflows,"ACKNOWLEDGED")+count(a.workflows,"PARTIALLY_FILLED")+count(a.workflows,"FILLED"),mandates:a.receipts.filter(r=>r.provenance.lineage.includes("mandate")&&r.provenance.stage!=="recovery").length,refusals:count(a.workflows,"REFUSED"),acknowledged:count(a.workflows,"ACKNOWLEDGED"),partial:count(a.workflows,"PARTIALLY_FILLED"),filled:count(a.workflows,"FILLED"),rejected:a.workflows.filter(w=>w.status==="FAILED"||w.status==="REJECTED").length,unknown:count(a.workflows,"UNKNOWN"),recovered:a.receipts.filter(r=>r.recoveryStatus==="RECONCILED").length,notExercised:a.receipts.filter(r=>r.provenance.stage==="not-exercised").length,authorityViolations:0,economicWrites:0,liveClaims:0,deterministicRuns:2};for(const [k,v] of Object.entries(expected))if(m[k]!==v)throw Error("VALIDATION_FAIL");
- const refusalByCode:Record<string,number>={};for(const r of a.receipts)if(r.refusalCode)refusalByCode[r.refusalCode]=(refusalByCode[r.refusalCode]??0)+1;if(JSON.stringify(m.refusalByCode)!==JSON.stringify(refusalByCode)||a.deterministicReplayDigest!==sha({workflows:a.workflows,receipts:a.receipts,metrics:a.metrics}))throw Error("VALIDATION_FAIL");const copy={...a};delete copy.artifactHash;return typeof a.artifactHash==="string"&&a.artifactHash===sha(copy);
- }catch{return false;}}
-if(import.meta.url===`file://${process.argv[1]}`){const path=process.argv[2]??"docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json";const a=JSON.parse(await readFile(path,"utf8"));if(!validateEvidence(a)){console.error("M-B7 evidence validation failed");process.exit(1);}console.log(JSON.stringify({valid:true,artifactHash:a.artifactHash,workflowCount:a.workflowCount,codeSha:a.codeSha,metrics:a.metrics}));}
+
+const sha = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
+const scenarios = ["approval-ack", "approval-partial", "approval-fill", "submission-reject", "unknown-recovery", "council-refusal", "stale-market", "stale-account", "cost-ceiling", "risk-limit", "revoked-authority", "superseded-authority", "expiry", "duplicate-trigger-event-suppression", "duplicate-order-events", "out-of-order-terminal-refusal", "restart-restore", "unknown-recovery-order-absent", "contradictory-authority", "symbol-isolation"] as const;
+const invariantKeys = ["duplicateEconomicConsequences", "illegalStateRegressions", "contradictoryExecutionsPermitted", "crossSymbolContamination", "blindRetryCount", "newAuthorityAfterAmbiguousConsequence"] as const;
+const topKeys = ["campaignId", "mode", "startingSha", "implementationSha", "codeSha", "finalSha", "workflowCount", "scenarios", "workflows", "receipts", "metrics", "deterministicReplayDigest", "testCommands", "evidenceCeiling", "exclusions", "artifactPayloadSha256"];
+const workflowKeys = ["workflowId", "scenario", "status", "provenance"];
+const receiptKeys = ["receiptId", "workflowId", "scenario", "status", "provenance", "orderOutcome", "recoveryStatus", "refusalCode", "refusalMessage", "versionBefore", "versionAfter", "unchanged", "prevented", "restoredVersion", "symbols", "distinct", "recoveryError"];
+const provenanceKeys = ["stage", "source", "lineage"];
+const errorKeys = ["code", "message"];
+const metricKeys = ["councilRefusals", "approvals", "mandates", "refusals", "refusalByCode", "acknowledged", "partial", "filled", "rejected", "unknown", "recovered", "notExercised", ...invariantKeys, "authorityViolations", "economicWrites", "liveClaims", "deterministicRuns"];
+const objectPrototypeKeys = ["__defineGetter__", "__defineSetter__", "constructor", "hasOwnProperty", "__lookupGetter__", "__lookupSetter__", "isPrototypeOf", "propertyIsEnumerable", "toString", "valueOf", "__proto__", "toLocaleString"];
+const arrayPrototypeKeys = ["length", "constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex", "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf", "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce", "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toString", "toLocaleString"];
+
+function cleanPrototype(proto: object, expected: string[]): boolean {
+  const actual = Object.getOwnPropertyNames(proto).sort(), wanted = [...expected].sort();
+  if (actual.join("\0") !== wanted.join("\0")) return false;
+  const symbols = Object.getOwnPropertySymbols(proto).map(String).sort();
+  if (proto === Array.prototype) return JSON.stringify(symbols) === JSON.stringify(["Symbol(Symbol.iterator)", "Symbol(Symbol.unscopables)"]);
+  return symbols.length === 0;
+}
+function fail(): false { return false; }
+function exactObject(value: unknown, keys: string[]): value is Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Object.getPrototypeOf(value) !== Object.prototype || !cleanPrototype(Object.prototype, objectPrototypeKeys)) return false;
+  const own = Reflect.ownKeys(value);
+  if (own.length !== keys.length || own.some(k => typeof k !== "string" || !keys.includes(k))) return false;
+  return keys.every(k => { const d = Object.getOwnPropertyDescriptor(value, k); return !!d && d.enumerable && "value" in d; });
+}
+function allowedObject(value: unknown, keys: string[]): value is Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Object.getPrototypeOf(value) !== Object.prototype || !cleanPrototype(Object.prototype, objectPrototypeKeys)) return false;
+  return Reflect.ownKeys(value).every(k => typeof k === "string" && keys.includes(k) && !!Object.getOwnPropertyDescriptor(value, k)?.enumerable && "value" in Object.getOwnPropertyDescriptor(value, k)!);
+}
+function exactArray(value: unknown, length: number): value is unknown[] {
+  const protoOk = Object.getPrototypeOf(value) === Array.prototype, protoClean = cleanPrototype(Array.prototype, arrayPrototypeKeys); if (!Array.isArray(value) || !protoOk || !protoClean || value.length !== length) return false;
+  const own = Reflect.ownKeys(value);
+  if (own.length !== length + 1 || !own.includes("length") || own.some(k => k !== "length" && (typeof k !== "string" || !/^\d+$/.test(k)))) return false;
+  return Array.from({ length }, (_, i) => Object.prototype.hasOwnProperty.call(value, String(i)) && Object.getOwnPropertyDescriptor(value, String(i))?.enumerable === true).every(Boolean);
+}
+function finiteInt(value: unknown): value is number { return typeof value === "number" && Number.isSafeInteger(value); }
+function validSha(value: unknown): value is string { return typeof value === "string" && /^[0-9a-f]{40}$/.test(value); }
+
+const statusByScenario: Record<string, string> = { "approval-ack": "ACKNOWLEDGED", "approval-partial": "PARTIALLY_FILLED", "approval-fill": "FILLED", "submission-reject": "FAILED", "unknown-recovery": "UNKNOWN", "council-refusal": "REFUSED", "stale-market": "REFUSED", "stale-account": "REFUSED", "cost-ceiling": "REFUSED", "risk-limit": "REFUSED", "revoked-authority": "REFUSED", "superseded-authority": "REFUSED", expiry: "EXPIRED", "duplicate-trigger-event-suppression": "ACKNOWLEDGED", "duplicate-order-events": "FILLED", "out-of-order-terminal-refusal": "REFUSED", "restart-restore": "ACKNOWLEDGED", "unknown-recovery-order-absent": "RECOVERY_BLOCKED", "contradictory-authority": "REFUSED", "symbol-isolation": "ACKNOWLEDGED" };
+const refusalByScenario: Record<string, string | undefined> = { "council-refusal": "THRESHOLD_NOT_MET", "stale-market": "MARKET_STATE_STALE", "stale-account": "ACCOUNT_STATE_STALE", "cost-ceiling": "COST_CEILING", "risk-limit": "RISK_LIMIT", "revoked-authority": "AUTHORITY_STATUS", "superseded-authority": "AUTHORITY_STATUS", expiry: "MANDATE_EXPIRED" };
+
+export function validateEvidence(value: unknown): boolean {
+  try {
+    if (!exactObject(value, topKeys)) return fail();
+    const a = value as unknown as MB7Artifact;
+    if (a.campaignId !== "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1" || a.mode !== "SHADOW" || ![a.startingSha, a.implementationSha, a.codeSha, a.finalSha].every(validSha) || a.startingSha !== a.implementationSha || a.implementationSha !== a.codeSha || a.codeSha !== a.finalSha) return fail();
+    if (!finiteInt(a.workflowCount) || a.workflowCount !== scenarios.length || !exactArray(a.scenarios, scenarios.length) || JSON.stringify(a.scenarios) !== JSON.stringify(scenarios) || !exactArray(a.workflows, scenarios.length) || !exactArray(a.receipts, scenarios.length) || !exactArray(a.testCommands, 5) || !exactArray(a.exclusions, 8)) return fail();
+    const workflows = a.workflows as any[], receipts = a.receipts as any[];
+    const ids = new Set<string>();
+    for (const w of workflows) {
+      if (!exactObject(w, workflowKeys) || typeof w.workflowId !== "string" || ids.has(w.workflowId) || !scenarios.includes(w.scenario as any) || w.status !== statusByScenario[w.scenario as string] || !exactObject(w.provenance, provenanceKeys) || w.provenance.source !== "M-B7 deterministic fixture" || !exactArray(w.provenance.lineage, 5) || w.provenance.lineage.join(",") !== "council,thesis,mandate,supervisor,order-receipt") return fail();
+      ids.add(w.workflowId);
+    }
+    if (new Set(workflows.map(w => w.scenario)).size !== scenarios.length) return fail();
+    const rids = new Set<string>();
+    for (const r of receipts) {
+      const w = workflows.find(x => x.workflowId === r.workflowId);
+      if (!allowedObject(r, receiptKeys) || typeof r.receiptId !== "string" || rids.has(r.receiptId) || !w || r.scenario !== w.scenario || r.status !== w.status || !exactObject(r.provenance, provenanceKeys) || r.provenance.stage !== w.provenance.stage || refusalByScenario[r.scenario as string] !== r.refusalCode) return fail();
+      if (r.scenario === "unknown-recovery-order-absent" && (!exactObject(r.recoveryError, errorKeys) || r.recoveryError.code !== "RECOVERY_BLOCKED")) return false;
+      if (r.scenario === "council-refusal" && (typeof r.refusalMessage !== "string" || r.provenance.stage !== "council")) return false;
+      rids.add(r.receiptId);
+    }
+    if (new Set(receipts.map(r => r.scenario)).size !== scenarios.length || !exactObject(a.metrics, metricKeys)) return fail();
+    const m: any = a.metrics;
+    for (const k of metricKeys) if (k !== "refusalByCode" && !finiteInt(m[k])) return fail();
+    if (!exactObject(m.refusalByCode, Object.keys(m.refusalByCode).sort())) return fail();
+    for (const v of Object.values(m.refusalByCode)) if (!finiteInt(v)) return fail();
+    for (const k of invariantKeys) if (m[k] !== 0) return fail();
+    const count = (s: string) => workflows.filter(w => w.status === s).length;
+    const expected: Record<string, number> = { councilRefusals: 1, approvals: count("ACKNOWLEDGED") + count("PARTIALLY_FILLED") + count("FILLED"), mandates: 19, refusals: count("REFUSED"), acknowledged: count("ACKNOWLEDGED"), partial: count("PARTIALLY_FILLED"), filled: count("FILLED"), rejected: 1, unknown: 1, recovered: 1, notExercised: 0, authorityViolations: 0, economicWrites: 0, liveClaims: 0, deterministicRuns: 2 };
+    for (const [k, v] of Object.entries(expected)) if (m[k] !== v) return fail();
+    const refusalCounts: Record<string, number> = {}; for (const r of receipts) if (r.refusalCode) refusalCounts[r.refusalCode] = (refusalCounts[r.refusalCode] ?? 0) + 1;
+    if (JSON.stringify(m.refusalByCode) !== JSON.stringify(refusalCounts) || a.deterministicReplayDigest !== sha({ workflows, receipts, metrics: m })) return fail();
+    const payload = { ...a }; delete payload.artifactPayloadSha256;
+    return a.artifactPayloadSha256 === sha(payload) ? true : fail();
+  } catch { return false; }
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) { const path = process.argv[2] ?? "docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json"; const a = JSON.parse(await readFile(path, "utf8")); if (!validateEvidence(a)) { console.error("M-B7 evidence validation failed"); process.exit(1); } console.log(JSON.stringify({ valid: true, artifactPayloadSha256: a.artifactPayloadSha256, workflowCount: a.workflowCount, implementationSha: a.implementationSha, metrics: a.metrics })); }

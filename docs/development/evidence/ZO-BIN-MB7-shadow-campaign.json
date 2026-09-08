@@ -2,6 +2,7 @@
   "campaignId": "ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1",
   "mode": "SHADOW",
   "startingSha": "81fbeff09034582bd03ec197b7f6474121453dc6",
+  "implementationSha": "81fbeff09034582bd03ec197b7f6474121453dc6",
   "codeSha": "81fbeff09034582bd03ec197b7f6474121453dc6",
   "finalSha": "81fbeff09034582bd03ec197b7f6474121453dc6",
   "workflowCount": 20,
@@ -774,5 +775,5 @@
     "M-B2-G HTTP 451 bypass",
     "push"
   ],
-  "artifactHash": "8310beb0f09e136091746cfbabed09120fcff18da5026d5147f4fc401ca43f26"
+  "artifactPayloadSha256": "1b077be89c92dff6ac437c0caaad908832ed28c40b90d621ed83311e6f72f28e"
 }

@@ -6,7 +6,7 @@ import { validateEvidence } from "../src/shadow/mb7Evidence.js";
 test("M-B7 campaign is deterministic and independently validates", async () => {
   const a = await runCampaign();
   const b = await runCampaign();
-  assert.deepEqual(a.artifactHash, b.artifactHash);
+  assert.deepEqual(a.artifactPayloadSha256, b.artifactPayloadSha256);
   assert.equal(validateEvidence(a.artifact), true);
   assert.equal(a.artifact.mode, "SHADOW");
   assert.ok(a.artifact.workflowCount >= 17);

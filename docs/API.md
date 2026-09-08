@@ -18,7 +18,7 @@ Malformed JSON objects, arrays, inherited/custom-prototype objects, and accessor
 
 ## MCP
 
-`tools/list` advertises `get_capabilities`, `get_readiness`, `create_workflow`, `submit_opportunity`, `get_reasoning_receipt`, `get_trade_thesis`, `run_shadow_workflow`, and `get_workflow`.
+`tools/list` advertises `get_capabilities`, `get_readiness`, `create_workflow`, `submit_opportunity`, `get_reasoning_receipt`, `get_trade_thesis`, `run_shadow_workflow`, `run_paper_live`, and `get_workflow`.
 
 `resources/list` advertises the canonical JSON resources `zero-infinity://capabilities` and `zero-infinity://readiness`. `resources/read` accepts `{ "uri": "..." }` and returns standard `contents` entries containing JSON text. Invalid params are errors; malformed opportunities are never replaced with `{}`.
 

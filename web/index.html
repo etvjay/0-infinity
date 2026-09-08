@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Zero Infinity decision operating surface — evidence, reasoning, and bounded execution readiness.">
+  <title>Zero Infinity / Decision Surface</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="app-shell">
+  <aside class="rail" aria-label="Primary navigation">
+    <div class="brand"><span class="mark">∞</span><span>ZERO<br><b>INFINITY</b></span></div>
+    <nav>
+      <a class="nav-item active" href="#workflows" aria-current="page"><span>01</span> Workflows</a>
+      <a class="nav-item" href="#stacks"><span>02</span> Reasoning Stacks</a>
+      <a class="nav-item" href="#integrations"><span>03</span> Integrations</a>
+      <a class="nav-item" href="#proof"><span>04</span> Proof / Readiness</a>
+      <a class="nav-item" href="#settings"><span>05</span> Settings</a>
+    </nav>
+    <div class="rail-foot"><span class="status-dot"></span> LOCAL CONSOLE<br><small>no live authority</small></div>
+  </aside>
+  <main id="main">
+    <header class="topbar"><div><p class="eyebrow">DECISION OPERATING SURFACE / ZI-01</p><h1>Evidence before action.</h1></div><div class="top-actions"><span id="connection" class="pill neutral">API · not checked</span><button id="refresh" class="button ghost">Refresh</button></div></header>
+    <section class="mode-strip" aria-label="Execution modes">
+      <div><span class="eyebrow">AUTHORITY POSTURE</span><strong>Reasoning is available. Execution is bounded.</strong></div>
+      <div class="modes"><span class="mode paper"><b>PAPER</b><small>simulation</small></span><span class="mode shadow"><b>SHADOW</b><small>ready</small></span><span class="mode blocked"><b>TESTNET</b><small>blocked</small></span><span class="mode locked"><b>LIVE</b><small>locked</small></span></div>
+    </section>
+    <section id="workflows" class="section"><div class="section-head"><div><p class="eyebrow">FLAGSHIP WORKFLOW</p><h2>BTC / USD-M Futures · decision trace</h2></div><span class="pill neutral">READ-ONLY VIEW</span></div>
+      <div class="pipeline" aria-label="Workflow pipeline">
+        <div class="stage done"><i>01</i><b>Evidence</b><small>bundle accepted</small></div><div class="connector"></div><div class="stage done"><i>02</i><b>Opposition</b><small>challenge issued</small></div><div class="connector"></div><div class="stage done"><i>03</i><b>Council</b><small>deliberation</small></div><div class="connector"></div><div class="stage done"><i>04</i><b>ReasoningReceipt</b><small>hash captured</small></div><div class="connector"></div><div class="stage current"><i>05</i><b>TradeThesis</b><small>paper candidate</small></div><div class="connector"></div><div class="stage pending"><i>06</i><b>Mandate</b><small>not authorized</small></div><div class="connector"></div><div class="stage pending"><i>07</i><b>Economics</b><small>awaiting gate</small></div><div class="connector"></div><div class="stage pending"><i>08</i><b>Evaluation</b><small>not run</small></div><div class="connector"></div><div class="stage pending"><i>09</i><b>Intent / Refusal</b><small>bounded output</small></div><div class="connector"></div><div class="stage pending"><i>10</i><b>Receipt</b><small>local only</small></div>
+      </div>
+    </section>
+    <div class="grid">
+      <section id="stacks" class="card"><div class="card-head"><div><p class="eyebrow">REASONING STACK</p><h2>Default / v1</h2></div><span class="badge green">ACTIVE</span></div><p class="muted">Independent roles produce artifacts; the council records support, opposition, and unresolved claims.</p><div class="roles"><span>ADVOCATE <em>builtin</em></span><span>OPPOSER <em>builtin</em></span><span>MARKET ANALYST <em>builtin</em></span><span>COUNCIL <em>builtin</em></span></div><div class="receipt"><span class="eyebrow">REASONING RECEIPT HASH</span><code id="receipt-hash">waiting for API response</code><small>Provenance is retained locally; no exchange credentials are used.</small></div></section>
+      <section id="proof" class="card"><div class="card-head"><div><p class="eyebrow">PROOF / READINESS</p><h2 id="readiness-title">Local bounded state</h2></div><span id="readiness-badge" class="badge amber">CHECKING</span></div><div class="readiness-list"><div><span>Reasoning engine</span><b class="ok">AVAILABLE</b></div><div><span>Paper order writer</span><b class="ok">NO-WRITE</b></div><div><span>Hosted evidence</span><b class="warn">NOT PRESENT</b></div><div><span>Live authority</span><b class="warn">LOCKED</b></div><div><span>Testnet adapter</span><b class="warn">BLOCKED</b></div></div><div id="blocker" class="callout">Run locally to inspect service state. A static Pages deployment does not host REST or MCP.</div></section>
+      <section id="integrations" class="card wide"><div class="card-head"><div><p class="eyebrow">INTEGRATIONS</p><h2>Connected surfaces</h2></div><span class="pill neutral">NO SECRETS IN UI</span></div><div class="integration-grid"><div><b>REST API</b><span id="api-url">Configurable endpoint · not connected</span></div><div><b>MCP</b><span>Local JSON-RPC entrypoint · available by command</span></div><div><b>Market / Account</b><span>Paper fixtures only · external writes disabled</span></div></div></section>
+    </div>
+    <section id="settings" class="settings"><p class="eyebrow">SETTINGS</p><label><input id="demo-toggle" type="checkbox"> Use local demo fixture (explicit opt-in)</label><p class="muted">Without this switch, the UI only renders data returned by the configured REST API. API base can be set with <code>window.__ZERO_INFINITY_CONFIG__.apiBase</code> before loading this page.</p></section>
+    <footer>ZERO INFINITY <span>•</span> Truthful by construction <span>•</span> v1 local surface</footer>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -9,7 +9,11 @@ This repository separates OPINION from TRADE: observation → evidence → thesi
 - Mode: `submission-ready-shadow/readiness`; current state: `READINESS_PREPARED / REMOTE_NOT_SYNCHRONIZED / LIVE_WRITE_NOT_AUTHORIZED`.
 - Product and allowlist: Binance USD-M Futures, `BTCUSDT` and `ETHUSDT` only.
 - Market evidence: bounded public bookTicker read (`LIVE_READ_PASS`); this does not prove synchronized depth, account state, profitability, or production safety.
-- Account reads and authenticated Agentic MCP are blocked: account `BLOCKED_EXTERNAL`; MCP probe is HTTP 401 with Bearer resource metadata and no credentials supplied. M-B2-G remains HTTP 451.
+- Account reads remain unavailable: account `BLOCKED_EXTERNAL`.
+- Binance Agentic MCP status is split accurately: the historical raw HTTP probe is `UNAUTHENTICATED_PROBE` (401); the supported `mcp-remote` OAuth attempt reached discovery but is `AUTH_BLOCKED_EXTERNAL` because the server does not support dynamic client registration. No credentials or browser session were used.
+- Official Binance Skills Hub source `binance/binance-skills-hub` was installed and inspected (skill v2.0.0; binance-cli 2.1.1). Credential-free BTCUSDT ticker/mark-price attempts are `BINANCE_SKILLS_PUBLIC_READ_BLOCKED_EXTERNAL` due Binance eligibility restrictions. No live Skills evidence is claimed.
+- Binance Futures Testnet public exchange metadata was read successfully (`HTTP 200`), but authenticated account/order lifecycle remains `BINANCE_TESTNET = BLOCKED_EXTERNAL` because dedicated testnet credentials are unavailable.
+- M-B2-G remains HTTP 451.
 - `liveWrite`, cancel, transfer, withdrawal, wallet mutation, and MCP financial actions are false. The local `LocalReplayOrderWriter` can only create deterministic shadow receipts.
 - Confirmation is mandatory and binds the exact immutable intent; stale, expired, anchor, or edge drift invalidates it. Denial never writes or retries.
 
@@ -53,3 +57,7 @@ The demo executes three canonical local scenarios: economics edge collapse → n
 2. Run `npm run demo`; point out the refusal, shadow receipt, and unknown recovery.
 3. Open the readiness artifact and capability manifest: writes are disabled, account/MCP are blocked, and the allowlist is explicit.
 4. Run `npm run readiness:validate`; close by stating the evidence ceiling and the M-B2/MCP blockers. Do not present local replay as a live Binance trade.
+
+## Static Web UI and local entrypoints
+
+The judge-facing UI lives in `web/` and is intentionally static. Run `npm run api` for the local REST surface, `npm run mcp` for line-delimited local JSON-RPC, and `npm run web:check` for static validation. GitHub Pages publishes only `web/`; it does not host REST/MCP. Hosted deployment remains blocked until a server host and operational evidence are configured. See [`docs/WEB_UI.md`](docs/WEB_UI.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), and [`docs/SUBMISSION.md`](docs/SUBMISSION.md).

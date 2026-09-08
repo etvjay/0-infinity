@@ -83,10 +83,14 @@ function canonical(value: unknown): string {
 const refusal = (code: CouncilRefusalCode, message: string): CouncilRefusal => Object.freeze({ kind: "REFUSAL", code, message });
 const analysisKeys = ["kind", "ref", "hash", "symbol", "direction", "expectedMoveBps", "confidence", "observedAt", "expiresAt"] as const;
 const opposeKeys = ["kind", "ref", "hash", "symbol", "direction", "recommendation", "observedAt", "expiresAt"] as const;
-const evidenceKeys = ["kind", "ref", "hash", "symbol", "market", "account", "observedAt", "expiresAt", "economics"] as const;
+const evidenceKeys = ["kind", "ref", "hash", "symbol", "market", "account", "observedAt", "expiresAt", "economics", "sourceEvidence"] as const;
 const policyKeys = ["method", "now", "maxAgeMs", "minConfidence", "minExpectedMoveBps", "thesisId", "thesisHash"] as const;
 const assessmentKeys = ["kind", "side", "requestedQuantity", "executableQuantity", "bestExecutableReference", "vwap", "worstExecutionPrice", "limitPrice", "totalCost", "spreadBps", "slippageBps", "feeBps", "fundingCostBps", "executableEdgeBps", "fills"] as const;
 const fillKeys = ["price", "quantity", "notional"] as const;
+const exactSourceEvidence = (value: unknown): value is { readonly ref: string; readonly hash: string; readonly workflowId: string; readonly venue: "BINANCE"; readonly product: "USD_M_FUTURES"; readonly symbol: string } => {
+  if (!Object.isFrozen(value) || !allowed(value, ["ref", "hash", "workflowId", "venue", "product", "symbol"], ["ref", "hash", "workflowId", "venue", "product", "symbol"])) return false;
+  const x = value as Record<string, unknown>; return [x.ref, x.hash, x.workflowId, x.symbol].every(requiredString) && x.venue === "BINANCE" && x.product === "USD_M_FUTURES";
+};
 type CanonicalArrayDescriptor = {
   readonly key: string | symbol;
   readonly configurable: boolean;
@@ -149,6 +153,7 @@ export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {
     for (const [observed, expires] of [[a.observedAt, a.expiresAt], [o.observedAt, o.expiresAt], [e.observedAt, e.expiresAt]]) if (observed < 0 || expires < 0 || expires <= observed || observed > p.now || p.now - observed > p.maxAgeMs || p.now >= expires) return refusal("STALE_EVIDENCE", "all evidence must be non-negative, chronological, and fresh at policy.now");
     if (e.market !== "TRUSTED" || e.account !== "TRUSTED") return refusal("UNTRUSTED_EVIDENCE", "trusted market and account evidence are required");
     if (e.economics !== undefined && (!e.economics || typeof e.economics !== "object" || !("kind" in e.economics))) return refusal("MALFORMED_INPUT", "economics evidence is malformed");
+    if (e.sourceEvidence !== undefined && (!e.sourceEvidence || typeof e.sourceEvidence !== "object" || !Object.isFrozen(e.sourceEvidence) || !exactSourceEvidence(e.sourceEvidence))) return refusal("MALFORMED_INPUT", "source evidence is malformed");
     if (e.economics?.kind === "REFUSAL") return refusal("ECONOMICS_REFUSED", "supplied execution economics refused");
     if (e.economics !== undefined && !canonicalEconomics(e.economics)) return refusal("MALFORMED_INPUT", "economics assessment is not canonical and deeply immutable");
     if (a.confidence < p.minConfidence || a.expectedMoveBps < p.minExpectedMoveBps) return refusal("THRESHOLD_NOT_MET", "council thresholds are not met");

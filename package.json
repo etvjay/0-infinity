@@ -11,7 +11,11 @@
     "evidence:mb7": "npm run build && node dist/src/shadow/mb7Evidence.js",
     "demo": "npm run build && node dist/src/readiness/cli.js demo",
     "readiness:validate": "npm run build && node dist/src/readiness/cli.js validate",
-    "secret-scan": "npm run build && node dist/src/readiness/cli.js secret-scan"
+    "evidence:validate": "npm run readiness:validate",
+    "secret-scan": "npm run build && node dist/src/readiness/cli.js secret-scan",
+    "api": "npm run build && node dist/src/product/server.js",
+    "mcp": "npm run build && node dist/src/product/mcp-server.js",
+    "web:check": "npm run build && node --test dist/tests/productization.ui.test.js"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -26,6 +26,28 @@ test("receipt arrays must be dense canonical arrays", () => {
   assert.throws(() => createReasoningReceipt(extra), TypeError);
 });
 
+test("receipt arrays reject non-canonical descriptors at creation and verification", () => {
+  const mutations: Array<(array: unknown[]) => void> = [
+    (array) => Object.defineProperty(array, "length", { writable: false }),
+    (array) => Object.defineProperty(array, "0", { writable: false }),
+    (array) => Object.defineProperty(array, "0", { configurable: false }),
+    (array) => Object.defineProperty(array, "0", { get: () => refs.a }),
+  ];
+
+  for (const mutate of mutations) {
+    const candidate = input();
+    mutate(candidate.evidence.supporting as unknown[]);
+    assert.throws(() => createReasoningReceipt(candidate), TypeError);
+  }
+
+  const receipt = createReasoningReceipt(input());
+  for (const mutate of mutations) {
+    const tampered = structuredClone(receipt);
+    mutate(tampered.evidence.supporting as unknown[]);
+    assert.equal(verifyReasoningReceipt(tampered), false);
+  }
+});
+
 test("trade thesis hash may be omitted but explicit undefined is invalid", () => {
   const withUndefined = input();
   delete (withUndefined.output as { tradeThesisHash?: string }).tradeThesisHash;

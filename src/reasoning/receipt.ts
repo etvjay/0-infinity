@@ -30,30 +30,51 @@ const freeze = <T>(v: T, seen = new Set<object>()): T => { if (v && typeof v ===
 const ownExact = (v: unknown, keys: readonly string[]): v is Record<string, unknown> => isObject(v) && Reflect.ownKeys(v).length === keys.length && keys.every(k => Object.prototype.hasOwnProperty.call(v, k) && Object.getOwnPropertyDescriptor(v, k)?.enumerable === true && "value" in Object.getOwnPropertyDescriptor(v, k)!);
 const refKeys = ["ref", "hash", "workflowId", "venue", "product", "symbol"] as const;
 const validRef = (v: unknown): v is EvidenceReference => ownExact(v, refKeys) && refKeys.every(k => text(v[k]));
-const canonicalArray = (v: unknown): v is readonly unknown[] => {
-  if (!Array.isArray(v) || Object.getPrototypeOf(v) !== Array.prototype) return false;
+const descriptorMatches = (actual: PropertyDescriptor | undefined, expected: PropertyDescriptor): boolean => {
+  if (!actual || Object.keys(actual).length !== Object.keys(expected).length) return false;
+  for (const key of Object.keys(expected) as (keyof PropertyDescriptor)[]) if (actual[key] !== expected[key]) return false;
+  return true;
+};
+const arrayPrototypeDescriptors = Object.getOwnPropertyDescriptors(Array.prototype) as unknown as Record<PropertyKey, PropertyDescriptor>;
+const canonicalArrayPrototype = (): boolean => {
+  const keys = Reflect.ownKeys(Array.prototype);
+  const expectedKeys = Reflect.ownKeys(arrayPrototypeDescriptors);
+  if (keys.length !== expectedKeys.length || !keys.every((key) => expectedKeys.includes(key))) return false;
+  return keys.every((key) => {
+    const actual = Object.getOwnPropertyDescriptor(Array.prototype, key);
+    const expected = arrayPrototypeDescriptors[key];
+    if (!actual || !expected) return false;
+    if (actual.enumerable !== expected.enumerable || actual.configurable !== expected.configurable || actual.writable !== expected.writable) return false;
+    if ("value" in expected) return "value" in actual && actual.value === expected.value;
+    return "get" in actual && actual.get === expected.get && actual.set === expected.set;
+  });
+};
+const canonicalArray = (v: unknown, allowFrozen = false): v is readonly unknown[] => {
+  if (!Array.isArray(v) || Object.getPrototypeOf(v) !== Array.prototype || !canonicalArrayPrototype()) return false;
   const keys = Reflect.ownKeys(v);
   const length = v.length;
   if (keys.length !== length + 1 || !keys.includes("length")) return false;
   const lengthDescriptor = Object.getOwnPropertyDescriptor(v, "length");
-  if (!lengthDescriptor || !("value" in lengthDescriptor) || lengthDescriptor.value !== length) return false;
+  const lengthWritable = lengthDescriptor?.writable === true || (allowFrozen && lengthDescriptor?.writable === false && Object.isFrozen(v));
+  if (!lengthDescriptor || !descriptorMatches(lengthDescriptor, { value: length, writable: lengthDescriptor.writable, enumerable: false, configurable: false }) || !lengthWritable) return false;
   for (let i = 0; i < length; i++) {
     const descriptor = Object.getOwnPropertyDescriptor(v, String(i));
-    if (!descriptor || !("value" in descriptor) || descriptor.enumerable !== true) return false;
+    const immutable = allowFrozen && Object.isFrozen(v) && descriptor?.writable === false && descriptor?.configurable === false;
+    if (!descriptor || !descriptorMatches(descriptor, { value: descriptor.value, writable: descriptor.writable, enumerable: true, configurable: descriptor.configurable }) || !(descriptor.writable === true && descriptor.configurable === true || immutable)) return false;
   }
   return true;
 };
-const strings = (v: unknown): v is readonly string[] => canonicalArray(v) && new Set(v).size === v.length && v.every(text);
-const validInput = (v: unknown): v is ReasoningReceiptInput => {
+const strings = (v: unknown, allowFrozen = false): v is readonly string[] => canonicalArray(v, allowFrozen) && new Set(v).size === v.length && v.every(text);
+const validInput = (v: unknown, allowFrozenArrays = false): v is ReasoningReceiptInput => {
   if (!ownExact(v, ["receiptVersion","workflowId","createdAt","opportunity","evidence","analyses","council","rationale","output"])) return false;
   const x = v as unknown as ReasoningReceiptInput, o = x.opportunity, e = x.evidence, a = x.analyses, c = x.council, r = x.rationale, out = x.output;
   if (x.receiptVersion !== "ZO-BIN-REASONING-RECEIPT-V2" || !text(x.workflowId) || !finite(x.createdAt) || x.createdAt < 0 || !ownExact(o,["venue","product","symbol"]) || ![o.venue,o.product,o.symbol].every(text)) return false;
-  if (!ownExact(e,["evidenceBundleHash","supporting","opposing"]) || !text(e.evidenceBundleHash) || !canonicalArray(e.supporting) || !canonicalArray(e.opposing) || [...e.supporting,...e.opposing].every(validRef) === false) return false;
+  if (!ownExact(e,["evidenceBundleHash","supporting","opposing"]) || !text(e.evidenceBundleHash) || !canonicalArray(e.supporting, allowFrozenArrays) || !canonicalArray(e.opposing, allowFrozenArrays) || [...e.supporting,...e.opposing].every(validRef) === false) return false;
   const refs = [...e.supporting,...e.opposing]; if (new Set(refs.map(z=>z.ref)).size !== refs.length || refs.some(z=>z.workflowId!==x.workflowId||z.venue!==o.venue||z.product!==o.product||z.symbol!==o.symbol)) return false;
   if (!ownExact(a,["advocate","oppose","market"]) || ![a.advocate,a.oppose,a.market].every(text)) return false;
-  if (!ownExact(c,["decision","direction","confidence","expectedMoveBps","horizonMs","strongestSupport","strongestOpposition","invalidation","unresolved"]) || !["APPROVE","REFUSE"].includes(c.decision) || !["LONG","SHORT"].includes(c.direction) || !finite(c.confidence)||c.confidence<0||c.confidence>1||!finite(c.expectedMoveBps)||!finite(c.horizonMs)||c.horizonMs<=0||![c.strongestSupport,c.strongestOpposition].every(text)||!strings(c.invalidation)||!strings(c.unresolved)) return false;
+  if (!ownExact(c,["decision","direction","confidence","expectedMoveBps","horizonMs","strongestSupport","strongestOpposition","invalidation","unresolved"]) || !["APPROVE","REFUSE"].includes(c.decision) || !["LONG","SHORT"].includes(c.direction) || !finite(c.confidence)||c.confidence<0||c.confidence>1||!finite(c.expectedMoveBps)||!finite(c.horizonMs)||c.horizonMs<=0||![c.strongestSupport,c.strongestOpposition].every(text)||!strings(c.invalidation, allowFrozenArrays)||!strings(c.unresolved, allowFrozenArrays)) return false;
   if (c.decision === "APPROVE" && (e.opposing.length===0 || c.invalidation.length===0)) return false;
-  if (!ownExact(r,["method","claims"]) || !text(r.method) || !canonicalArray(r.claims) || r.claims.some(cl=>!ownExact(cl,["claimId","statement","supportedBy","opposedBy","assumptions"])||![cl.claimId,cl.statement].every(text)||!strings(cl.supportedBy)||!strings(cl.opposedBy)||!strings(cl.assumptions)||[...cl.supportedBy,...cl.opposedBy].some(id=>!refs.some(z=>z.ref===id)))) return false;
+  if (!ownExact(r,["method","claims"]) || !text(r.method) || !canonicalArray(r.claims, allowFrozenArrays) || r.claims.some(cl=>!ownExact(cl,["claimId","statement","supportedBy","opposedBy","assumptions"])||![cl.claimId,cl.statement].every(text)||!strings(cl.supportedBy, allowFrozenArrays)||!strings(cl.opposedBy, allowFrozenArrays)||!strings(cl.assumptions, allowFrozenArrays)||[...cl.supportedBy,...cl.opposedBy].some(id=>!refs.some(z=>z.ref===id)))) return false;
   if (new Set(r.claims.map(cl=>cl.claimId)).size!==r.claims.length || !isObject(out) || !((ownExact(out,["councilDecisionHash"]) || ownExact(out,["councilDecisionHash","tradeThesisHash"])) && text(out.councilDecisionHash) && (!Object.prototype.hasOwnProperty.call(out,"tradeThesisHash") || text(out.tradeThesisHash)))) return false;
   return true;
 };
@@ -70,6 +91,6 @@ const canonicalPrototypes = (value: unknown, seen = new Set<object>()): boolean 
 };
 export function createReasoningReceipt(input: ReasoningReceiptInput): ReasoningReceipt { if (!canonicalPrototypes(input) || !validInput(input)) throw new TypeError("reasoning receipt is malformed"); const cloned = structuredClone(input); const json=canonicalReasoningJson(cloned); return freeze({...cloned,canonicalSha256:createHash("sha256").update(json).digest("hex")}); }
 export function verifyReasoningReceipt(value: unknown, registry?: EvidenceContextRegistry): string | false {
-  try { if (!ownExact(value,["receiptVersion","workflowId","createdAt","opportunity","evidence","analyses","council","rationale","output","canonicalSha256"])) return false; const x=value as unknown as ReasoningReceipt; if (!/^[0-9a-f]{64}$/.test(x.canonicalSha256)||!validInput(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")))) return false; if (registry) { if (registry.workflowId!==x.workflowId||registry.venue!==x.opportunity.venue||registry.product!==x.opportunity.product||registry.symbol!==x.opportunity.symbol||registry.evidenceBundleHash!==x.evidence.evidenceBundleHash||canonical(registry.analyses)!==canonical(x.analyses)) return false; const known=new Map(registry.references.map(r=>[r.ref,r])); for(const ref of [...x.evidence.supporting,...x.evidence.opposing]) { const k=known.get(ref.ref); if(!k||canonical(k)!==canonical(ref)) return false; } for (const ref of [x.council.strongestSupport, x.council.strongestOpposition]) if (!known.has(ref)) return false; } return createHash("sha256").update(canonical(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")))).digest("hex")===x.canonicalSha256?x.canonicalSha256:false; } catch { return false; }
+  try { if (!ownExact(value,["receiptVersion","workflowId","createdAt","opportunity","evidence","analyses","council","rationale","output","canonicalSha256"])) return false; const x=value as unknown as ReasoningReceipt; if (!/^[0-9a-f]{64}$/.test(x.canonicalSha256)||!validInput(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")), true)) return false; if (registry) { if (registry.workflowId!==x.workflowId||registry.venue!==x.opportunity.venue||registry.product!==x.opportunity.product||registry.symbol!==x.opportunity.symbol||registry.evidenceBundleHash!==x.evidence.evidenceBundleHash||canonical(registry.analyses)!==canonical(x.analyses)) return false; const known=new Map(registry.references.map(r=>[r.ref,r])); for(const ref of [...x.evidence.supporting,...x.evidence.opposing]) { const k=known.get(ref.ref); if(!k||canonical(k)!==canonical(ref)) return false; } for (const ref of [x.council.strongestSupport, x.council.strongestOpposition]) if (!known.has(ref)) return false; } return createHash("sha256").update(canonical(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")))).digest("hex")===x.canonicalSha256?x.canonicalSha256:false; } catch { return false; }
 }
 export function reasoningReceiptMarkdown(receipt: ReasoningReceipt): string { if(!verifyReasoningReceipt(receipt)) throw new TypeError("cannot project unverifiable receipt"); return [`# Reasoning receipt: ${receipt.council.decision}`,`- Version: ${receipt.receiptVersion}`,`- SHA-256: \`${receipt.canonicalSha256}\``,`- Workflow: ${receipt.workflowId}`,`- Opportunity: ${receipt.opportunity.venue}/${receipt.opportunity.product}/${receipt.opportunity.symbol}`,`- Evidence bundle: ${receipt.evidence.evidenceBundleHash}`,"","## Claims",...receipt.rationale.claims.map(c=>`- **${c.claimId}**: ${c.statement}`)].join("\n"); }

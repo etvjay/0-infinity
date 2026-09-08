@@ -35,9 +35,12 @@ function allowedObject(value: unknown, keys: string[]): value is Record<string, 
 }
 function exactArray(value: unknown, length: number): value is unknown[] {
   const protoOk = Object.getPrototypeOf(value) === Array.prototype, protoClean = cleanPrototype(Array.prototype, arrayPrototypeKeys); if (!Array.isArray(value) || !protoOk || !protoClean || value.length !== length) return false;
-  const own = Reflect.ownKeys(value);
-  if (own.length !== length + 1 || !own.includes("length") || own.some(k => k !== "length" && (typeof k !== "string" || !/^\d+$/.test(k)))) return false;
-  return Array.from({ length }, (_, i) => Object.prototype.hasOwnProperty.call(value, String(i)) && Object.getOwnPropertyDescriptor(value, String(i))?.enumerable === true).every(Boolean);
+  const own = Reflect.ownKeys(value), lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
+  if (own.length !== length + 1 || !own.includes("length") || !lengthDescriptor || !("value" in lengthDescriptor) || lengthDescriptor.enumerable || lengthDescriptor.configurable || !lengthDescriptor.writable || own.some(k => k !== "length" && (typeof k !== "string" || !/^\d+$/.test(k)))) return false;
+  return Array.from({ length }, (_, i) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
+    return !!descriptor && "value" in descriptor && descriptor.enumerable === true;
+  }).every(Boolean);
 }
 function finiteInt(value: unknown): value is number { return typeof value === "number" && Number.isSafeInteger(value); }
 function validSha(value: unknown): value is string { return typeof value === "string" && /^[0-9a-f]{40}$/.test(value); }
@@ -93,4 +96,4 @@ export function validateEvidence(value: unknown): boolean {
   } catch { return false; }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) { const path = process.argv[2] ?? "docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json"; const a = JSON.parse(await readFile(path, "utf8")); if (!validateEvidence(a)) { console.error("M-B7 evidence validation failed"); process.exit(1); } console.log(JSON.stringify({ valid: true, artifactPayloadSha256: a.artifactPayloadSha256, workflowCount: a.workflowCount, implementationSha: a.implementationSha, metrics: a.metrics })); }
+if (import.meta.url === `file://${process.argv[1]}`) { const path = process.argv[2] ?? "docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json"; const a = JSON.parse(await readFile(path, "utf8")); if (!validateEvidence(a)) { console.error("M-B7 evidence validation failed"); process.exit(1); } console.log(JSON.stringify({ valid: true, artifactPayloadSha256: a.artifactPayloadSha256, workflowCount: a.workflowCount, runnerImplementationSha: a.runnerImplementationSha, validatorImplementationSha: a.validatorImplementationSha, metrics: a.metrics })); }

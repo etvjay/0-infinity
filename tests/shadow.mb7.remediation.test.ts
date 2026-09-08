@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { runCampaign } from "../src/shadow/mb7Campaign.js";
 import { validateEvidence } from "../src/shadow/mb7Evidence.js";
 
@@ -45,6 +46,16 @@ test("M-B7 rejects hostile object shapes and polluted prototypes", async () => {
   Object.defineProperty(Object.prototype, "mb7Polluted", { value: true, configurable: true });
   try { assert.equal(validateEvidence(hostile(artifact, () => {})), false); }
   finally { delete (Object.prototype as any).mb7Polluted; }
+});
+
+test("M-B7 rejects rehashed accessor-backed canonical arrays", async () => {
+  const { artifact } = await runCampaign();
+  const copy = structuredClone(artifact) as any;
+  Object.defineProperty(copy.scenarios, "0", { get: () => artifact.scenarios[0], enumerable: true, configurable: true });
+  const payload = { ...copy };
+  delete payload.artifactPayloadSha256;
+  copy.artifactPayloadSha256 = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  assert.equal(validateEvidence(copy), false);
 });
 
 test("M-B7 requires exact one-to-one scenario coverage after rehash", async () => {

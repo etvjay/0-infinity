@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { ZeroInfinityService } from "./service.js";
+import { handleMcp } from "./mcp.js";
 import { exactOwnPlain, ValidationError } from "./types.js";
 const MAX_JSON = 64 * 1024;
 function bodyObject(value: unknown): Record<string, unknown> { if (!exactOwnPlain(value, Object.keys((value as Record<string, unknown>) ?? {}))) throw new ValidationError("JSON object required"); if (JSON.stringify(value).length > MAX_JSON) throw new ValidationError("payload too large"); return value as Record<string, unknown>; }
@@ -18,7 +19,7 @@ export async function handleRequest(service: ZeroInfinityService, method: string
     if (method === "GET" && match) { const value = service.getReasoningReceipt(match[1]); return value ? { status: 200, body: value } : notFound(); }
     match = path.match(/^\/v1\/workflows\/([^/]+)\/thesis$/);
     if (method === "GET" && match) { const value = service.getTradeThesis(match[1]); return value ? { status: 200, body: value } : notFound(); }
-    if (method === "POST" && path === "/v1/shadow") return { status: 200, body: await service.runShadowWorkflow(bodyObject(body ?? {})) };
+    if (method === "POST" && path === "/mcp") return { status: 200, body: await handleMcp(service, body) };
     if (method === "POST" && path === "/v1/paper-live") return { status: 200, body: await service.runPaperLiveWorkflow(bodyObject(body ?? {})) };
     return { status: 404, body: { error: "NOT_FOUND" } };
   } catch (error) { return { status: error instanceof ValidationError ? 400 : 500, body: { error: error instanceof Error ? error.name : "ERROR", message: error instanceof Error ? error.message : "request failed" } }; }

@@ -1,0 +1,35 @@
+{
+  "schema": "ZO-BIN-MB8-LATENCY-HOTPATH-V1",
+  "codeSha": "b199e2fb00dd040e6d62100dc1e82a8f7f3babd3",
+  "scope": "bounded operational-only telemetry; no receipt hash or authority decision inputs",
+  "modelCallsAfterMandateArmed": 0,
+  "hotPathModelDependencies": 0,
+  "evidenceCeiling": "LOCAL_STATIC_ONLY",
+  "reasoningClock": {
+    "roleStartsAndCompletions": "IMPLEMENTED_TYPES_ONLY",
+    "councilStartAndCompletion": "IMPLEMENTED_TYPES_ONLY",
+    "receiptAt": null,
+    "mandateArmedAt": null,
+    "timing": "NOT_MEASURED"
+  },
+  "hotPathClock": {
+    "marketReceivedAt": null,
+    "triggerEvaluatedAt": null,
+    "economicsEvaluatedAt": null,
+    "evaluateMandateAt": null,
+    "intentAt": null,
+    "writerPreIoAt": null,
+    "outboundAt": null,
+    "ackAt": null,
+    "timing": "NOT_MEASURED"
+  },
+  "p50Ms": null,
+  "p95Ms": null,
+  "p99Ms": null,
+  "claims": [
+    "FAST retains ADVOCATE, OPPOSER, MARKET_ANALYST, and COUNCIL",
+    "one Council result can feed repeated deterministic evaluations",
+    "expiry and single-use remain governed by the existing mandate kernel",
+    "no HFT or wall-clock performance claim is made"
+  ]
+}

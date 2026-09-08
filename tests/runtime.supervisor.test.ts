@@ -40,3 +40,45 @@ test("credentials cannot elevate explicit mode and stale state refuses", async (
   const receipt = await x.supervisor.start({ workflowId: "wf", mandate, market: { ...market, observedAt: 1_000, receivedAt: 1_001 }, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
   assert.equal(receipt.status, "REFUSED"); assert.equal(receipt.orderOutcome, undefined);
 });
+
+test("malformed first start is rejected without poisoning a later valid start", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  await assert.rejects(() => x.supervisor.start({ workflowId: "wf", mandate: { ...mandate, mandateId: "forged" }, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" }));
+  const receipt = await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  assert.equal(receipt.workflowId, "wf");
+});
+
+test("reconciled cancellation and rejection keep receipt status coherent with runtime", async () => {
+  const cancelled = setup({ submit: async () => ({ kind: "ACKNOWLEDGED" }) }); await cancelled.mandates.issue(mandate);
+  await cancelled.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  const ack = await cancelled.supervisor.trigger("wf");
+  const c = await cancelled.supervisor.reconcile("wf", Object.freeze({ eventId: "cancel", status: "CANCELLED" }));
+  assert.equal(c.status, "CANCELLED"); assert.equal(c.runtime.state, "CANCELLED"); assert.equal(ack.orderOutcome, "ACKNOWLEDGED");
+  const rejected = setup({ submit: async () => ({ kind: "REJECTED" }) }); await rejected.mandates.issue(mandate);
+  const r = await rejected.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  assert.equal(r.status, "FAILED"); assert.equal(r.runtime.state, "FAILED"); assert.equal(r.orderOutcome, "REJECTED");
+});
+
+test("unknown recovery records order outcome without advancing M-B1 runtime", async () => {
+  const x = setup({ submit: async () => ({ kind: "TIMEOUT" }) }); await x.mandates.issue(mandate);
+  await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  await x.supervisor.trigger("wf");
+  const recovered = await x.supervisor.reconcile("wf", Object.freeze({ eventId: "ack", status: "ACKNOWLEDGED" }));
+  assert.equal(recovered.status, "UNKNOWN"); assert.equal(recovered.runtime.state, "UNKNOWN"); assert.equal(recovered.orderOutcome, "ACKNOWLEDGED"); assert.equal(recovered.recoveryStatus, "RECONCILED");
+});
+
+test("concurrent workflow operations serialize without lost versions", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  const input = { workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" as const };
+  const [a, b] = await Promise.all([x.supervisor.start(input), x.supervisor.start(input)]);
+  assert.equal(a.version, b.version); assert.equal((await x.supervisor.restore("wf")).version, b.version);
+});
+
+test("restore rejects a forged frozen record with incoherent runtime", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  const persistence = (x.supervisor as any).persistence as MemoryWorkflowPersistence;
+  const original = persistence.load("wf")!;
+  await persistence.save(Object.freeze({ ...original, runtime: Object.freeze({ ...original.runtime, state: "FILLED" }) }));
+  await assert.rejects(() => x.supervisor.restore("wf"), /RECOVERY_BLOCKED/);
+});

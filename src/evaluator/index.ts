@@ -18,7 +18,7 @@ const nonNegative = (v: unknown): v is number => finite(v) && v >= 0;
 const text = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 const MAX_AGE = Number.MAX_SAFE_INTEGER;
 
-function validMandate(value: unknown): value is ExecutionMandate {
+export function validMandate(value: unknown): value is ExecutionMandate {
   if (!object(value) || !frozenTree(value) || value.version !== 1 || value.maxUses !== 1) return false;
   const x = value;
   const strings = [x.mandateId, x.workflowId, x.thesisId, x.method, x.advocateRef, x.opposeRef, x.marketAnalysisRef, x.evidenceBundleHash, x.councilDecisionHash, x.symbol, x.accountId];

@@ -1,78 +1,64 @@
 import type { ExecutionMandate } from "../domain/index.js";
-import { evaluateMandate, type EvaluationPolicy, type EvaluationWorkflow, type ExecutionIntent, type LiveAccountState, type LiveMarketState, type StateEnvelope } from "../evaluator/index.js";
+import { evaluateMandate, validMandate, type EvaluationPolicy, type EvaluationWorkflow, type ExecutionIntent, type LiveAccountState, type LiveMarketState, type StateEnvelope } from "../evaluator/index.js";
 import { OrderWriter, type FillEvent, type OrderReceipt } from "../execution/index.js";
 import { createMandateRuntime, transition, type MandateRuntime } from "./mandateRuntime.js";
+import { MANDATE_STATES, isLegalTransition, type MandateState } from "./mandateState.js";
 import type { MandateTransitionEvent } from "./mandateEvents.js";
 
 export type CapabilityMode = "SHADOW" | "LOCAL_REPLAY";
-export type WorkflowStatus = "READY" | "TRIGGERED" | "VALIDATING" | "SUBMITTING" | "ACKNOWLEDGED" | "PARTIALLY_FILLED" | "FILLED" | "REFUSED" | "REJECTED" | "FAILED" | "UNKNOWN" | "RECOVERY_BLOCKED";
+export type WorkflowStatus = "READY" | "TRIGGERED" | "VALIDATING" | "SUBMITTING" | "ACKNOWLEDGED" | "PARTIALLY_FILLED" | "FILLED" | "REFUSED" | "REJECTED" | "FAILED" | "UNKNOWN" | "RECOVERY_BLOCKED" | "CANCELLED";
 export type WorkflowMarketState = StateEnvelope<LiveMarketState>;
 export type WorkflowAccountState = StateEnvelope<LiveAccountState>;
-
-export interface WorkflowReceipt {
-  readonly kind: "WORKFLOW_RECEIPT"; readonly workflowId: string; readonly mandateId: string; readonly version: number;
-  readonly status: WorkflowStatus; readonly runtime: MandateRuntime; readonly authorityStatus: EvaluationWorkflow["authorityStatus"];
-  readonly orderOutcome?: OrderReceipt["outcome"]; readonly clientOrderId?: string; readonly refusalCode?: string;
-}
+export interface WorkflowReceipt { readonly kind: "WORKFLOW_RECEIPT"; readonly workflowId: string; readonly mandateId: string; readonly version: number; readonly status: WorkflowStatus; readonly runtime: MandateRuntime; readonly authorityStatus: EvaluationWorkflow["authorityStatus"]; readonly orderOutcome?: OrderReceipt["outcome"]; readonly clientOrderId?: string; readonly refusalCode?: string; readonly recoveryStatus?: "RECONCILED"; }
 export interface WorkflowRecord extends WorkflowReceipt { readonly mandate: ExecutionMandate; readonly market: WorkflowMarketState; readonly account: WorkflowAccountState; readonly evaluationPolicy: EvaluationPolicy; }
-export interface WorkflowPersistence { load(workflowId: string): WorkflowRecord | undefined; save(record: WorkflowRecord): Promise<void>; }
+export interface WorkflowPersistence { load(workflowId: string): WorkflowRecord | undefined; save(record: WorkflowRecord, expectedVersion?: number): Promise<void>; }
 export class MemoryWorkflowPersistence implements WorkflowPersistence {
   private readonly records = new Map<string, WorkflowRecord>();
   load(id: string): WorkflowRecord | undefined { const r = this.records.get(id); return r ? frozen(structuredClone(r)) : undefined; }
-  async save(record: WorkflowRecord): Promise<void> { this.records.set(record.workflowId, frozen(structuredClone(record))); }
+  async save(record: WorkflowRecord, expectedVersion?: number): Promise<void> {
+    const current = this.records.get(record.workflowId);
+    if (expectedVersion === -1 ? current !== undefined : expectedVersion !== undefined && (!current || current.version !== expectedVersion)) throw new Error("WORKFLOW_VERSION_CONFLICT");
+    this.records.set(record.workflowId, frozen(structuredClone(record)));
+  }
 }
 export interface RuntimeSupervisorOptions { readonly mode: CapabilityMode; readonly writer: OrderWriter; readonly persistence: WorkflowPersistence; readonly clock: () => number; }
 export interface StartWorkflowInput { readonly workflowId: string; readonly mandate: ExecutionMandate; readonly market: WorkflowMarketState; readonly account: WorkflowAccountState; readonly evaluationPolicy: EvaluationPolicy; readonly authorityStatus: EvaluationWorkflow["authorityStatus"]; }
-
 function frozen<T>(value: T): T { if (value && typeof value === "object" && !Object.isFrozen(value)) { Object.freeze(value); for (const child of Object.values(value as object as Record<string, unknown>)) frozen(child); } return value; }
+function deepFrozen(value: unknown, seen = new Set<object>()): boolean { if (!value || typeof value !== "object") return true; if (seen.has(value)) return true; seen.add(value); return Object.isFrozen(value) && Reflect.ownKeys(value).every((k) => { const d = Object.getOwnPropertyDescriptor(value, k); return !!d && "value" in d && deepFrozen(d.value, seen); }); }
+function finite(v: unknown): v is number { return typeof v === "number" && Number.isFinite(v); }
+function validEnvelope(value: unknown, kind: "market" | "account"): boolean {
+  if (!value || typeof value !== "object") return false; const x = value as Record<string, any>;
+  if (typeof x.version !== "bigint" || x.version < 0n || !finite(x.observedAt) || x.observedAt < 0 || !finite(x.receivedAt) || x.receivedAt < x.observedAt || !x.value || typeof x.value !== "object") return false;
+  const v = x.value; if (kind === "market") return v.venue === "BINANCE" && ["SPOT", "USD_M_FUTURES"].includes(v.instrument) && typeof v.symbol === "string" && [v.bidPrice,v.askPrice,v.markPrice,v.expectedMoveBps,v.spreadBps,v.slippageBps,v.feeBps,v.fundingCostBps].every((n: unknown) => finite(n));
+  return typeof v.accountId === "string" && [v.availableNotional,v.currentNotional,v.currentLossBps].every((n: unknown) => finite(n) && (n as number) >= 0);
+}
+function validPolicy(value: unknown): value is EvaluationPolicy { const x = value as any; return !!x && finite(x.maxMarketAgeMs) && x.maxMarketAgeMs >= 0 && finite(x.maxAccountAgeMs) && x.maxAccountAgeMs >= 0 && typeof x.maxAnchorVersionLag === "bigint" && x.maxAnchorVersionLag >= 0n; }
 function transitionOrThrow(runtime: MandateRuntime, event: MandateTransitionEvent, at: number, reason: string): MandateRuntime { const result = transition(runtime, event, { at, reason }); if (!result.ok) throw new Error(result.rejection.message); return result.machine; }
-function statusFor(outcome: OrderReceipt["outcome"]): WorkflowStatus { return outcome === "ACKNOWLEDGED" ? "ACKNOWLEDGED" : outcome === "PARTIALLY_FILLED" ? "PARTIALLY_FILLED" : outcome === "FILLED" ? "FILLED" : outcome === "REJECTED" ? "REJECTED" : outcome === "FAILED" ? "FAILED" : outcome === "CANCELLED" ? "FAILED" : "UNKNOWN"; }
-function eventFor(outcome: OrderReceipt["outcome"]): MandateTransitionEvent | undefined { return outcome === "ACKNOWLEDGED" ? { type: "ACKNOWLEDGE" } : outcome === "PARTIALLY_FILLED" ? { type: "PARTIAL_FILL" } : outcome === "FILLED" ? { type: "FILL" } : outcome === "REJECTED" ? { type: "FAIL" } : outcome === "FAILED" ? { type: "FAIL" } : outcome === "UNKNOWN" ? { type: "SUBMIT_UNKNOWN" } : undefined; }
+function statusFor(outcome: OrderReceipt["outcome"]): WorkflowStatus { return outcome === "ACKNOWLEDGED" ? "ACKNOWLEDGED" : outcome === "PARTIALLY_FILLED" ? "PARTIALLY_FILLED" : outcome === "FILLED" ? "FILLED" : outcome === "CANCELLED" ? "CANCELLED" : outcome === "UNKNOWN" ? "UNKNOWN" : "FAILED"; }
+function eventFor(outcome: OrderReceipt["outcome"]): MandateTransitionEvent | undefined { return outcome === "ACKNOWLEDGED" ? { type: "ACKNOWLEDGE" } : outcome === "PARTIALLY_FILLED" ? { type: "PARTIAL_FILL" } : outcome === "FILLED" ? { type: "FILL" } : outcome === "CANCELLED" ? { type: "CANCEL" } : outcome === "REJECTED" || outcome === "FAILED" ? { type: "FAIL" } : outcome === "UNKNOWN" ? { type: "SUBMIT_UNKNOWN" } : undefined; }
+function validRuntime(runtime: unknown, now: number): runtime is MandateRuntime { if (!runtime || typeof runtime !== "object" || !deepFrozen(runtime)) return false; const x = runtime as MandateRuntime; if (!MANDATE_STATES.includes(x.state) || !finite(x.expiresAt) || !Array.isArray(x.history) || !Object.isFrozen(x.history)) return false; let prior: MandateState = "ARMED", at = -Infinity; for (const h of x.history) { if (!h || !Object.isFrozen(h) || h.fromState !== prior || !MANDATE_STATES.includes(h.toState) || !finite(h.at) || h.at < 0 || h.at > now || h.at < at || !isLegalTransition(h.fromState, h.toState)) return false; prior = h.toState; at = h.at; } return prior === x.state; }
+function validRecord(record: unknown, now: number): record is WorkflowRecord {
+  if (!record || typeof record !== "object" || !deepFrozen(record)) return false;
+  const x = record as WorkflowRecord;
+  if (!x.mandate || !x.market || !x.account || !x.evaluationPolicy || x.kind !== "WORKFLOW_RECEIPT" || typeof x.workflowId !== "string" || x.workflowId.length === 0 || x.mandateId !== x.mandate.mandateId || x.workflowId !== x.mandate.workflowId || !Number.isSafeInteger(x.version) || x.version < 0 || !validMandate(x.mandate) || !validEnvelope(x.market, "market") || !validEnvelope(x.account, "account") || !validPolicy(x.evaluationPolicy) || !["ACTIVE","SUPERSEDED","REVOKED","CONSUMED"].includes(String(x.authorityStatus)) || !validRuntime(x.runtime, now) || x.runtime.expiresAt !== x.mandate.expiresAt || x.status === "RECOVERY_BLOCKED") return false;
+  const expectedRuntime: Record<string, string> = { ARMED: "READY", REFUSED: "REFUSED", ACKNOWLEDGED: "ACKNOWLEDGED", PARTIALLY_FILLED: "PARTIALLY_FILLED", FILLED: "FILLED", CANCELLED: "CANCELLED", FAILED: "FAILED", UNKNOWN: "UNKNOWN" };
+  if (expectedRuntime[x.runtime.state] !== x.status) return false;
+  if (x.orderOutcome !== undefined && !x.clientOrderId) return false;
+  if (x.runtime.state !== "UNKNOWN" && x.orderOutcome !== undefined && statusFor(x.orderOutcome) !== x.status) return false;
+  return true;
+}
 
 /** Coordinator for deterministic local/replay execution. It never discovers live capabilities. */
 export class RuntimeSupervisor {
-  private readonly mode: CapabilityMode; private readonly writer: OrderWriter; private readonly persistence: WorkflowPersistence; private readonly clock: () => number;
-  constructor(options: RuntimeSupervisorOptions) {
-    if (options.mode !== "SHADOW" && options.mode !== "LOCAL_REPLAY") throw new TypeError("explicit SHADOW or LOCAL_REPLAY mode is required");
-    if (!options.writer || !options.persistence || !options.clock) throw new TypeError("explicit writer, persistence, and clock are required");
-    this.mode = options.mode; this.writer = options.writer; this.persistence = options.persistence; this.clock = options.clock;
-  }
-  async start(input: StartWorkflowInput): Promise<WorkflowReceipt> {
-    if (this.mode !== "SHADOW" && this.mode !== "LOCAL_REPLAY") throw new Error("unsupported capability mode");
-    const prior = this.persistence.load(input.workflowId);
-    if (prior) { if (prior.mandate.mandateId !== input.mandate.mandateId) throw new Error("conflicting mandate for workflow"); return frozen({ ...prior }); }
-    const initial: WorkflowRecord = frozen({ kind: "WORKFLOW_RECEIPT", workflowId: input.workflowId, mandateId: input.mandate.mandateId, version: 0, status: "READY", runtime: createMandateRuntime({ expiresAt: input.mandate.expiresAt }), authorityStatus: input.authorityStatus, mandate: structuredClone(input.mandate), market: structuredClone(input.market), account: structuredClone(input.account), evaluationPolicy: structuredClone(input.evaluationPolicy) });
-    await this.persistence.save(initial);
-    return this.trigger(input.workflowId);
-  }
-  async trigger(workflowId: string): Promise<WorkflowReceipt> {
-    const record = this.require(workflowId);
-    if (record.status !== "READY") return frozen({ ...record });
-    const now = this.clock();
-    let runtime = transitionOrThrow(record.runtime, { type: "TRIGGER" }, now, "trigger accepted");
-    runtime = transitionOrThrow(runtime, { type: "VALIDATE" }, now, "validation started");
-    const result = evaluateMandate({ workflowId, mandateId: record.mandateId, authorityStatus: record.authorityStatus }, record.mandate, runtime, record.market, record.account, record.evaluationPolicy, now);
-    if (result.kind === "EXECUTION_REFUSAL") {
-      runtime = transitionOrThrow(runtime, { type: "REFUSE" }, now, result.code);
-      return this.saveReceipt(record, { status: "REFUSED", runtime, refusalCode: result.code });
-    }
-    runtime = transitionOrThrow(runtime, { type: "SUBMIT" }, now, "local/replay submission");
-    const submitted = await this.writer.submit(result as ExecutionIntent, 0);
-    const event = eventFor(submitted.outcome); if (event) runtime = transitionOrThrow(runtime, event, now, `writer outcome ${submitted.outcome}`);
-    return this.saveReceipt(record, { status: statusFor(submitted.outcome), runtime, orderOutcome: submitted.outcome, clientOrderId: submitted.clientOrderId });
-  }
-  async restore(workflowId: string): Promise<WorkflowReceipt> { const record = this.persistence.load(workflowId); if (!record || record.workflowId !== workflowId || record.mandateId !== record.mandate.mandateId) throw new Error("RECOVERY_BLOCKED: incomplete or conflicting workflow persistence"); return frozen({ ...record }); }
-  async reconcile(workflowId: string, event: FillEvent): Promise<WorkflowReceipt> {
-    const record = this.require(workflowId); if (!record.clientOrderId) throw new Error("RECOVERY_BLOCKED: no persisted clientOrderId");
-    const order = await this.writer.reconcile(record.clientOrderId, event); let runtime = record.runtime;
-    const target = eventFor(order.outcome);
-    // M-B1 deliberately keeps UNKNOWN terminal. Recovery updates the separately
-    // persisted order outcome, but never re-enters the mandate lifecycle.
-    if (target && record.runtime.state !== "UNKNOWN" && !["ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED"].includes(record.status)) runtime = transitionOrThrow(runtime, target, this.clock(), `reconciled ${event.eventId}`);
-    return this.saveReceipt(record, { status: statusFor(order.outcome), runtime, orderOutcome: order.outcome, clientOrderId: order.clientOrderId });
-  }
-  private require(id: string): WorkflowRecord { const record = this.persistence.load(id); if (!record) throw new Error("RECOVERY_BLOCKED: workflow is not persisted"); return record; }
-  private async saveReceipt(record: WorkflowRecord, changes: Partial<WorkflowReceipt>): Promise<WorkflowReceipt> {
-    const next = frozen({ ...record, ...changes, version: record.version + 1 }); await this.persistence.save(next); return frozen({ ...next });
-  }
+  private readonly mode: CapabilityMode; private readonly writer: OrderWriter; private readonly persistence: WorkflowPersistence; private readonly clock: () => number; private readonly tails = new Map<string, Promise<void>>();
+  constructor(options: RuntimeSupervisorOptions) { if (options.mode !== "SHADOW" && options.mode !== "LOCAL_REPLAY") throw new TypeError("explicit SHADOW or LOCAL_REPLAY mode is required"); if (!options.writer || !options.persistence || !options.clock) throw new TypeError("explicit writer, persistence, and clock are required"); this.mode = options.mode; this.writer = options.writer; this.persistence = options.persistence; this.clock = options.clock; }
+  async start(input: StartWorkflowInput): Promise<WorkflowReceipt> { return this.serial(input.workflowId, async () => { this.validateStart(input); const prior = this.persistence.load(input.workflowId); if (prior) { if (prior.mandateId !== input.mandate.mandateId) throw new Error("conflicting mandate for workflow"); return frozen({ ...prior }); } const initial: WorkflowRecord = frozen({ kind: "WORKFLOW_RECEIPT", workflowId: input.workflowId, mandateId: input.mandate.mandateId, version: 0, status: "READY", runtime: createMandateRuntime({ expiresAt: input.mandate.expiresAt }), authorityStatus: input.authorityStatus, mandate: structuredClone(input.mandate), market: structuredClone(input.market), account: structuredClone(input.account), evaluationPolicy: structuredClone(input.evaluationPolicy) }); await this.persistence.save(initial, -1); return this.triggerOnce(input.workflowId); }); }
+  async trigger(workflowId: string): Promise<WorkflowReceipt> { return this.serial(workflowId, () => this.triggerOnce(workflowId)); }
+  private async triggerOnce(workflowId: string): Promise<WorkflowReceipt> { const record = this.require(workflowId); if (record.status !== "READY") return frozen({ ...record }); const now = this.clock(); let runtime = transitionOrThrow(record.runtime, { type: "TRIGGER" }, now, "trigger accepted"); runtime = transitionOrThrow(runtime, { type: "VALIDATE" }, now, "validation started"); const result = evaluateMandate({ workflowId, mandateId: record.mandateId, authorityStatus: record.authorityStatus }, record.mandate, runtime, record.market, record.account, record.evaluationPolicy, now); if (result.kind === "EXECUTION_REFUSAL") { runtime = transitionOrThrow(runtime, { type: "REFUSE" }, now, result.code); return this.saveReceipt(record, { status: "REFUSED", runtime, refusalCode: result.code }); } runtime = transitionOrThrow(runtime, { type: "SUBMIT" }, now, "local/replay submission"); const submitted = await this.writer.submit(result as ExecutionIntent, 0); const event = eventFor(submitted.outcome); if (event) runtime = transitionOrThrow(runtime, event, now, `writer outcome ${submitted.outcome}`); return this.saveReceipt(record, { status: statusFor(submitted.outcome), runtime, orderOutcome: submitted.outcome, clientOrderId: submitted.clientOrderId }); }
+  async restore(workflowId: string): Promise<WorkflowReceipt> { return this.serial(workflowId, async () => { const record = this.persistence.load(workflowId); if (!record || !validRecord(record, this.clock())) throw new Error("RECOVERY_BLOCKED: incomplete or conflicting workflow persistence"); return frozen({ ...record }); }); }
+  async reconcile(workflowId: string, event: FillEvent): Promise<WorkflowReceipt> { return this.serial(workflowId, async () => { const record = this.require(workflowId); if (!record.clientOrderId) throw new Error("RECOVERY_BLOCKED: no persisted clientOrderId"); const order = await this.writer.reconcile(record.clientOrderId, event); let runtime = record.runtime; const target = eventFor(order.outcome); if (target && record.runtime.state !== "UNKNOWN" && target.type !== "ACKNOWLEDGE" && isLegalTransition(record.runtime.state, (target.type === "PARTIAL_FILL" ? "PARTIALLY_FILLED" : target.type === "FILL" ? "FILLED" : target.type === "CANCEL" ? "CANCELLED" : target.type === "FAIL" ? "FAILED" : target.type === "SUBMIT_UNKNOWN" ? "UNKNOWN" : record.runtime.state))) runtime = transitionOrThrow(runtime, target, this.clock(), `reconciled ${event.eventId}`); const changes: any = { status: record.runtime.state === "UNKNOWN" ? "UNKNOWN" : statusFor(order.outcome), runtime, orderOutcome: order.outcome, clientOrderId: order.clientOrderId }; if (record.runtime.state === "UNKNOWN") changes.recoveryStatus = "RECONCILED"; return this.saveReceipt(record, changes); }); }
+  private validateStart(input: StartWorkflowInput): void { if (this.mode !== "SHADOW" && this.mode !== "LOCAL_REPLAY") throw new Error("unsupported capability mode"); if (!input || typeof input.workflowId !== "string" || input.workflowId.length === 0 || !validMandate(input.mandate) || input.mandate.workflowId !== input.workflowId || !validEnvelope(input.market, "market") || !validEnvelope(input.account, "account") || input.market.value.symbol !== input.mandate.symbol || input.market.value.venue !== input.mandate.venue || input.market.value.instrument !== input.mandate.instrument || input.account.value.accountId !== input.mandate.accountId || !validPolicy(input.evaluationPolicy) || !["ACTIVE","SUPERSEDED","REVOKED","CONSUMED"].includes(String(input.authorityStatus))) throw new Error("invalid workflow binding"); }
+  private require(id: string): WorkflowRecord { const record = this.persistence.load(id); if (!record || !validRecord(record, this.clock())) throw new Error("RECOVERY_BLOCKED: workflow is not persisted"); return record; }
+  private async saveReceipt(record: WorkflowRecord, changes: Partial<WorkflowReceipt>): Promise<WorkflowReceipt> { const next = frozen({ ...record, ...changes, version: record.version + 1 }); await this.persistence.save(next, record.version); return frozen({ ...next }); }
+  private async serial<T>(id: string, operation: () => Promise<T>): Promise<T> { const previous = this.tails.get(id) ?? Promise.resolve(); let release!: () => void; const gate = new Promise<void>((resolve) => { release = resolve; }); this.tails.set(id, previous.then(() => gate)); await previous; try { return await operation(); } finally { release(); if (this.tails.get(id) === gate) this.tails.delete(id); } }
 }

@@ -9,7 +9,7 @@ const read = (name: string) => readFileSync(join(root, name), "utf8");
 test("judge UI exists with truthful operating states and workflow pipeline", () => {
   for (const file of ["web/index.html", "web/styles.css", "web/app.js", "docs/WEB_UI.md", "docs/DEPLOYMENT.md", "docs/SUBMISSION.md", ".github/workflows/pages.yml", "src/product/server.ts", "src/product/mcp-server.ts"]) assert.ok(existsSync(join(root, file)), file);
   const html = read("web/index.html");
-  for (const label of ["Workflows", "Reasoning Stacks", "Integrations", "Proof / Readiness", "Settings", "PAPER", "SHADOW", "TESTNET", "LIVE", "Evidence", "Opposition", "Council", "ReasoningReceipt", "TradeThesis", "Mandate", "Economics", "Evaluation", "Intent / Refusal", "Receipt"]) assert.match(html, new RegExp(label.replace(/[ /]/g, "[ /]")), label);
+  for (const label of ["Workflow", "Try", "Integrate", "Proof", "PAPER", "SHADOW", "TESTNET", "LIVE", "Evidence", "Opposition", "Council", "ReasoningReceipt", "TradeThesis", "Mandate", "Economics", "Evaluation", "Intent / Refusal", "Receipt"]) assert.match(html, new RegExp(label.replace(/[ /]/g, "[ /]")), label);
 });
 
 test("static UI uses configurable API base and explicit demo opt-in", () => {

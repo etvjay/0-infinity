@@ -1,16 +1,19 @@
 # ZO-BIN-MB7 deterministic SHADOW campaign
 
-Status: candidate evidence only; no SHADOW_PASS or independent approval claim.
+Status: provisional candidate evidence; deterministic local replay only.
 
 - Campaign: `ZO-BIN-MB7-SHADOW-DETERMINISTIC-V1`
 - Mode: `SHADOW`
-- Workflows: 17 (11 executed, 6 explicitly NOT_EXERCISED)
+- Workflows: 20; all required scenario classes exercised or explicitly bounded
 - Artifact: `docs/development/evidence/ZO-BIN-MB7-shadow-campaign.json`
-- Artifact SHA-256: `7133329ac25bd4a726b59d7667cd3c2b36b12415386a5d4caaf801328f470766`
-- Outcomes: 3 ACKNOWLEDGED, 1 FAILED/REJECTED, 1 UNKNOWN, 6 REFUSED, 6 NOT_EXERCISED
-- Recovery: 1 UNKNOWN order-found reconciliation; order-absent is NOT_EXERCISED
-- Authority/economic/live violations: 0 / 0 / 0
-- Refusal codes: `EXECUTABLE_EDGE_TOO_LOW=1`, `RISK_LIMIT=2`, `COST_CEILING=1`, `AUTHORITY_STATUS=2`
+- Artifact SHA-256: `df801a7dca5f75cb8d69882c2c793b2cfe0652d46cb371f048c6459f5fd099ed`
+- Campaign code SHA: `8503c0a7b7fd514d740d7e3b5ea30df1520c58ca`
+- Outcomes: 4 ACKNOWLEDGED, 1 PARTIALLY_FILLED, 2 FILLED, 1 FAILED/REJECTED, 1 UNKNOWN, 10 REFUSED, 1 RECOVERY_BLOCKED
+- Recovery: order-found UNKNOWN reconciliation exercised; order-absent is explicitly bounded `RECOVERY_BLOCKED` because the injected OrderWriter has no order-lookup boundary
+- Duplicate coverage: duplicate trigger leaves version unchanged; duplicate FILLED event leaves receipt unchanged; out-of-order terminal event is refused
+- Restart/restore: persisted workflow restored and version checked
+- Isolation: simultaneous BTCUSDT/ETHUSDT workflow identities checked for cross-symbol contamination
+- Invariant counters: duplicate economic consequences, illegal regressions, contradictory executions permitted, cross-symbol contamination, blind retries, and post-ambiguity authority minting are all zero
 
 Exact receipts executed:
 
@@ -19,7 +22,8 @@ Exact receipts executed:
 3. `node --test dist/tests/shadow.mb7.test.js`
 4. `npm test`
 5. `npm run check`
+6. `git diff --check`
 
-Evidence ceiling: deterministic replay-only behavior using injected clocks, council/handoff/compiler APIs, `RuntimeSupervisor` in explicit SHADOW mode, `MemoryPersistence`, `MemoryOrderPersistence`, and injected adapter outcomes. It proves no live market/account truth, exchange writes/cancels, credentials, wallet/funds behavior, or M-B2-G recovery.
+Evidence ceiling: deterministic replay-only behavior using injected clocks, council/compiler APIs, `RuntimeSupervisor` in explicit SHADOW mode, `MemoryPersistence`, `MemoryOrderPersistence`, and injected adapter outcomes. It proves no live market/account truth, exchange writes/cancels, credentials, wallet/funds behavior, or M-B2-G recovery.
 
-Unresolved/not exercised: expiry in this new runner, partial/fill/reject reconciliation matrix beyond writer/supervisor accepted tests, duplicate trigger/event suppression in this runner, out-of-order terminal events, restart/restore, unknown order-absent recovery, and contradictory-authority workflow creation. These are recorded as bounded NOT_EXERCISED rather than invented semantics.
+Unresolved: independent approval and any live/network evidence remain outside this campaign and are not claimed.

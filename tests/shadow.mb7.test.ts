@@ -9,7 +9,16 @@ test("M-B7 campaign is deterministic and independently validates", async () => {
   assert.deepEqual(a.artifactHash, b.artifactHash);
   assert.equal(validateEvidence(a.artifact), true);
   assert.equal(a.artifact.mode, "SHADOW");
-  assert.ok(a.artifact.workflowCount >= 12);
+  assert.ok(a.artifact.workflowCount >= 17);
+  assert.deepEqual(a.artifact.scenarios, [
+    "approval-ack", "approval-partial", "approval-fill", "submission-reject", "unknown-recovery",
+    "council-refusal", "stale-market", "stale-account", "cost-ceiling", "risk-limit",
+    "revoked-authority", "superseded-authority", "expiry", "duplicate-trigger-event-suppression",
+    "duplicate-order-events", "out-of-order-terminal-refusal", "restart-restore", "unknown-recovery-order-absent",
+    "contradictory-authority", "symbol-isolation"
+  ]);
+  assert.equal(a.artifact.metrics.notExercised, 0);
+  for (const key of ["duplicateEconomicConsequences", "illegalStateRegressions", "contradictoryExecutionsPermitted", "crossSymbolContamination", "blindRetryCount", "newAuthorityAfterAmbiguousConsequence"]) assert.equal(a.artifact.metrics[key], 0);
 });
 
 test("M-B7 validator rejects mutated critical fields", async () => {

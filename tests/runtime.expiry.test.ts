@@ -151,3 +151,13 @@ test("runtime transition rejects negative timestamps", () => {
   assert.throws(() => transition(machine, { type: "TRIGGER" }, { at: -1 }), RangeError);
 });
 
+test("runtime boundaries reject forged negative or non-finite machine expiry", () => {
+  const forged = { state: "ARMED", expiresAt: -1, history: [] } as unknown as MandateRuntime;
+  assert.throws(() => assertExpiry(forged, 0), RangeError);
+  assert.throws(() => transition(forged, { type: "TRIGGER" }, { at: 0 }), RangeError);
+  const nonFinite = { state: "ARMED", expiresAt: Number.NaN, history: [] } as unknown as MandateRuntime;
+  assert.throws(() => assertExpiry(nonFinite, 0), TypeError);
+  assert.throws(() => transition(nonFinite, { type: "TRIGGER" }, { at: 0 }), TypeError);
+});
+
+

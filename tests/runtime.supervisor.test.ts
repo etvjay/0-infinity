@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { compileMandate, type TradeThesis, type CompilerPolicy } from "../src/domain/index.js";
 import { MandateStore, MemoryPersistence } from "../src/store/index.js";
 import { MemoryOrderPersistence, OrderWriter, type ExchangeAdapter } from "../src/execution/index.js";
-import { RuntimeSupervisor, MemoryWorkflowPersistence, WORKFLOW_PERSISTENCE_CAS_CAPABILITY, type WorkflowMarketState, type WorkflowAccountState } from "../src/runtime/index.js";
+import { RuntimeSupervisor, MemoryWorkflowPersistence, WORKFLOW_PERSISTENCE_CAS_CAPABILITY, createMandateRuntime, type WorkflowMarketState, type WorkflowAccountState } from "../src/runtime/index.js";
 
 const thesis: TradeThesis = { thesisId: "t", venue: "BINANCE", instrument: "SPOT", symbol: "BTCUSDT", direction: "LONG", horizonMs: 60_000, confidence: .9, expectedMove: { bps: 50, lowerBps: 20, upperBps: 80 }, reasoning: { method: "council", advocateRef: "a", opposeRef: "o", marketAnalysisRef: "m", evidenceBundleHash: "e", councilDecisionHash: "c", reasoningReceiptHash: "r" }, createdAt: 1_000, expiresAt: 61_000 };
 const policy: CompilerPolicy = { accountId: "acct", validityMs: 30_000, minExecutableEdgeBps: 10, maxSpreadBps: 6, maxSlippageBps: 5, maxFeeBps: 5, maxFundingCostBps: 5, maxNotional: 1_000, maxLossBps: 100, execution: "LIMIT", minEntryPrice: 99_975, maxEntryPrice: 101_000, entryTrigger: "BELOW" };
@@ -84,6 +84,19 @@ test("restore rejects a forged frozen record with incoherent runtime", async () 
   await persistence.save(Object.freeze({ ...original, runtime: Object.freeze({ ...original.runtime, state: "FILLED" }) }));
   await assert.rejects(() => x.supervisor.restore("wf"), /RECOVERY_BLOCKED/);
 });
+
+test("restore rejects a READY workflow at the exact mandate expiry boundary", async () => {
+  const x = setup(); await x.mandates.issue(mandate);
+  const persistence = (x.supervisor as any).persistence as MemoryWorkflowPersistence;
+  await persistence.save(Object.freeze({
+    kind: "WORKFLOW_RECEIPT", workflowId: "wf", mandateId: mandate.mandateId, version: 0,
+    status: "READY", runtime: createMandateRuntime({ expiresAt: mandate.expiresAt }), authorityStatus: "ACTIVE",
+    mandate: structuredClone(mandate), market, account, evaluationPolicy: evalPolicy,
+  }));
+  const expiredSupervisor = new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer: x.writer, persistence, clock: () => mandate.expiresAt });
+  await assert.rejects(() => expiredSupervisor.restore("wf"), /RECOVERY_BLOCKED/);
+});
+
 
 test("start blocks any existing forged, mutable, or structurally hostile record", async () => {
   const x = setup(); await x.mandates.issue(mandate);

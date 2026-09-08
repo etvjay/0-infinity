@@ -152,6 +152,12 @@ export function assertExpiry(machine: MandateRuntime, now: number): void {
   if (now < 0) {
     throw new RangeError(`now must be non-negative, got ${String(now)}`);
   }
+  if (machine.expiresAt !== machine.expiresAt || !Number.isFinite(machine.expiresAt)) {
+    throw new TypeError(`machine.expiresAt must be finite, got ${String(machine.expiresAt)}`);
+  }
+  if (machine.expiresAt < 0) {
+    throw new RangeError(`machine.expiresAt must be non-negative, got ${String(machine.expiresAt)}`);
+  }
   if (machine.state === "ARMED" && now >= machine.expiresAt) {
     const rejection: TransitionRejection = Object.freeze({
       code: "EXPIRED_CANNOT_TRIGGER",
@@ -180,6 +186,12 @@ export function transition(
   }
   if (at < 0) {
     throw new RangeError(`transition 'at' must be non-negative, got ${String(at)}`);
+  }
+  if (machine.expiresAt !== machine.expiresAt || !Number.isFinite(machine.expiresAt)) {
+    throw new TypeError(`machine.expiresAt must be finite, got ${String(machine.expiresAt)}`);
+  }
+  if (machine.expiresAt < 0) {
+    throw new RangeError(`machine.expiresAt must be non-negative, got ${String(machine.expiresAt)}`);
   }
   const attemptedState = eventTargetState(event);
   const fromState = machine.state;

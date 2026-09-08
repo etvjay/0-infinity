@@ -45,7 +45,17 @@ const validInput = (v: unknown): v is ReasoningReceiptInput => {
   return true;
 };
 export function canonicalReasoningJson(value: ReasoningReceiptInput): string { if (!validInput(value)) throw new TypeError("reasoning receipt is malformed"); return canonical(value); }
-export function createReasoningReceipt(input: ReasoningReceiptInput): ReasoningReceipt { const cloned = structuredClone(input); const json=canonicalReasoningJson(cloned); return freeze({...cloned,canonicalSha256:createHash("sha256").update(json).digest("hex")}); }
+const canonicalPrototypes = (value: unknown, seen = new Set<object>()): boolean => {
+  if (!value || typeof value !== "object" || seen.has(value)) return true;
+  seen.add(value);
+  if (Object.getPrototypeOf(value) !== (Array.isArray(value) ? Array.prototype : Object.prototype)) return false;
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !("value" in descriptor) || !canonicalPrototypes(descriptor.value, seen)) return false;
+  }
+  return true;
+};
+export function createReasoningReceipt(input: ReasoningReceiptInput): ReasoningReceipt { if (!canonicalPrototypes(input) || !validInput(input)) throw new TypeError("reasoning receipt is malformed"); const cloned = structuredClone(input); const json=canonicalReasoningJson(cloned); return freeze({...cloned,canonicalSha256:createHash("sha256").update(json).digest("hex")}); }
 export function verifyReasoningReceipt(value: unknown, registry?: EvidenceContextRegistry): string | false {
   try { if (!ownExact(value,["receiptVersion","workflowId","createdAt","opportunity","evidence","analyses","council","rationale","output","canonicalSha256"])) return false; const x=value as unknown as ReasoningReceipt; if (!/^[0-9a-f]{64}$/.test(x.canonicalSha256)||!validInput(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")))) return false; if (registry) { if (registry.workflowId!==x.workflowId||registry.venue!==x.opportunity.venue||registry.product!==x.opportunity.product||registry.symbol!==x.opportunity.symbol||registry.evidenceBundleHash!==x.evidence.evidenceBundleHash||canonical(registry.analyses)!==canonical(x.analyses)) return false; const known=new Map(registry.references.map(r=>[r.ref,r])); for(const ref of [...x.evidence.supporting,...x.evidence.opposing]) { const k=known.get(ref.ref); if(!k||canonical(k)!==canonical(ref)) return false; } for (const ref of [x.council.strongestSupport, x.council.strongestOpposition]) if (!known.has(ref)) return false; } return createHash("sha256").update(canonical(Object.fromEntries(Object.entries(x).filter(([k])=>k!=="canonicalSha256")))).digest("hex")===x.canonicalSha256?x.canonicalSha256:false; } catch { return false; }
 }

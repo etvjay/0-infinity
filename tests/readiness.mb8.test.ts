@@ -22,6 +22,25 @@ test("confirmation binds exact intent and revalidation fails drift", () => {
   assert.equal(boundary.confirm(intent, request.token, request.expiresAt), false);
 });
 
+test("confirmation rejects non-finite and negative timestamps fail closed", () => {
+  const intent = Object.freeze({ kind: "EXECUTION_INTENT", mandateId: "m" });
+  for (const now of [NaN, Infinity, -Infinity, -1]) {
+    const boundary = new ConfirmationBoundary(1000);
+    assert.throws(() => boundary.request(intent, now), RangeError);
+    assert.equal(boundary.state, "READY_FOR_CONFIRMATION");
+  }
+  const boundary = new ConfirmationBoundary(1000);
+  const request = boundary.request(intent, 1000);
+  assert.equal(boundary.confirm(intent, request.token, NaN), false);
+  assert.equal(boundary.state, "INVALIDATED");
+
+  const revalidated = new ConfirmationBoundary(1000);
+  const second = revalidated.request(intent, 1000);
+  assert.equal(revalidated.confirm(intent, second.token, 1001), true);
+  assert.equal(revalidated.revalidate(intent, -1, () => true), false);
+  assert.equal(revalidated.state, "INVALIDATED");
+});
+
 test("kill switch blocks new work but permits reconciliation", () => {
   const kill = new KillSwitch();
   assert.equal(kill.state, "ENABLED");

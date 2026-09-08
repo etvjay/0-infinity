@@ -10,3 +10,8 @@ test("APPROVE requires opposition and invalidation while REFUSE remains verifiab
 test("registry binding requires strongest council refs", () => { const receipt = createReasoningReceipt(input()); const registry: EvidenceContextRegistry = { workflowId: "wf", venue: "BINANCE", product: "USD_M_FUTURES", symbol: "BTCUSDT", evidenceBundleHash: "bundle", references: Object.values(refs), analyses: input().analyses }; assert.equal(verifyReasoningReceipt({ ...receipt, council: { ...receipt.council, strongestSupport: "dangling" } }, registry), false); assert.equal(verifyReasoningReceipt({ ...receipt, council: { ...receipt.council, strongestOpposition: "dangling" } }, registry), false); });
 
 test("receipt creation leaves caller-owned nested input mutable", () => { const original = input(); const before = JSON.stringify(original); const receipt = createReasoningReceipt(original); assert.equal(JSON.stringify(original), before); assert.equal(Object.isFrozen(original), false); assert.equal(Object.isFrozen(original.evidence), false); assert.equal(Object.isFrozen(original.evidence.supporting), false); assert.equal(Object.isFrozen(receipt.evidence), true); assert.equal(Object.isFrozen(receipt.evidence.supporting), true); });
+
+test("receipt creation rejects custom prototypes before cloning normalization", () => {
+  const custom = Object.assign(Object.create({ inherited: true }), input().opportunity);
+  assert.throws(() => createReasoningReceipt({ ...input(), opportunity: custom } as never), TypeError);
+});

@@ -26,6 +26,7 @@ export type ConfirmationState = "READY_FOR_CONFIRMATION" | "CONFIRMATION_REQUEST
 export type ConfirmationIntent = Readonly<Record<string, unknown>>;
 const encode = (v: unknown): unknown => typeof v === "bigint" ? `${v}n` : Array.isArray(v) ? v.map(encode) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v as object).sort().map(k => [k, encode((v as Record<string, unknown>)[k])])) : v;
 const fingerprint = (v: unknown) => createHash("sha256").update(JSON.stringify(encode(v))).digest("hex");
+const validTimestamp = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0;
 export class ConfirmationBoundary {
   private current: ConfirmationState = "READY_FOR_CONFIRMATION";
   private token?: string; private bound?: string; private expiresAt = 0;
@@ -33,16 +34,19 @@ export class ConfirmationBoundary {
   get state(): ConfirmationState { return this.current; }
   request(intent: ConfirmationIntent, now: number): Readonly<{ token: string; intentFingerprint: string; expiresAt: number }> {
     if (this.current !== "READY_FOR_CONFIRMATION") throw new Error(`confirmation cannot be requested from ${this.current}`);
+    if (!validTimestamp(now) || !Number.isFinite(now + this.ttlMs)) throw new RangeError("confirmation timestamp must be finite and non-negative");
     const bound = fingerprint(intent); this.bound = bound; this.expiresAt = now + this.ttlMs; this.token = fingerprint({ bound, now, ttl: this.ttlMs }); this.current = "CONFIRMATION_REQUESTED";
     return freeze({ token: this.token, intentFingerprint: bound, expiresAt: this.expiresAt });
   }
   confirm(intent: ConfirmationIntent, token: string, now: number): boolean {
+    if (!validTimestamp(now)) { this.current = "INVALIDATED"; return false; }
     if (this.current !== "CONFIRMATION_REQUESTED" || token !== this.token || now >= this.expiresAt || fingerprint(intent) !== this.bound) { this.current = now >= this.expiresAt ? "EXPIRED" : "INVALIDATED"; return false; }
     this.current = "CONFIRMED"; return true;
   }
   deny(): void { if (this.current === "CONFIRMATION_REQUESTED") this.current = "DENIED"; }
   revalidate(intent: ConfirmationIntent, now: number, check: () => boolean): boolean {
     if (this.current !== "CONFIRMED") return false;
+    if (!validTimestamp(now)) { this.current = "INVALIDATED"; return false; }
     if (now >= this.expiresAt || fingerprint(intent) !== this.bound || !check()) { this.current = now >= this.expiresAt ? "EXPIRED" : "INVALIDATED"; return false; }
     return true;
   }

@@ -66,24 +66,24 @@ test("expired ARMED mandate cannot SUPERSEDE either (fail closed)", () => {
   assert.equal(machine.state, "ARMED");
 });
 
-test("boundary: TRIGGER at exactly expiresAt is still legal", () => {
+test("boundary: TRIGGER at exactly expiresAt is refused", () => {
   const machine = createMandateRuntime({ expiresAt: EXPIRES_AT });
-  const result = transition(machine, { type: "TRIGGER" }, { at: EXPIRES_AT, reason: "just in time" });
+  const result = transition(machine, { type: "TRIGGER" }, { at: EXPIRES_AT, reason: "exact boundary" });
+  if (result.ok) {
+    assert.fail("TRIGGER accepted at exact expiry");
+  }
+  assert.equal(result.rejection.code, "EXPIRED_CANNOT_TRIGGER");
+  assert.equal(machine.state, "ARMED");
+});
+
+test("boundary: EXPIRE at exactly expiresAt is accepted", () => {
+  const machine = createMandateRuntime({ expiresAt: EXPIRES_AT });
+  const result = transition(machine, { type: "EXPIRE" }, { at: EXPIRES_AT, reason: "exact boundary" });
   if (!result.ok) {
     assert.fail(result.rejection.message);
   }
-  assert.equal(result.machine.state, "TRIGGERED");
-});
-
-test("boundary: EXPIRE at exactly expiresAt is rejected (not yet due)", () => {
-  const machine = createMandateRuntime({ expiresAt: EXPIRES_AT });
-  const result = transition(machine, { type: "EXPIRE" }, { at: EXPIRES_AT, reason: "not yet" });
-  if (result.ok) {
-    assert.fail("EXPIRE accepted at exactly expiresAt");
-  }
-  assert.equal(result.rejection.code, "EXPIRE_NOT_DUE");
-  assert.equal(machine.state, "ARMED");
-  assert.equal(machine.history.length, 0);
+  assert.equal(result.machine.state, "EXPIRED");
+  assert.equal(result.machine.history[0]?.at, EXPIRES_AT);
 });
 
 test("EXPIRE before the deadline is rejected and state unchanged", () => {
@@ -97,10 +97,10 @@ test("EXPIRE before the deadline is rejected and state unchanged", () => {
   assert.equal(machine.history.length, 0);
 });
 
-test("isExpired is strict: expired iff now > expiresAt", () => {
+test("isExpired is inclusive: expired iff now >= expiresAt", () => {
   const mandate = { expiresAt: 100 };
   assert.equal(isExpired(mandate, 99), false);
-  assert.equal(isExpired(mandate, 100), false);
+  assert.equal(isExpired(mandate, 100), true);
   assert.equal(isExpired(mandate, 101), true);
 });
 
@@ -120,10 +120,10 @@ test("assertExpiry throws MandateExpiryError carrying a typed rejection when exp
   );
 });
 
-test("assertExpiry passes before the deadline and on non-ARMED states", () => {
+test("assertExpiry rejects at the exact deadline and passes before it or after leaving ARMED", () => {
   const machine = createMandateRuntime({ expiresAt: EXPIRES_AT });
-  assert.doesNotThrow(() => assertExpiry(machine, EXPIRES_AT));
   assert.doesNotThrow(() => assertExpiry(machine, EXPIRES_AT - 1));
+  assert.throws(() => assertExpiry(machine, EXPIRES_AT), MandateExpiryError);
   // expiry gates ARMED only; TRIGGERED is governed by the transition table
   const triggered = driveTriggered();
   assert.doesNotThrow(() => assertExpiry(triggered, 50_000));

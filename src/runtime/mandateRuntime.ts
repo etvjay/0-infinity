@@ -9,8 +9,8 @@
  *
  * Determinism: no Date.now(), no Math.random(), no I/O of any kind. All time
  * is injected via `at` / `now` parameters. Expiry applies only while ARMED and
- * is strict: a mandate is expired iff now > expiresAt. An ARMED mandate past
- * its deadline must transition to EXPIRED and can do nothing else (never
+ * is inclusive: a mandate is expired iff now >= expiresAt. An ARMED mandate at
+ * or past its deadline must transition to EXPIRED and can do nothing else
  * TRIGGER, never SUPERSEDE — supersession past the deadline would misrecord
  * the timeline; a mandate superseded while fresh uses ARMED -> SUPERSEDED).
  *
@@ -130,9 +130,9 @@ export function getHistory(machine: MandateRuntime): readonly TransitionRecord[]
   return machine.history;
 }
 
-/** Deterministic expiry check on any structural mandate input: expired iff now > expiresAt. */
+/** Deterministic expiry check on any structural mandate input: expired iff now >= expiresAt. */
 export function isExpired(mandate: { readonly expiresAt: number }, now: number): boolean {
-  return now > mandate.expiresAt;
+  return now >= mandate.expiresAt;
 }
 
 /**
@@ -144,7 +144,7 @@ export function assertExpiry(machine: MandateRuntime, now: number): void {
   if (!Number.isFinite(now)) {
     throw new TypeError(`now must be a finite number, got ${String(now)}`);
   }
-  if (machine.state === "ARMED" && now > machine.expiresAt) {
+  if (machine.state === "ARMED" && now >= machine.expiresAt) {
     const rejection: TransitionRejection = Object.freeze({
       code: "EXPIRED_CANNOT_TRIGGER",
       fromState: machine.state,
@@ -195,7 +195,7 @@ export function transition(
 
   // Time-based expiry, injected time only: an ARMED mandate past its deadline
   // must transition to EXPIRED and can do nothing else (never TRIGGER).
-  if (fromState === "ARMED" && at > machine.expiresAt) {
+  if (fromState === "ARMED" && at >= machine.expiresAt) {
     if (attemptedState !== "EXPIRED") {
       return reject(
         "EXPIRED_CANNOT_TRIGGER",
@@ -203,14 +203,14 @@ export function transition(
       );
     }
   } else if (attemptedState === "EXPIRED") {
-    // EXPIRE is only legal from ARMED, and only once the deadline has passed.
+    // EXPIRE is only legal from ARMED, and only once the deadline is reached.
     if (fromState !== "ARMED") {
       return reject(
         "ILLEGAL_TRANSITION",
         `Illegal mandate transition: ${fromState} -> EXPIRED via ${event.type} (only ARMED expires)`,
       );
     }
-    if (at <= machine.expiresAt) {
+    if (at < machine.expiresAt) {
       return reject(
         "EXPIRE_NOT_DUE",
         `Expiry is time-based: mandate expires at ${machine.expiresAt}; cannot EXPIRE at ${at}`,

@@ -80,7 +80,7 @@ function validateSnapshot(input: unknown): PersistedSnapshot {
   }
   return { records };
 }
-function expire(snapshot: PersistedSnapshot, now: number): { snapshot: PersistedSnapshot; changed: boolean; ids: string[] } { const ids: string[] = []; const records = snapshot.records.map((r) => r.state === "ARMED" && !r.revoked && now > r.mandate.expiresAt ? (ids.push(r.mandate.mandateId), { ...r, state: "EXPIRED" as const, status: undefined }) : r); return { snapshot: { records }, changed: ids.length > 0, ids }; }
+function expire(snapshot: PersistedSnapshot, now: number): { snapshot: PersistedSnapshot; changed: boolean; ids: string[] } { const ids: string[] = []; const records = snapshot.records.map((r) => r.state === "ARMED" && !r.revoked && now >= r.mandate.expiresAt ? (ids.push(r.mandate.mandateId), { ...r, state: "EXPIRED" as const, status: undefined }) : r); return { snapshot: { records }, changed: ids.length > 0, ids }; }
 
 export class MemoryPersistence implements PersistenceAdapter {
   private value: PersistedSnapshot; private tail: Promise<void> = Promise.resolve(); private fail = false;

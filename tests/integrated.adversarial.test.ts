@@ -40,10 +40,10 @@ async function waitForOwnerJson(lock: string): Promise<string> {
 
 function refusal(result: ReturnType<typeof evaluate>, code: string): void { assert.equal(result.kind, "EXECUTION_REFUSAL"); if (result.kind === "EXECUTION_REFUSAL") assert.equal(result.code, code); }
 
- test("integrated expiry is strict at the boundary and never rearms", async () => {
+test("integrated expiry is inclusive at the boundary and never rearms", async () => {
   let now = 2_001; const p = new MemoryPersistence(); const s = new MandateStore(p, () => now); const m = mandate(); await s.issue(m);
-  now = m.expiresAt; assert.notEqual(s.getActive(authorityKey(m)), null); now++;
-  assert.equal(s.getActive(authorityKey(m)), null); await new Promise<void>((r) => setImmediate(r)); assert.equal(p.snapshot().records[0].state, "EXPIRED");
+  now = m.expiresAt; assert.equal(s.getActive(authorityKey(m)), null); await new Promise<void>((r) => setImmediate(r));
+  assert.equal(p.snapshot().records[0].state, "EXPIRED");
   await assert.rejects(() => s.issue(m), /historical/); await assert.rejects(() => s.consumeForSubmission(m.mandateId, "e-rearm"), /EXPIRED/);
  });
 

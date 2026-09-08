@@ -32,6 +32,16 @@ test("expired armed authority is durably retired by recovery and reads", async (
   assert.equal(new MandateStore(p, () => now).history()[0].state, "EXPIRED");
 });
 
+test("store retires an armed mandate at the exact expiry instant", async () => {
+  const p = new MemoryPersistence(); const m = mandate(); const store = new MandateStore(p, () => 2_001);
+  await store.issue(m);
+  const atExpiry = new MandateStore(p, () => m.expiresAt);
+  assert.equal(atExpiry.getActive(key(m)), null);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(p.snapshot().records[0].state, "EXPIRED");
+});
+
+
 test("revocation is persisted and remains fail closed after recovery", async () => {
   const p = new MemoryPersistence(); const store = new MandateStore(p, () => 2_001); const m = mandate(); await store.issue(m); await store.revoke(m.mandateId);
   assert.equal(p.snapshot().records[0].revoked, true); assert.equal(store.getActive(key(m)), null);

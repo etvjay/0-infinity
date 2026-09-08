@@ -103,3 +103,17 @@ test("rejects negative timestamp fields", () => {
   }
   assert.throws(() => compileMandate(input(), thesis, policy, anchor, -1), /now/);
 });
+
+test("rejects a thesis expiry beyond its declared horizon", () => {
+  assert.throws(
+    () => compileMandate(input(), { ...thesis, expiresAt: 62_000 }, policy, anchor, 2_000),
+    /horizon|validity/,
+  );
+});
+
+test("permits a thesis horizon longer than the compiled mandate TTL", () => {
+  const compiled = compileMandate(input(), thesis, policy, anchor, 2_000);
+  assert.equal(compiled.expiresAt, 32_000);
+  assert.equal(compiled.invalidation.thesisExpiry, thesis.expiresAt);
+  assert.ok(compiled.expiresAt < compiled.invalidation.thesisExpiry);
+});

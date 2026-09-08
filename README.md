@@ -4,6 +4,10 @@
 
 This repository separates OPINION from TRADE: observation → evidence → thesis → executable edge → authority → execution. A thesis or evaluator result is not a trade. M-B8 adds a local submission/readiness boundary without enabling financial writes.
 
+## Slow reasoning, fast deterministic hot path
+
+Reasoning is intentionally bounded but not presented as a trading-speed loop. ADVOCATE, OPPOSER, and MARKET_ANALYST run before the service-owned COUNCIL; FAST changes explicit role timeout/research/tool budgets but never skips OPPOSER or COUNCIL. After a mandate is armed, one Council result can feed repeated pure `evaluateMandate` evaluations. The canonical hot closure has no role adapter, reasoning runtime, Council, OpenAI, MCP, or fetch dependency and makes no second LLM call. TTL is mandate validity, not thesis horizon or an HFT promise. Reasoning and execution use separate clocks; absent an API trace the UI says `NOT MEASURED`, never an invented percentile.
+
 ## M-B8 position
 
 - Mode: `submission-ready-shadow/readiness`; current state: `READINESS_PREPARED / REMOTE_NOT_SYNCHRONIZED / LIVE_WRITE_NOT_AUTHORIZED`.

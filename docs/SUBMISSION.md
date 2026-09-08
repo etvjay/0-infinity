@@ -8,6 +8,8 @@
 
 The local implementation proves deterministic reasoning, receipt/provenance structure, readiness reporting, and no-write paper/shadow behavior. It does not prove hosted REST/MCP availability, exchange connectivity, testnet execution, live authority, or economic performance. The static Pages artifact proves presentation only.
 
+Latency evidence is local/static only. The Council-before-trigger timeline is documented, and immutable operational trace types are tested for chronology and derivation. No p50/p95/p99 or wall-clock performance is claimed; timing fields remain `null`/`NOT_MEASURED` until an API trace is emitted. The hot path is deterministic and can evaluate repeatedly from one armed mandate without a second LLM call, while mandate TTL, expiry/refusal, and single-use controls remain unchanged. This is not an HFT system.
+
 ## 90–120 second video script
 
 - **0:00–0:12** — Open the surface: “This is the decision trace, not a trading dashboard. The authority posture is explicit.”

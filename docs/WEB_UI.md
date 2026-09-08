@@ -12,3 +12,7 @@ python3 -m http.server 4173 --directory web
 To connect the static page to the local REST service, open the browser console before loading the page and set `window.__ZERO_INFINITY_CONFIG__ = { apiBase: 'http://127.0.0.1:8787' }`, or serve a small wrapper that defines that value before `app.js`. The default has no API base and therefore makes no network claim. The **Use local demo fixture** switch is an explicit opt-in and is labeled as demo; it is not evidence.
 
 The UI sends `credentials: omit`, has no credential fields, and exposes no write controls. It does not infer live/testnet state from a failed request.
+
+## Latency representation
+
+The surface shows separate `REASONING TIME` and `TRIGGER → DECISION` clocks, plus `MANDATE ARMED`, `VALID FOR`, `EVALUATIONS`, and `NO SECOND LLM CALL`. These values are populated only from an API `trace` object. Until a runtime trace is present, the UI renders `NOT MEASURED` and `0` for the evaluation count. It never substitutes browser load time, a request round trip, or a static demo value. The timeline is Council-before-trigger: slow role/council deliberation first, then deterministic evaluations during the mandate TTL. This is not an HFT claim.

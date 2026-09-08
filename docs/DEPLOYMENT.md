@@ -16,6 +16,6 @@ These surfaces share `ZeroInfinityService` and expose no live financial write en
 
 ## GitHub Pages
 
-`.github/workflows/pages.yml` publishes only `web/` as a static artifact on pushes to `main`. If Pages is enabled for `etvjay/0-infinity`, the expected URL format is `https://etvjay.github.io/0-infinity/`; this URL is **not verified here**. Pages cannot host the REST API or MCP process. A configured server host, domain, and operational controls are still required for hosted REST/MCP deployment.
+`.github/workflows/pages.yml` is ready to publish only `web/` as a static artifact on pushes to `main`. The attempted deployment was **BLOCKED_EXTERNAL**: GitHub Pages is not enabled and the available Actions/PAT credentials returned `403 Resource not accessible by integration/personal access token` when creating the Pages site. No public Web URL is claimed. If Pages is enabled for `etvjay/0-infinity`, the expected URL format is `https://etvjay.github.io/0-infinity/`; this URL is not verified here. Pages cannot host the REST API or MCP process. A configured server host, domain, and operational controls are still required for hosted REST/MCP deployment.
 
 Testnet status: **BINANCE_TESTNET = BLOCKED_EXTERNAL** for authenticated account/order lifecycle. Public testnet `exchangeInfo` metadata was read with HTTP 200; dedicated server-side testnet credentials were unavailable, so no authenticated request, order, cancel, or reconciliation was attempted.

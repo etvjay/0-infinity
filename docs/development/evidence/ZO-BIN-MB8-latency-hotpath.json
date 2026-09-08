@@ -1,6 +1,6 @@
 {
   "schema": "ZO-BIN-MB8-LATENCY-HOTPATH-V1",
-  "codeSha": "ca555ed3b6536e82f6d79d8bc2a3aff116389744",
+  "codeSha": "18581e6db780e20251a1f1021a0db774e440cff6",
   "scope": "bounded operational-only telemetry; no receipt hash or authority decision inputs",
   "modelCallsAfterMandateArmed": 0,
   "hotPathModelDependencies": 0,

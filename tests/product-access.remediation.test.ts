@@ -91,6 +91,27 @@ test("product receipt provenance is bound to the published thesis", async () => 
 
 });
 
+test("product projections survive service restart and reject corrupt durable records", async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = mkdtempSync(join(tmpdir(), "zero-infinity-product-"));
+  const path = join(directory, "workflows.json");
+  try {
+    const first = new ZeroInfinityService({ clock: () => 1_700_000_000_000, idFactory: () => "wf-durable", persistencePath: path });
+    const created = first.createWorkflow({ symbol: "BTCUSDT", venue: "BINANCE", product: "USD_M_FUTURES" });
+    const submitted = await first.submitOpportunity(created.workflowId);
+    assert.equal(submitted.workflow.status, "COMPLETE");
+    const second = new ZeroInfinityService({ clock: () => 1_700_000_000_000, persistencePath: path });
+    assert.deepEqual(second.getWorkflow(created.workflowId), submitted.workflow);
+    assert.deepEqual(second.getTradeThesis(created.workflowId), submitted.thesis);
+    assert.deepEqual(second.getReasoningReceipt(created.workflowId), submitted.workflow.receipt);
+    assert.equal((second.getWorkflow(created.workflowId) as any).execution, undefined);
+    writeFileSync(path, JSON.stringify({ version: 1, records: [{ workflowId: "wf-durable", workflow: { status: "COMPLETE" } }] }));
+    assert.throws(() => new ZeroInfinityService({ persistencePath: path }), /persisted product|corrupt|invalid/i);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
 test("paper execution is visible from the canonical workflow read model", async () => {
   const now = 1_700_000_000_000;
   const service = new ZeroInfinityService({ clock: () => now, idFactory: () => "wf-read-model" });
@@ -108,6 +129,12 @@ test("paper execution is visible from the canonical workflow read model", async 
   assert.equal(read.execution.mandate.workflowId, "wf-read-model");
   assert.equal(read.execution.runtime.state, "FILLED");
   assert.equal(read.execution.orderOutcome, "FILLED");
+  assert.equal(read.execution.evaluator.kind, "EXECUTION_INTENT");
+  assert.equal(read.execution.evaluator.workflowId, "wf-read-model");
+  assert.equal(read.execution.order.clientOrderId, read.execution.clientOrderId);
+  assert.equal(read.execution.mandateStatus, "ACTIVE");
+  assert.equal(read.execution.mandateHash, read.execution.mandate.thesisHash);
+  assert.equal(read.execution.runtime.history.length > 0, true);
 });
 
 test("PAPER_LIVE is wired through REST and MCP", async () => {

@@ -53,7 +53,7 @@ function applyCors(request: import("node:http").IncomingMessage, response: impor
   }
   return true;
 }
-export const createHttpServer = (service = new ZeroInfinityService()) => createServer((request, response) => {
+export const createHttpServer = (service = new ZeroInfinityService({ persistencePath: process.env.ZERO_INFINITY_PRODUCT_STORE_PATH })) => createServer((request, response) => {
   if (!applyCors(request, response)) return;
   if (request.headers["content-type"] && !request.headers["content-type"].startsWith("application/json")) { response.statusCode = 415; response.end(JSON.stringify({ error: "UNSUPPORTED_MEDIA_TYPE" })); return; }
   let raw = ""; request.on("data", chunk => { raw += chunk; if (raw.length > MAX_JSON) request.destroy(); }).on("end", async () => { let body: unknown; try { body = raw ? JSON.parse(raw) : undefined; } catch { response.statusCode = 400; response.end(JSON.stringify({ error: "INVALID_JSON" })); return; } const result = await handleRequest(service, request.method ?? "GET", new URL(request.url ?? "/", "http://localhost").pathname, body); response.statusCode = result.status; response.setHeader("content-type", "application/json"); response.end(JSON.stringify(result.body, (_key, value) => typeof value === "bigint" ? `${value}n` : value)); });

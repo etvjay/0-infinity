@@ -13,8 +13,13 @@ test("paper workflow refuses without canonical market/account inputs instead of 
 });
 
 test("paper workflow composes explicit canonical execution input end to end", async () => {
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = mkdtempSync(join(tmpdir(), "zero-infinity-paper-"));
+  const persistencePath = join(directory, "workflows.json");
   const now = 1_700_000_000_000;
-  const service = new ZeroInfinityService({ clock: () => now, idFactory: () => "wf-canonical-paper" });
+  const service = new ZeroInfinityService({ clock: () => now, idFactory: () => "wf-canonical-paper", persistencePath });
   const spreadBps = (100 / ((99_900 + 100_000) / 2)) * 10_000;
   const result = await service.runPaperLiveWorkflow({
     symbol: "BTCUSDT", venue: "BINANCE", product: "USD_M_FUTURES",
@@ -31,4 +36,8 @@ test("paper workflow composes explicit canonical execution input end to end", as
   assert.equal((result as any).noWrite, true);
   assert.equal((result as any).result.workflow.status, "FILLED");
   assert.equal((result as any).result.workflow.orderOutcome, "FILLED");
+  const restarted = new ZeroInfinityService({ clock: () => now, persistencePath });
+  assert.equal((restarted.getWorkflow("wf-canonical-paper") as any).execution.status, "FILLED");
+  assert.equal((restarted.getWorkflow("wf-canonical-paper") as any).execution.runtime.state, "FILLED");
+  rmSync(directory, { recursive: true, force: true });
 });

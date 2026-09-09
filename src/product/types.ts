@@ -1,3 +1,5 @@
+import type { ReasoningBudget, ReasoningProfile } from "./reasoningBudget.js";
+
 export const ROLE_NAMES = ["ADVOCATE", "OPPOSER", "MARKET_ANALYST", "COUNCIL"] as const;
 export type RoleName = typeof ROLE_NAMES[number];
 export const ARTIFACT_KINDS = ["ADVOCATE", "OPPOSE", "MARKET_ACCOUNT"] as const;
@@ -9,7 +11,22 @@ export interface RoleInvocation { readonly workflowId: string; readonly invocati
 export interface RoleArtifact { readonly workflowId: string; readonly invocationId: string; readonly role: RoleName; readonly kind: ArtifactKind; readonly payload: Readonly<Record<string, unknown>>; readonly artifactHash: string; readonly producedAt: number; readonly independence: IndependenceClass; }
 export interface RoleAdapter { readonly name: string; readonly independence: IndependenceClass; invoke(input: RoleInvocation): Promise<RoleArtifact>; }
 export interface ReasoningStack { readonly name: string; readonly version: string; readonly bindings: Readonly<Record<RoleName, RoleAdapter>>; readonly capabilities: readonly Capability[]; }
-export interface WorkflowRecord { readonly workflowId: string; readonly stackName: string; readonly stackVersion: string; readonly createdAt: number; readonly status: WorkflowStatus; readonly opportunity: Readonly<Record<string, unknown>>; readonly composition: readonly { readonly role: RoleName; readonly adapter: string; readonly independence: IndependenceClass }[]; readonly thesis?: unknown; readonly receipt?: unknown; /** Canonical runtime/evaluator/order projection when paper execution was exercised. */ readonly execution?: unknown; readonly error?: string; }
+export interface ReasoningTiming {
+  readonly profile: ReasoningProfile;
+  readonly budget: ReasoningBudget;
+  readonly reasoningStartedAt: number;
+  readonly roleStartedAt: Readonly<Partial<Record<Exclude<RoleName, "COUNCIL">, number>>>;
+  readonly roleCompletedAt: Readonly<Partial<Record<Exclude<RoleName, "COUNCIL">, number>>>;
+  readonly roleDurationMs: Readonly<Partial<Record<Exclude<RoleName, "COUNCIL">, number>>>;
+  readonly councilStartedAt?: number;
+  readonly councilCompletedAt?: number;
+  readonly councilDurationMs?: number;
+  readonly reasoningCompletedAt?: number;
+  readonly totalReasoningDurationMs?: number;
+  readonly failureReason?: string;
+}
+
+export interface WorkflowRecord { readonly workflowId: string; readonly stackName: string; readonly stackVersion: string; readonly createdAt: number; readonly status: WorkflowStatus; readonly opportunity: Readonly<Record<string, unknown>>; readonly composition: readonly { readonly role: RoleName; readonly adapter: string; readonly independence: IndependenceClass }[]; readonly reasoningProfile?: ReasoningProfile; readonly reasoningBudget?: ReasoningBudget; readonly reasoningTiming?: ReasoningTiming; readonly thesis?: unknown; readonly receipt?: unknown; /** Canonical runtime/evaluator/order projection when paper execution was exercised. */ readonly execution?: unknown; readonly error?: string; }
 export interface WorkflowResult { readonly workflow: WorkflowRecord; readonly thesis?: unknown; }
 export class ProductAccessError extends Error { constructor(public readonly code: string, message: string) { super(message); this.name = "ProductAccessError"; } }
 export class ValidationError extends ProductAccessError { constructor(message: string) { super("VALIDATION_ERROR", message); } }

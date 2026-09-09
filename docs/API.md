@@ -7,7 +7,7 @@ The product-access surface is bounded and no-write by default. Runtime modes exp
 - `GET /health` → `{ ok: true, version }`
 - `GET /capabilities` → version, roles, capabilities, empty `writes`, and `authority: false`
 - `GET /readiness` → bounded-local readiness; `liveWrites: false`
-- `POST /v1/workflows` with a plain JSON object opportunity → `201` workflow record
+- `POST /v1/workflows` accepts an optional `reasoningProfile` of `FAST`, `STANDARD`, or `DEEP`. The service resolves one bounded budget per workflow and exposes the resolved profile, budget, and reasoning timing in the workflow read model. Profiles affect reasoning-resource budgets only; they do not remove OPPOSER/COUNCIL, widen authority, or change the deterministic execution lane.
 - `GET /v1/workflows/{workflowId}` → workflow record or `404 { error: "NOT_FOUND", message }`
 - `POST /v1/workflows/{workflowId}/submit` → bounded workflow result or 404
 - `GET /v1/workflows/{workflowId}/receipt` and `/thesis` → artifact or 404

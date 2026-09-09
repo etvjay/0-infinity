@@ -55,6 +55,13 @@ These are implementation/test claims, not a claim of a completed external exchan
 | LIVE_CONFIRMED | blocked | disabled | readiness/capability boundary |
 | hosted provider-backed reasoning | not configured | unavailable | provider/readiness boundary |
 
+Profiles are resolved per workflow with these bounded defaults:
+
+- `FAST`: 5s role, 5s Council, 15s reasoning workflow deadline.
+- `STANDARD`: 12s role, 12s Council, 30s reasoning workflow deadline.
+- `DEEP`: 30s role, 30s Council, 60s reasoning workflow deadline.
+
+The workflow read model records the selected profile, effective budget, role start/completion/duration, Council timing, total reasoning duration, and failure reason when applicable. Evidence freshness is evaluated separately from provider latency; a profile cannot create authority from stale evidence.
 ## ReasoningReceipt example
 
 The following is a redacted structural example. Hashes, IDs, timestamps, and evidence references are placeholders and are not external receipts.
@@ -180,8 +187,22 @@ npm run web:check
 npm run smoke:hosted
 ```
 
-The current verified local run reports **541/541 tests passing** and **5/5 UI tests passing**. At the time of this document update, the hosted front door returned `503` on repeated health probes, so hosted smoke is not represented as currently passing here.
+The current verified local run reports **548/548 tests passing** and **5/5 UI tests passing**. At the time of this document update, the hosted front door and hosted SDK/MCP smoke pass; hosted smoke is read-only/bounded and does not prove authenticated exchange state.
 
+## Provider results
+
+Local Ollama was reachable at the local OpenAI-compatible endpoint and the actual provider adapter path was exercised. Results are separated by correctness and budget:
+
+- `llama3.2:1b`: structured role output valid; warm end-to-end three-role flow completed under FAST (~8.7s), STANDARD (~8.5s), and DEEP (~8.6s) in the measured run. Classified `LOCAL_PROVIDER_PASS` for that run.
+- `llama3.2:3b`: FAST and STANDARD role budgets timed out in the measured run; DEEP produced valid structured role output in ~25.3s. Classified `DEEP_PROFILE_PASS`, `FAST_PROFILE_FAIL`, `STANDARD_PROFILE_FAIL` for that run.
+- `qwen2.5-7b-4k:latest`: timed out under FAST, STANDARD, and DEEP in the measured adapter run. Classified `FAST_PROFILE_FAIL`, `STANDARD_PROFILE_FAIL`, `DEEP_PROFILE_FAIL` for that run.
+- hosted provider-backed reasoning: `NOT_CONFIGURED`.
+
+These are local-provider measurements, not hosted-provider proof. Latency is not authority: a successful provider artifact still must pass Council, receipt provenance, thesis compilation, mandate validity, freshness, and deterministic evaluation.
+
+## Browser proof
+
+A real Chromium/CDP journey on the public Pages surface passed: Landing → Demo → Integrate → Try; REST and SDK integration tabs rendered; Try selected BTCUSDT/LONG/SHADOW; clicking `Run SHADOW` reached `API · connected`, rendered `ACTUAL · COMPLETE`, and exposed returned structured artifact/receipt controls. The page stated that no exchange write occurred. No credential or financial-write path was used.
 ## System integration result
 
 The local flagship integration tests currently prove that:

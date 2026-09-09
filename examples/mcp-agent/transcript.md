@@ -1,8 +1,7 @@
 # Historical cold-agent walkthrough (read-only)
 
-Historical target: `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run` (superseded by the Cloudflare front door)
-Evidence: [`docs/development/evidence/ZO-BIN-MB8-api-mcp-sdk-hosted.json`](../../docs/development/evidence/ZO-BIN-MB8-api-mcp-sdk-hosted.json)
-
+Public target: `https://zero-infinity-projection-store.microcosm.workers.dev/mcp`
+The current public proof is maintained in [`docs/PROOF.md`](../../docs/PROOF.md). Re-run the bounded hosted evidence with `npm run smoke:hosted`; workflow IDs are generated at runtime.
 The agent uses the hosted MCP JSON-RPC boundary. No credentials are supplied and no exchange write is available.
 
 ## Implemented method names

@@ -43,6 +43,19 @@ test("default service configuration does not create or call a provider", async (
   assert.equal(adapter, undefined);
 });
 
+test("default OpenAI-compatible transport accepts standard provider metadata around a strict role payload", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => ({ ok: true, json: async () => ({ id: "chatcmpl-local", object: "chat.completion", choices: [{ index: 0, message: { role: "assistant", content: JSON.stringify({ direction: "LONG", expectedMoveBps: 40, confidence: 0.8 }) }, finish_reason: "stop" }] }) })) as unknown as typeof fetch;
+  try {
+    const adapter = createOpenAICompatibleAdapterFromEnv(env);
+    assert.ok(adapter);
+    const result = await adapter.invoke(input);
+    assert.equal(result.kind, "ADVOCATE");
+    assert.equal(result.payload.direction, "LONG");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 test("provider rejects council invocations rather than widening the LLM boundary", async () => {
   const adapter = new OpenAICompatibleModelAdapter("openai-compatible-reasoning-v1", async () => artifact);
   await assert.rejects(() => adapter.invoke({ ...input, role: "COUNCIL", invocationId: "wf-1:COUNCIL" }), /pre-Council roles/);

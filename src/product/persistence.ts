@@ -29,8 +29,14 @@ function plainTree(value: unknown, seen = new Set<object>()): boolean {
 function validWorkflow(value: unknown, key: string): value is WorkflowRecord {
   if (!isObject(value) || !plainTree(value)) return false;
   const x = value as Record<string, unknown>;
-  const allowed = new Set(["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "thesis", "receipt", "execution", "error"]);
+  const allowed = new Set(["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "reasoningProfile", "reasoningBudget", "reasoningTiming", "thesis", "receipt", "execution", "error"]);
   if (Reflect.ownKeys(x).some((k) => typeof k !== "string" || !allowed.has(k)) || !text(x.workflowId) || x.workflowId !== key || !text(x.stackName) || !text(x.stackVersion) || !finite(x.createdAt) || x.createdAt < 0 || !["CREATED", "COMPLETE", "REASONING_INCOMPLETE", "REFUSE"].includes(String(x.status)) || !isObject(x.opportunity) || !Array.isArray(x.composition)) return false;
+  if (x.reasoningProfile !== undefined && !["FAST", "STANDARD", "DEEP"].includes(String(x.reasoningProfile))) return false;
+  if (x.reasoningBudget !== undefined) {
+    if (!isObject(x.reasoningBudget) || !["FAST", "STANDARD", "DEEP"].includes(String(x.reasoningBudget.profile)) || !finite(x.reasoningBudget.roleTimeoutMs) || !finite(x.reasoningBudget.councilTimeoutMs) || !finite(x.reasoningBudget.workflowDeadlineMs) || x.reasoningBudget.roleTimeoutMs <= 0 || x.reasoningBudget.councilTimeoutMs <= 0 || x.reasoningBudget.workflowDeadlineMs <= 0 || (x.reasoningBudget.maxEvidenceAgeMs !== undefined && (!finite(x.reasoningBudget.maxEvidenceAgeMs) || x.reasoningBudget.maxEvidenceAgeMs < 0))) return false;
+  }
+  if (x.reasoningTiming !== undefined && !isObject(x.reasoningTiming)) return false;
+  if (x.reasoningProfile !== undefined && x.reasoningBudget !== undefined && x.reasoningProfile !== x.reasoningBudget.profile) return false;
   if (x.status === "COMPLETE") {
     if (!isObject(x.thesis) || !isObject(x.receipt) || !verifyReasoningReceipt(x.receipt)) return false;
     const thesis = x.thesis as Record<string, unknown>;

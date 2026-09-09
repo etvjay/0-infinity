@@ -15,6 +15,18 @@
     sdk: { label: 'SDK / ZeroInfinityClient', text: `const client = new ZeroInfinityClient(fetch, apiBase);\nawait client.createWorkflow(opportunity);\nawait client.submitOpportunity(workflowId);\nawait client.getWorkflow(workflowId);\nawait client.getReasoningReceipt(workflowId);\nawait client.getTradeThesis(workflowId);\nawait client.runShadowWorkflow(opportunity);\nawait client.runPaperLiveWorkflow(opportunity);\nawait client.capabilities();\nawait client.readiness();` },
     adapters: { label: 'Adapters / role boundary', text: `Role names: ADVOCATE · OPPOSER · MARKET_ANALYST · COUNCIL\nArtifact kinds: ADVOCATE · OPPOSE · MARKET_ACCOUNT\nIndependence: builtin · injected · external\n\nAdapters produce bounded artifacts. External adapters are limited to pre-Council roles; the browser does not invoke them.` }
   };
+  let capabilityPromise;
+  async function loadCapabilities() {
+    if (capabilityPromise) return capabilityPromise;
+    capabilityPromise = fetch(`${apiBase}/capabilities`, { credentials: 'omit' }).then(async (response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); }).then((capabilities) => {
+      const modes = Array.isArray(capabilities.modes) ? capabilities.modes : [];
+      document.querySelectorAll('[data-mode]').forEach((button) => { const mode = button.dataset.mode === 'PAPER' ? 'PAPER_LIVE' : button.dataset.mode; const available = modes.includes(mode); button.disabled = !available; button.classList.toggle('disabled', !available); });
+      const provider = capabilities.providerBackedReasoning;
+      document.querySelectorAll('[data-capability-note]').forEach((note) => { note.textContent = provider?.configured ? `Provider-backed reasoning configured: ${provider.adapter}. Profiles: ${(capabilities.reasoningProfiles || []).join(' · ')}.` : `Provider-backed reasoning not configured. Profiles: ${(capabilities.reasoningProfiles || []).join(' · ')}.`; });
+      return capabilities;
+    }).catch(() => { document.querySelectorAll('[data-capability-note]').forEach((note) => { note.textContent = 'Capability state unavailable; no mode is enabled by fallback.'; }); document.querySelectorAll('[data-mode]').forEach((button) => { button.disabled = true; button.classList.add('disabled'); }); return null; });
+    return capabilityPromise;
+  }
   function route() { const hash = location.hash.replace(/^#/, ''); if (hash) return hash.replace(/\/$/, '') || '/'; const path = location.pathname.replace(/^\/0-infinity/, '').replace(/\/$/, '') || '/'; return path; }
   function setActiveRoute(name) { document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === name)); }
   function renderRoute() {
@@ -27,6 +39,7 @@
     if ($('demo-panel')) $('demo-panel').hidden = name !== 'demo'; if ($('integrate-panel')) $('integrate-panel').hidden = name !== 'integrate'; if ($('try-panel')) $('try-panel').hidden = name !== 'try';
     document.title = `0∞ / ${name}`;
     if (name === 'integrate') renderExample('mcp');
+    if (name === 'integrate' || name === 'try') void loadCapabilities();
   }
   function addDetail(parent, summary, entries) { const detail = document.createElement('details'); const heading = document.createElement('summary'); heading.textContent = summary; detail.append(heading); const list = document.createElement('dl'); for (const [label, value] of entries) { if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) continue; const term = document.createElement('dt'); term.textContent = label; const desc = document.createElement('dd'); desc.textContent = Array.isArray(value) ? value.map(item => typeof item === 'object' ? JSON.stringify(item) : String(item)).join(' · ') : typeof value === 'object' ? JSON.stringify(value) : String(value); list.append(term, desc); } detail.append(list.children.length ? list : Object.assign(document.createElement('p'), { textContent: 'No value returned.' })); parent.append(detail); }
   function renderStages() { const grid = $('stage-grid'); if (!grid || grid.children.length) return; stages.forEach(([name, description, terminal], index) => { const card = document.createElement('article'); card.className = `stage-card${terminal ? ' terminal' : ''}`; card.innerHTML = `<span class="stage-number">${String(index + 1).padStart(2, '0')}</span><b></b><small></small><em>${terminal ? 'TERMINAL' : 'NON-TERMINAL'}</em>`; card.querySelector('b').textContent = name; card.querySelector('small').textContent = description; grid.append(card); }); }

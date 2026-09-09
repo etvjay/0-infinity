@@ -1,6 +1,6 @@
 import { ZeroInfinityClient } from "../../dist/src/product/sdk.js";
 
-const base = process.env.ZERO_INFINITY_BASE_URL ?? "http://127.0.0.1:8787";
+const base = process.env.ZERO_INFINITY_BASE_URL ?? "https://zero-infinity-projection-store.microcosm.workers.dev";
 const client = new ZeroInfinityClient(async (url, init = {}) => {
   const response = await fetch(url, {
     method: init.method,

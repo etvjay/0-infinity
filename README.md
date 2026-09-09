@@ -60,6 +60,12 @@ The static public UI is hosted at [`https://etvjay.github.io/0-infinity/`](https
 
 The route inventory is documented in [`docs/WEB_UI.md`](docs/WEB_UI.md). The static UI and the REST/MCP runtime are separate deployments.
 
+## See an agent drive the runtime
+
+A complete hosted MCP example is in [`examples/mcp-agent`](examples/mcp-agent/). It runs the same bounded paper workflow an external agent would use: capabilities, readiness, `run_paper_live`, workflow retrieval, Reasoning Receipt, and Trade Thesis. The example also shows the equivalent REST and SDK calls.
+
+This is a paper-trading governance flow. The current runtime does not expose payment tools, authenticated Binance account actions, or live financial writes.
+
 ## Evidence boundary
 
 The repository demonstrates deterministic local behavior, SHADOW replay, PAPER simulation, bounded public market-read evidence, and fail-closed authority boundaries. `LIVE` is `NOT_AUTHORIZED`; Testnet account/order lifecycle and authenticated Agentic MCP access remain externally blocked. Hosted responses are bounded probes, not proof of production durability or live financial authority.

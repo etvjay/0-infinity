@@ -1,5 +1,7 @@
 {
   "schema": "ZO-BIN-MB8-API-MCP-SDK-HOSTED-V1",
+  "historical": true,
+  "historicalNote": "Receipt retained from the prior hosted runtime probe; current public REST/MCP instructions use the Cloudflare front door.",
   "status": "READ_ONLY_VERIFIED",
   "endpoint": "https://http--zero-infinity-runtime--tw56snbf4tjj.code.run",
   "implementedMethods": {

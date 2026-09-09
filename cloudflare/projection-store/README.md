@@ -2,7 +2,7 @@
 
 This isolated Worker is the durable store for the product projection only. It exposes no financial, execution, order, or wallet routes.
 
-The Worker is also the hosted REST/MCP front door. It forwards only the existing read/reasoning workflow routes to `UPSTREAM_URL`; it has no execution, order, wallet, or financial route. Successful upstream responses are persisted to D1 before the response is returned. If Northflank is unavailable, `GET /v1/workflows/:id`, `/receipt`, and `/thesis` are served from the last validated D1 projection. D1 authentication is used only inside the Worker and is never forwarded upstream or required from front-door callers.
+The Worker is also the hosted REST/MCP front door. It forwards only the existing read/reasoning workflow routes to the private `UPSTREAM_URL`; it has no execution, order, wallet, or financial route. Successful upstream responses are persisted to D1 before the response is returned. If the private Northflank upstream is unavailable, `GET /v1/workflows/:id`, `/receipt`, and `/thesis` are served from the last validated D1 projection. D1 authentication is used only inside the Worker and is never forwarded upstream or required from front-door callers.
 
 ## Contract
 
@@ -13,7 +13,7 @@ The Worker is also the hosted REST/MCP front door. It forwards only the existing
 - `provenance` is required and must be `{source: "zero-infinity", schema: "product-projection", schemaVersion: 1, generatedAt, workflows}`. Its workflow set and stack name/version must exactly match the snapshot.
 - Saves use an optimistic revision fence. The D1 `UPDATE ... WHERE revision = ?` is submitted through D1 `batch()`, which is atomic. A stale writer receives `409` and must reload, reconcile, then retry explicitly.
 
-The existing Node/Northflank product persistence is unchanged and is not D1-backed by this directory. There is intentionally no application adapter yet: the current `ProductProjectionPersistence` interface is synchronous, while Worker calls are asynchronous. Wiring it without changing the service lifecycle would risk fire-and-forget durability.
+The existing Node/Northflank private-upstream persistence is unchanged and is not D1-backed by this directory. There is intentionally no application adapter yet: the current `ProductProjectionPersistence` interface is synchronous, while Worker calls are asynchronous. Wiring it without changing the service lifecycle would risk fire-and-forget durability.
 
 ## Deploy
 

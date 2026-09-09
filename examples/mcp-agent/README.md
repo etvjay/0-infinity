@@ -7,7 +7,7 @@ It is intentionally not a payment or live-order flow: the implemented MCP surfac
 ## Run
 
 ```bash
-ZERO_INFINITY_MCP=https://http--zero-infinity-runtime--tw56snbf4tjj.code.run/mcp \
+ZERO_INFINITY_MCP=https://zero-infinity-projection-store.microcosm.workers.dev/mcp \
   node examples/mcp-agent/run-paper-workflow.mjs
 ```
 
@@ -27,6 +27,7 @@ It prints only bounded summary fields and never prints credentials or private ch
 REST:
 
 ```bash
+ZERO_INFINITY_API=https://zero-infinity-projection-store.microcosm.workers.dev \
 curl -sS -X POST "$ZERO_INFINITY_API/v1/paper-live" \
   -H 'content-type: application/json' \
   -d '{"symbol":"BTCUSDT","side":"LONG"}'

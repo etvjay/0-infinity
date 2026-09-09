@@ -1,4 +1,4 @@
-import { ZeroInfinityClient } from "0-infinity/sdk";
+import { ZeroInfinityClient } from "../../dist/src/product/sdk.js";
 
 const base = process.env.ZERO_INFINITY_BASE_URL ?? "http://127.0.0.1:8787";
 const client = new ZeroInfinityClient(async (url, init = {}) => {

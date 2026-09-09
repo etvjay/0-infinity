@@ -5,7 +5,7 @@ The package export `0-infinity/sdk` provides `ZeroInfinityClient`, a thin TypeSc
 ```ts
 import { ZeroInfinityClient } from "0-infinity/sdk";
 
-const client = new ZeroInfinityClient(fetch, "https://http--zero-infinity-runtime--tw56snbf4tjj.code.run");
+const client = new ZeroInfinityClient(fetch, "https://zero-infinity-projection-store.microcosm.workers.dev");
 const readiness = await client.readiness();
 const result = await client.runShadowWorkflow({ symbol: "BTCUSDT" });
 ```

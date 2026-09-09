@@ -19,7 +19,12 @@
     "secret-scan": "npm run build && node dist/src/readiness/cli.js secret-scan",
     "api": "npm run build && node dist/src/product/server.js",
     "mcp": "npm run build && node dist/src/product/mcp-server.js",
-    "web:check": "npm run build && node --test dist/tests/productization.ui.test.js"
+    "web:check": "npm run build && node --test dist/tests/productization.ui.test.js",
+    "quickstart": "npm run demo && npm run readiness:validate",
+    "judge:local": "bash scripts/judge-local.sh",
+    "smoke:front-door": "node scripts/front-door-smoke.mjs",
+    "smoke:hosted": "npm run build && npm run smoke:front-door && node scripts/sdk-mcp-smoke.mjs",
+    "sdk:mcp:smoke": "npm run build && node scripts/sdk-mcp-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

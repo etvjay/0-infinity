@@ -2,6 +2,8 @@
 
 **Evidence before action.**
 
+Start here: [`docs/INDEX.md`](docs/INDEX.md) for the documentation map, or [`docs/JUDGE_QUICKSTART.md`](docs/JUDGE_QUICKSTART.md) for the shortest verified path. The hosted REST/MCP front door is `https://zero-infinity-projection-store.microcosm.workers.dev`; Northflank remains private upstream only.
+
 ## The failure mode
 
 A trading agent can be persuasive without being correct. A Council can approve a thesis while spread, slippage, fees, or funding have already erased its executable edge. Treating a proposal, an approval, and an exchange order as the same event turns uncertainty into authority too early.
@@ -90,19 +92,31 @@ The repository demonstrates deterministic local reasoning, SHADOW replay, bounde
 
 For the detailed evidence ceiling and current submission wording, see [`docs/SUBMISSION.md`](docs/SUBMISSION.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), and the [evidence appendix](docs/development/evidence/). The repository readiness manifest keeps account reads, MCP reads, and all write capabilities disabled. No credentials belong in this repository.
 
-## Run locally
+## First run
 
-Requirements: Node.js 22 and npm.
+From a clean clone, the credential-free local gate is:
 
 ```bash
 npm ci
-npm run check
-npm run web:check
-npm test
-npm run demo
-npm run readiness:validate
-npm run secret-scan
+npm run quickstart
+npm run judge:local
 ```
+
+`quickstart` runs the deterministic demo and readiness validation. `judge:local`
+runs type-checking, the full test suite, the web contract check, readiness
+validation, and the repository secret scan. No service, account, token, or
+financial write is required.
+
+For the public read-only runtime, run:
+
+```bash
+npm run smoke:hosted
+```
+
+This checks the front door health/capability/readiness routes, then exercises the
+SDK and MCP read-only surfaces. Override `ZERO_INFINITY_FRONT_DOOR` or
+`ZERO_INFINITY_BASE_URL` to smoke a compatible deployment. The hosted smoke does
+not use credentials and never sends a projection write.
 
 `npm run demo` is credential-free and network-free. It exercises economics-edge refusal, a valid shadow receipt, and unknown-outcome reconciliation without blind retry. Run the local REST service and static UI in separate terminals:
 

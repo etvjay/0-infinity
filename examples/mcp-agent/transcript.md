@@ -1,6 +1,6 @@
-# Cold-agent walkthrough (read-only)
+# Historical cold-agent walkthrough (read-only)
 
-Target: `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run`
+Historical target: `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run` (superseded by the Cloudflare front door)
 Evidence: [`docs/development/evidence/ZO-BIN-MB8-api-mcp-sdk-hosted.json`](../../docs/development/evidence/ZO-BIN-MB8-api-mcp-sdk-hosted.json)
 
 The agent uses the hosted MCP JSON-RPC boundary. No credentials are supplied and no exchange write is available.

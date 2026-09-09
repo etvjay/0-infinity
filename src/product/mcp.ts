@@ -12,6 +12,7 @@ export async function handleMcp(service: ZeroInfinityService, query: unknown): P
   const q = query as Record<string, unknown>; const id = typeof q.id === "string" || typeof q.id === "number" ? q.id : null; const method = q.method;
   try {
     const p = q.params === undefined ? {} : plainObject(q.params, "params must be a plain object");
+    if (method === "initialize") return { jsonrpc: "2.0", id, result: { protocolVersion: "2024-11-05", capabilities: { tools: {}, resources: {} }, serverInfo: { name: "0-infinity", version: "v1" } } };
     if (method === "tools/list") return { jsonrpc: "2.0", id, result: { version: "v1", tools: MCP_TOOLS.map(name => ({ name })) } };
     if (method === "resources/list") return { jsonrpc: "2.0", id, result: { version: "v1", resources: MCP_RESOURCES } };
     if (method === "resources/read") { if (!exactOwnPlain(p, ["uri"], ["uri"]) || typeof p.uri !== "string") throw new ValidationError("resource uri is required"); const resource = MCP_RESOURCES.find(x => x.uri === p.uri); if (!resource) throw new ValidationError("resource not found"); const value = p.uri.endsWith("capabilities") ? service.getCapabilities() : service.getReadiness(); return { jsonrpc: "2.0", id, result: { contents: [{ uri: resource.uri, mimeType: resource.mimeType, text: JSON.stringify(value) }] } }; }
@@ -20,7 +21,13 @@ export async function handleMcp(service: ZeroInfinityService, query: unknown): P
     if (method === "create_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: service.createWorkflow(opportunity) }; }
     if (method === "run_shadow_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runShadowWorkflow(opportunity) }; }
     if (method === "run_paper_live") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runPaperLiveWorkflow(opportunity) }; }
-    if (method === "submit_opportunity" || method === "get_workflow" || method === "get_reasoning_receipt" || method === "get_trade_thesis") { if (typeof p.workflowId !== "string" || p.workflowId.length === 0) throw new ValidationError("workflowId is required"); if (method === "submit_opportunity") return { jsonrpc: "2.0", id, result: await service.submitOpportunity(p.workflowId) }; if (method === "get_workflow") return { jsonrpc: "2.0", id, result: service.getWorkflow(p.workflowId) }; if (method === "get_reasoning_receipt") return { jsonrpc: "2.0", id, result: service.getReasoningReceipt(p.workflowId) }; return { jsonrpc: "2.0", id, result: service.getTradeThesis(p.workflowId) }; }
+    if (method === "submit_opportunity" || method === "get_workflow" || method === "get_reasoning_receipt" || method === "get_trade_thesis") {
+      if (typeof p.workflowId !== "string" || p.workflowId.length === 0) throw new ValidationError("workflowId is required");
+      if (method === "submit_opportunity") return { jsonrpc: "2.0", id, result: await service.submitOpportunity(p.workflowId) };
+      const value = method === "get_workflow" ? service.getWorkflow(p.workflowId) : method === "get_reasoning_receipt" ? service.getReasoningReceipt(p.workflowId) : service.getTradeThesis(p.workflowId);
+      if (value === undefined) return { jsonrpc: "2.0", id, error: { code: -32004, message: method === "get_workflow" ? "workflow not found" : method === "get_reasoning_receipt" ? "reasoning receipt not found" : "trade thesis not found" } };
+      return { jsonrpc: "2.0", id, result: value };
+    }
     return { jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found" } };
   } catch (error) { return { jsonrpc: "2.0", id, error: { code: -32000, message: error instanceof Error ? error.message : "request failed" } }; }
 }

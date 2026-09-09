@@ -115,6 +115,16 @@ test("MCP requires a real workflowId instead of coercing undefined", async () =>
   assert.match(response.error?.message ?? "", /workflowId is required/);
 });
 
+test("MCP supports initialize and returns explicit not-found errors", async () => {
+  const s = service("mcp-protocol");
+  const initialized = await handleMcp(s, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "test", version: "1" } } });
+  assert.equal(initialized.error, undefined);
+  assert.equal((initialized.result as any).protocolVersion, "2024-11-05");
+  const missing = await handleMcp(s, { jsonrpc: "2.0", id: 2, method: "get_workflow", params: { workflowId: "missing-workflow" } });
+  assert.equal(missing.error?.code, -32004);
+  assert.equal(missing.error?.message, "workflow not found");
+});
+
 test("reasoning failure is distinguished from council refusal and cannot mint thesis or paper receipt", async () => {
   const s = service("failure");
   s.registerStack(failingStack("failure"));

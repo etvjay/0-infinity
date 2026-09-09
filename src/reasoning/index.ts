@@ -168,3 +168,4 @@ export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {
 }
 
 export * from "./handoff.js";
+export * from "./councilAdapter.js";

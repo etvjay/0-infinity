@@ -4,7 +4,7 @@ import worker from "../src/index.js";
 
 const token = "proxy-store-token";
 function workflow(status = "CREATED") {
-  return { workflowId: "wf-proxy", stackName: "stack", stackVersion: "v1", createdAt: 10, status, opportunity: { symbol: "BTCUSDT" }, composition: [], ...(status === "COMPLETE" ? { thesis: { thesisId: "wf-proxy" }, receipt: { workflowId: "wf-proxy" } } : {}) };
+  return { workflowId: "wf-proxy", stackName: "stack", stackVersion: "v1", createdAt: 10, status, opportunity: { symbol: "BTCUSDT" }, composition: [], reasoningProfile: "FAST", reasoningBudget: { profile: "FAST", roleTimeoutMs: 5000, councilTimeoutMs: 5000, workflowDeadlineMs: 15000, maxEvidenceAgeMs: 300000 }, ...(status === "COMPLETE" ? { thesis: { thesisId: "wf-proxy" }, receipt: { workflowId: "wf-proxy" } } : {}) };
 }
 function db() {
   let row = { revision: 0, snapshot_json: JSON.stringify({ version: 1, workflows: {} }), provenance_json: JSON.stringify({ source: "zero-infinity", schema: "product-projection", schemaVersion: 1, generatedAt: 0, workflows: {} }) };

@@ -15,8 +15,11 @@ const jsonTree = (x, seen = new Set()) => {
 };
 const fail = (message) => { throw new Error(message); };
 function validateWorkflow(value, id) {
-  const keys = ["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "thesis", "receipt", "execution", "error"];
+  const keys = ["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "reasoningProfile", "reasoningBudget", "reasoningTiming", "thesis", "receipt", "execution", "error"];
   if (!exact(value, keys) || value.workflowId !== id || !text(value.workflowId) || !text(value.stackName) || !text(value.stackVersion) || !finite(value.createdAt) || value.createdAt < 0 || !STATUSES.has(value.status) || !isRecord(value.opportunity) || !Array.isArray(value.composition) || !jsonTree(value)) fail(`invalid workflow ${id}`);
+  if (value.reasoningProfile !== undefined && !["FAST", "STANDARD", "DEEP"].includes(value.reasoningProfile)) fail(`invalid reasoning profile ${id}`);
+  if (value.reasoningBudget !== undefined) { const b = value.reasoningBudget; if (!isRecord(b) || !["FAST", "STANDARD", "DEEP"].includes(b.profile) || !finite(b.roleTimeoutMs) || !finite(b.councilTimeoutMs) || !finite(b.workflowDeadlineMs) || b.roleTimeoutMs <= 0 || b.councilTimeoutMs <= 0 || b.workflowDeadlineMs <= 0 || (b.maxEvidenceAgeMs !== undefined && (!finite(b.maxEvidenceAgeMs) || b.maxEvidenceAgeMs < 0)) || (value.reasoningProfile !== undefined && value.reasoningProfile !== b.profile)) fail(`invalid reasoning budget ${id}`); }
+  if (value.reasoningTiming !== undefined && !isRecord(value.reasoningTiming)) fail(`invalid reasoning timing ${id}`);
   if (value.status === "COMPLETE" && (!isRecord(value.thesis) || !isRecord(value.receipt))) fail(`incomplete workflow ${id}`);
   if (value.status !== "COMPLETE" && (value.thesis !== undefined || value.receipt !== undefined)) fail(`unexpected completion fields in ${id}`);
   if (value.execution !== undefined && (!isRecord(value.execution) || value.execution.workflowId !== id || !text(value.execution.mandateId) || !isRecord(value.execution.runtime) || !EXECUTION_STATUSES.has(value.execution.status))) fail(`invalid execution projection ${id}`);

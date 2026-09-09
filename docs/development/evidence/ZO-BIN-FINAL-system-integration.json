@@ -1,6 +1,6 @@
 {
-  "canonicalSha": "372bfbc1270f2924bb16e4f251d74f901f27c53e",
-  "evidenceRevision": "c8b41fd5f485ca78a911517daccfbbf1e7fbad57",
+  "canonicalSha": "b907d92d10aa27bc213275599bd1f3fa58003ef4",
+  "evidenceRevision": "pending-final-revision",
   "entrySurfaces": {
     "web": { "status": "HOSTED_FRONT_DOOR_CONFIGURED", "routes": ["/", "/app/demo/", "/app/integrate/", "/app/try/"], "apiBase": "https://zero-infinity-projection-store.microcosm.workers.dev" },
     "rest": { "status": "HOSTED_PASS", "paths": ["/health", "/readiness", "/capabilities", "/v1/shadow", "/v1/paper-live"], "frontDoor": "https://zero-infinity-projection-store.microcosm.workers.dev" },

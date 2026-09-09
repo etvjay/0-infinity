@@ -2,7 +2,7 @@
 
 **Audit target:** 0-Infinity whole-system coherence across Web Demo/Try/Integrate, REST, MCP, SDK, adapters, reasoning, authority, state, evaluator, economics, paper/testnet/live boundaries.
 
-**Audited head:** `0dd8075c36056bceb5dbfeb52828d3130df30743` (clean, `main` aligned with `origin/main`).
+**Audited head:** `d26e95ea149421f3b0dddea4b1a70c06d2fbf915` (implementation release; evidence revision is recorded separately).
 
 ## Evidence and verification
 

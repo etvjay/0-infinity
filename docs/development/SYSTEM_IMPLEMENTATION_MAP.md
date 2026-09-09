@@ -1,6 +1,6 @@
 # 0-Infinity Actual Implementation Map
 
-**Audit basis:** repository `9c3502f08112bfcb1262792f76230d89aac4511c` (`main`, local canonical candidate). This map describes source reachability and verified behavior, not the intended architecture.
+**Audit basis:** repository `d26e95ea149421f3b0dddea4b1a70c06d2fbf915` (implementation release; final evidence revision is recorded in `ZO-BIN-FINAL-system-integration.json`). This map describes source reachability and verified behavior, not the intended architecture.
 
 ## End-to-end graph
 

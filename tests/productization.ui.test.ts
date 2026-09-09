@@ -40,6 +40,8 @@ test("demo is a read-only canonical workflow proof surface", () => {
 test("integrate surface explains BYO intelligence and adapter boundaries", () => {
   const surface = `${read("web/app/integrate/index.html")}\n${read("web/app.js")}`;
   for (const label of ["Bring your own intelligence", "ADVOCATE", "OPPOSER", "MARKET ANALYST", "COUNCIL", "Builtin", "OpenAI-compatible", "HTTP Agent", "MCP Worker", "MCP/REST/SDK", "RoleAdapter"]) assert.ok(surface.includes(label), label);
+  const page = read("web/app/integrate/index.html");
+  for (const label of ["BUILTIN", "OPENAI-COMPATIBLE", "HTTP AGENT", "MCP WORKER", "workflowId", "invocationId", "RoleArtifact"]) assert.ok(page.includes(label), label);
   assert.ok(surface.includes('POST $ZERO_INFINITY_API/mcp'));
 });
 

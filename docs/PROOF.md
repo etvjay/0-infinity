@@ -204,6 +204,8 @@ The public Integrate surface now distinguishes the two directions: MCP/REST/SDK 
 
 The fresh public-only judge initially identified two P1 comprehension gaps: Try did not immediately state that public modes are no-write, and Integrate depended on hydration for its first example while the external artifact envelope was not published normatively. The bounded remediation adds the no-financial-write copy to Try, a static MCP example to Integrate, and the exact role-artifact envelope plus current configuration boundary to `docs/BRING_YOUR_OWN_AGENT.md`. No authority or provider-registration feature was added.
 
+The second fresh judge confirmed that Try now communicates `NO FINANCIAL WRITE` immediately. It identified one remaining static Integrate gap: adapter families and the artifact contract were visible only after hydration or in linked docs. The final bounded remediation places the four adapter families and the `RoleArtifact` identity fields directly in the static Integrate HTML; the focused UI test now checks those static labels. No provider-registration or authority feature was added.
+
 ## Browser proof
 
 A real Chromium/CDP journey on the public Pages surface passed: Landing → Demo → Integrate → Try; REST and SDK integration tabs rendered; Try selected BTCUSDT/LONG/SHADOW; clicking `Run SHADOW` reached `API · connected`, rendered `ACTUAL · COMPLETE`, and exposed returned structured artifact/receipt controls. The same result survived browser refresh through session-scoped restoration, and the mobile viewport had no horizontal overflow. The page stated that no exchange write occurred. No credential or financial-write path was used.

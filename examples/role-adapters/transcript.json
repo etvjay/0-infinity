@@ -1,0 +1,85 @@
+{
+  "label": "LOCAL/INJECTED ADAPTER EXAMPLE — NOT LIVE PROVIDER EVIDENCE",
+  "credentials": false,
+  "network": "127.0.0.1 loopback only",
+  "roles": [
+    "ADVOCATE",
+    "OPPOSER",
+    "MARKET_ANALYST"
+  ],
+  "transcript": [
+    {
+      "transport": "HTTP loopback",
+      "role": "ADVOCATE",
+      "status": "accepted",
+      "kind": "ADVOCATE",
+      "symbol": "BTCUSDT",
+      "independence": "external"
+    },
+    {
+      "transport": "HTTP loopback",
+      "role": "OPPOSER",
+      "status": "accepted",
+      "kind": "OPPOSE",
+      "symbol": "BTCUSDT",
+      "independence": "external"
+    },
+    {
+      "transport": "HTTP loopback",
+      "role": "MARKET_ANALYST",
+      "status": "accepted",
+      "kind": "MARKET_ACCOUNT",
+      "symbol": "BTCUSDT",
+      "independence": "external"
+    },
+    {
+      "transport": "HTTP loopback",
+      "case": "malformed envelope",
+      "status": "refused",
+      "failClosed": true
+    },
+    {
+      "transport": "HTTP loopback",
+      "case": "provider refused (403 fixture)",
+      "status": "refused",
+      "failClosed": true
+    },
+    {
+      "transport": "MCP loopback line",
+      "role": "ADVOCATE",
+      "status": "accepted",
+      "kind": "ADVOCATE",
+      "symbol": "BTCUSDT",
+      "independence": "external"
+    },
+    {
+      "transport": "MCP loopback line",
+      "role": "OPPOSER",
+      "status": "accepted",
+      "kind": "OPPOSE",
+      "symbol": "BTCUSDT",
+      "independence": "external"
+    },
+    {
+      "transport": "MCP loopback line",
+      "role": "MARKET_ANALYST",
+      "status": "accepted",
+      "kind": "MARKET_ACCOUNT",
+      "symbol": "BTCUSDT",
+      "independence": "external"
+    },
+    {
+      "transport": "MCP loopback line",
+      "case": "refused contradictory artifact",
+      "status": "refused",
+      "failClosed": true
+    },
+    {
+      "transport": "adapter boundary",
+      "case": "COUNCIL invocation",
+      "status": "refused",
+      "failClosed": true
+    }
+  ],
+  "evidenceCeiling": "Fixture acceptance proves adapter validation and binding only; it is not hosted/provider/market evidence."
+}

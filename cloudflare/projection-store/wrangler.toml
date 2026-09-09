@@ -1,0 +1,8 @@
+name = "zero-infinity-projection-store"
+main = "src/index.js"
+compatibility_date = "2026-09-09"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "zero-infinity-projections"
+database_id = "a9397a55-309c-4059-8883-a68ecc14bd4c"

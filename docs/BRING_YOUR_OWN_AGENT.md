@@ -88,10 +88,20 @@ The current adapter contract is this exact JSON object; no additional top-level 
 
 For `ADVOCATE`, `kind` is `ADVOCATE` and the payload additionally requires `direction`, non-negative `expectedMoveBps`, and `confidence` from `0` through `1`. For `MARKET_ANALYST`, `kind` is `MARKET_ACCOUNT` and the payload requires `market: "TRUSTED"` and `account: "TRUSTED"`. The outer `role`, `workflowId`, `invocationId`, and `kind` must agree with the invocation; `symbol` must agree with the opportunity; `expiresAt` must be after `observedAt`; and authority-shaped fields such as `order`, `mandate`, `intent`, `trade`, `quantity`, or `price` are rejected.
 
-This is a role-artifact contract, not a hosted provider-registration API. Current public configuration is through injected transports and the OpenAI-compatible environment boundary; no public endpoint claims to register arbitrary remote workers or credentials. A developer connecting a remote worker must supply the transport in its own runtime and keep credentials outside the artifact. Rejection is fail-closed and does not produce a thesis or mandate.
+This is a role-artifact contract, not a credential-management API. Current public configuration is available through the SDK, REST stack-registration endpoint, and MCP registration tool. A developer connecting a remote worker must supply the transport endpoint in its own runtime and keep credentials outside the artifact. Rejection is fail-closed and does not produce a thesis or mandate.
 
 
-## Consumer configuration path
+## REST and MCP stack registration
+
+A deployed consumer can register a frozen stack without importing repository source:
+
+```http
+POST /v1/reasoning-stacks
+content-type: application/json
+```
+
+The body is the same `ReasoningStackConfig` accepted by `createReasoningStack`. The endpoint returns the registered stack identity and sanitized composition. MCP consumers use the `register_reasoning_stack` tool with `{ "config": ... }`. Both surfaces validate the stack before registration and reject credential-bearing fields; provider keys belong in the server runtime environment only.
+
 
 A consumer can create and inject a stack without editing 0-infinity source code:
 

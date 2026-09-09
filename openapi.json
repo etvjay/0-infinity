@@ -5,6 +5,7 @@
     "/health": { "get": { "responses": { "200": { "$ref": "#/components/responses/Health" } } } },
     "/capabilities": { "get": { "responses": { "200": { "$ref": "#/components/responses/Capabilities" } } } },
     "/readiness": { "get": { "responses": { "200": { "$ref": "#/components/responses/Readiness" } } } },
+    "/v1/reasoning-stacks": { "post": { "description": "Register a validated frozen ReasoningStackConfig. Credentials are rejected; use server runtime configuration.", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReasoningStackConfig" } } } }, "responses": { "201": { "description": "Registered stack", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StackSummary" } } } }, "400": { "$ref": "#/components/responses/Error" } } } },
     "/v1/workflows": { "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Opportunity" } } } }, "responses": { "201": { "$ref": "#/components/responses/Workflow" }, "400": { "$ref": "#/components/responses/Error" } } } },
     "/v1/workflows/{workflowId}": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "get": { "responses": { "200": { "$ref": "#/components/responses/Workflow" }, "404": { "$ref": "#/components/responses/Error" } } } },
     "/v1/workflows/{workflowId}/submit": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "post": { "responses": { "200": { "$ref": "#/components/responses/WorkflowResult" }, "404": { "$ref": "#/components/responses/Error" } } } },
@@ -21,6 +22,8 @@
       "Health": { "type": "object", "required": ["ok", "version"], "properties": { "ok": { "type": "boolean", "const": true }, "version": { "type": "string" } } },
       "Capabilities": { "type": "object", "required": ["version", "roles", "capabilities", "writes", "authority"], "properties": { "version": { "type": "string" }, "roles": { "type": "array", "items": { "type": "string" } }, "capabilities": { "type": "array", "items": { "type": "string" } }, "writes": { "type": "array", "items": {} }, "authority": { "type": "boolean" } } },
       "Readiness": { "type": "object", "required": ["version", "ready", "mode", "liveWrites", "hostedEvidence"], "properties": { "version": { "type": "string" }, "ready": { "type": "boolean" }, "mode": { "type": "string" }, "liveWrites": { "type": "boolean" }, "hostedEvidence": { "type": "boolean" } } },
+      "ReasoningStackConfig": { "type": "object", "required": ["name", "version", "advocate", "opposer", "marketAnalyst", "council"], "additionalProperties": false, "description": "Frozen stack configuration. Do not include credentials; endpoint/API provider secrets belong to server runtime configuration." },
+      "StackSummary": { "type": "object", "required": ["name", "version", "capabilities", "composition"], "properties": { "name": { "type": "string" }, "version": { "type": "string" }, "capabilities": { "type": "array", "items": { "type": "string" } }, "composition": { "type": "array", "items": { "type": "object" } } } },
       "Error": { "type": "object", "required": ["error"], "properties": { "error": { "type": "string" }, "message": { "type": "string" } } },
       "Workflow": { "type": "object", "required": ["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition"], "properties": { "workflowId": { "type": "string" }, "stackName": { "type": "string" }, "stackVersion": { "type": "string" }, "createdAt": { "type": "number" }, "status": { "type": "string", "enum": ["CREATED", "COMPLETE", "REASONING_INCOMPLETE", "REFUSE"] }, "opportunity": { "$ref": "#/components/schemas/Opportunity" }, "composition": { "type": "array", "items": { "type": "object" } } } },
       "WorkflowResult": { "type": "object", "required": ["workflow"], "properties": { "workflow": { "$ref": "#/components/schemas/Workflow" }, "thesis": { "type": "object" } } },
@@ -37,7 +40,7 @@
       "PaperLiveResult": { "description": "Deterministic PAPER_LIVE no-write result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaperLiveResult" } } } }
     }
   },
-  "x-mcp": { "tools": ["tools/list", "get_capabilities", "get_readiness", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "run_paper_live", "get_workflow"], "resources": ["resources/list", "resources/read"] },
+  "x-mcp": { "tools": ["tools/list", "get_capabilities", "get_readiness", "register_reasoning_stack", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "run_paper_live", "get_workflow"], "resources": ["resources/list", "resources/read"] },
   "x-runtime-modes": { "SHADOW": true, "PAPER_LIVE": true, "BINANCE_TESTNET": false, "LIVE_CONFIRMED": false },
   "x-writes": []
 }

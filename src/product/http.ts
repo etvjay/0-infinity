@@ -1,15 +1,19 @@
 import { createServer } from "node:http";
 import { ZeroInfinityService } from "./service.js";
+import { createReasoningStack, type ReasoningStackConfig } from "./reasoningStack.js";
 import { handleMcp } from "./mcp.js";
 import { exactOwnPlain, ValidationError } from "./types.js";
 const MAX_JSON = 64 * 1024;
 function bodyObject(value: unknown): Record<string, unknown> { if (!exactOwnPlain(value, Object.keys((value as Record<string, unknown>) ?? {}))) throw new ValidationError("JSON object required"); if (JSON.stringify(value).length > MAX_JSON) throw new ValidationError("payload too large"); return value as Record<string, unknown>; }
+function stackConfig(value: unknown): ReasoningStackConfig { const config = bodyObject(value); const text = JSON.stringify(config); if(/"(?:apiKey|token|password|secret|privateKey|authorization)"\s*:/i.test(text)) throw new ValidationError("credentials must be supplied through the server runtime, not the API"); return config as unknown as ReasoningStackConfig; }
+function stackSummary(service: ZeroInfinityService, config: ReasoningStackConfig): unknown { const stack = service.registerStack(createReasoningStack(config)); return { name: stack.name, version: stack.version, capabilities: stack.capabilities, composition: Object.entries(stack.bindings).map(([role, adapter]) => ({ role, adapter: adapter.name, independence: adapter.independence })) }; }
 function notFound(): { status: number; body: unknown } { return { status: 404, body: { error: "NOT_FOUND", message: "workflow not found" } }; }
 export async function handleRequest(service: ZeroInfinityService, method: string, path: string, body?: unknown): Promise<{ status: number; body: unknown }> {
   try {
     if (method === "GET" && path === "/health") return { status: 200, body: { ok: true, version: "v1" } };
     if (method === "GET" && path === "/capabilities") return { status: 200, body: service.getCapabilities() };
     if (method === "GET" && path === "/readiness") return { status: 200, body: service.getReadiness() };
+    if (method === "POST" && path === "/v1/reasoning-stacks") return { status: 201, body: stackSummary(service, stackConfig(body ?? {})) };
     let match = path.match(/^\/v1\/workflows\/([^/]+)$/);
     if (method === "POST" && path === "/v1/workflows") return { status: 201, body: service.createWorkflow(bodyObject(body ?? {})) };
     if (method === "GET" && match) { const value = service.getWorkflow(match[1]); return value ? { status: 200, body: value } : notFound(); }

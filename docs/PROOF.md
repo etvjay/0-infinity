@@ -187,7 +187,7 @@ npm run web:check
 npm run smoke:hosted
 ```
 
-The current verified local run reports **548/548 tests passing** and **5/5 UI tests passing**. At the time of this document update, the hosted front door and hosted SDK/MCP smoke pass; hosted smoke is read-only/bounded and does not prove authenticated exchange state.
+The current verified local run reports **557/557 tests passing** and **7/7 UI tests passing**. At the time of this document update, the hosted front door and hosted SDK/MCP smoke pass; hosted smoke is read-only/bounded and does not prove authenticated exchange state.
 
 ## Provider results
 
@@ -203,13 +203,15 @@ These are local-provider measurements, not hosted-provider proof. Latency is not
 A real heterogeneous local consumer now completes with Advocate through the OpenAI-compatible Ollama adapter, Opposer through a separate HTTP worker process, Market Analyst through a separate MCP worker process, and Council through a separate HTTP Council worker. The workflow reached `COMPLETE`; its composition retained all four external adapter identities, the Council candidate passed canonical validation, and the receipt preserved the same workflow ID plus Council adapter provenance. This is `HETEROGENEOUS_FULL_COUNCIL_STACK_PASS` and local-provider evidence only.
 
 
-A packed-package consumer installed the private package artifact into a clean temporary directory and used only the exported `0-infinity/product` entrypoint. With separate HTTP Advocate/Opposer/Council and MCP Market Analyst workers, it completed canonical Paper (`FILLED`, `noWrite: true`) and a high-edge-floor run reached evaluator refusal `EXECUTABLE_EDGE_TOO_LOW`, also with `noWrite: true`. This is `PACKED_PACKAGE_CONSUMER_PASS`, `BYO_TO_PAPER_PASS`, and `BYO_TO_REFUSAL_PASS`; it is not published-registry evidence.
+A packed-package consumer installed the distributable package artifact into a clean temporary directory and used only the exported `0-infinity/product` entrypoint. With separate HTTP Advocate/Opposer/Council and MCP Market Analyst workers, it completed canonical Paper (`FILLED`, `noWrite: true`) and a high-edge-floor run reached evaluator refusal `EXECUTABLE_EDGE_TOO_LOW`, also with `noWrite: true`. This is `PACKED_PACKAGE_CONSUMER_PASS`, `BYO_TO_PAPER_PASS`, and `BYO_TO_REFUSAL_PASS`; registry publication remains pending npm authorization.
+
+REST and MCP stack registration are now public configuration surfaces: `POST /v1/reasoning-stacks` and MCP `register_reasoning_stack` accept the validated `ReasoningStackConfig`, register a frozen stack identity, return sanitized composition, and reject credential-bearing fields. Provider keys remain a server-runtime concern.
 
 The public Integrate surface now distinguishes the two directions: MCP/REST/SDK call 0-infinity, while RoleAdapters bring external intelligence into the reasoning stack. It names the implemented worker boundaries (`Builtin`, `OpenAI-compatible`, `HTTP Agent`, `MCP Worker`), maps Advocate/Opposer/Market Analyst/Council roles, and states that external adapters cannot create theses, mandates, intents, or receipts. The credential-free HTTP Agent/MCP Worker examples, real local OpenAI-compatible path, external Council candidate validation, and packed consumer path are tested separately; this is local/contract evidence, not a claim that every hosted provider is configured.
 
-The fresh public-only judge initially identified two P1 comprehension gaps: Try did not immediately state that public modes are no-write, and Integrate depended on hydration for its first example while the external artifact envelope was not published normatively. The bounded remediation adds the no-financial-write copy to Try, a static MCP example to Integrate, and the exact role-artifact envelope plus current configuration boundary to `docs/BRING_YOUR_OWN_AGENT.md`. No authority or provider-registration feature was added.
+The fresh public-only judge initially identified two P1 comprehension gaps: Try did not immediately state that public modes are no-write, and Integrate depended on hydration for its first example while the external artifact envelope was not published normatively. The bounded remediation adds the no-financial-write copy to Try, a static MCP example to Integrate, the exact role-artifact envelope plus current configuration boundary to `docs/BRING_YOUR_OWN_AGENT.md`, and validated REST/MCP stack registration. No authority or credential-management feature was added.
 
-The second fresh judge confirmed that Try now communicates `NO FINANCIAL WRITE` immediately. It identified one remaining static Integrate gap: adapter families and the artifact contract were visible only after hydration or in linked docs. The final bounded remediation places the four adapter families and the `RoleArtifact` identity fields directly in the static Integrate HTML; the focused UI test now checks those static labels. No provider-registration or authority feature was added.
+The final bounded remediation places the four adapter families and the `RoleArtifact` identity fields directly in the static Integrate HTML; the focused UI test now checks those static labels. REST/MCP registration is now covered by the product access tests. No provider-specific or authority feature was added.
 
 ## Browser proof
 

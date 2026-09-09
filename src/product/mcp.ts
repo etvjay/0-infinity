@@ -1,6 +1,7 @@
 import { ZeroInfinityService } from "./service.js";
+import { createReasoningStack, type ReasoningStackConfig } from "./reasoningStack.js";
 import { exactOwnPlain, ValidationError } from "./types.js";
-export const MCP_TOOLS = ["get_capabilities", "get_readiness", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "run_paper_live", "get_workflow"] as const;
+export const MCP_TOOLS = ["get_capabilities", "get_readiness", "register_reasoning_stack", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "run_paper_live", "get_workflow"] as const;
 export const MCP_RESOURCES = [
   { uri: "zero-infinity://capabilities", name: "Capabilities", mimeType: "application/json" },
   { uri: "zero-infinity://readiness", name: "Readiness", mimeType: "application/json" },
@@ -16,8 +17,8 @@ export async function handleMcp(service: ZeroInfinityService, query: unknown): P
     if (method === "tools/list") return { jsonrpc: "2.0", id, result: { version: "v1", tools: MCP_TOOLS.map(name => ({ name })) } };
     if (method === "resources/list") return { jsonrpc: "2.0", id, result: { version: "v1", resources: MCP_RESOURCES } };
     if (method === "resources/read") { if (!exactOwnPlain(p, ["uri"], ["uri"]) || typeof p.uri !== "string") throw new ValidationError("resource uri is required"); const resource = MCP_RESOURCES.find(x => x.uri === p.uri); if (!resource) throw new ValidationError("resource not found"); const value = p.uri.endsWith("capabilities") ? service.getCapabilities() : service.getReadiness(); return { jsonrpc: "2.0", id, result: { contents: [{ uri: resource.uri, mimeType: resource.mimeType, text: JSON.stringify(value) }] } }; }
-    if (method === "get_capabilities") return { jsonrpc: "2.0", id, result: service.getCapabilities() };
-    if (method === "get_readiness") return { jsonrpc: "2.0", id, result: service.getReadiness() };
+    if (method === "register_reasoning_stack") { const config = plainObject(p.config, "config must be a plain object") as unknown as ReasoningStackConfig; const text = JSON.stringify(config); if(/"(?:apiKey|token|password|secret|privateKey|authorization)"\s*:/i.test(text)) throw new ValidationError("credentials must be supplied through the server runtime, not MCP"); const stack = service.registerStack(createReasoningStack(config)); return { jsonrpc: "2.0", id, result: { name: stack.name, version: stack.version, capabilities: stack.capabilities } }; }
+    if (method === "get_capabilities") return { jsonrpc: "2.0", id, result: service.getCapabilities() };    if (method === "get_readiness") return { jsonrpc: "2.0", id, result: service.getReadiness() };
     if (method === "create_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: service.createWorkflow(opportunity) }; }
     if (method === "run_shadow_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runShadowWorkflow(opportunity) }; }
     if (method === "run_paper_live") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runPaperLiveWorkflow(opportunity) }; }

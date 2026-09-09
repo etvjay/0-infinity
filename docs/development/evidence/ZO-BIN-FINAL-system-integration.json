@@ -1,0 +1,80 @@
+{
+  "canonicalSha": "d26e95ea149421f3b0dddea4b1a70c06d2fbf915",
+  "entrySurfaces": {
+    "web": { "status": "LOCAL_INTEGRATED", "routes": ["/", "/app/demo/", "/app/integrate/", "/app/try/"] },
+    "rest": { "status": "HOSTED_PASS", "paths": ["/health", "/readiness", "/capabilities", "/v1/shadow", "/v1/paper-live"] },
+    "mcp": { "status": "HOSTED_PASS", "path": "/mcp", "identifierValidation": "LOCAL_PASS" },
+    "sdk": { "status": "LOCAL_INTEGRATED", "packageExport": "0-infinity/sdk" },
+    "externalWorkerAdapters": { "status": "LOCAL_INTEGRATED", "evidence": "injected/local provider rehearsal; hosted provider inference not proven" }
+  },
+  "workflowComposition": {
+    "opportunityToReasoning": "END_TO_END_PASS",
+    "reasoningToCouncil": "END_TO_END_PASS",
+    "councilToReceipt": "LOCAL_PASS; product receipt reconciliation remains a P1 gap",
+    "receiptToThesis": "END_TO_END_PASS",
+    "thesisToMandate": "END_TO_END_PASS for explicit paperExecution envelope",
+    "mandateToEvaluator": "END_TO_END_PASS for explicit paperExecution envelope",
+    "evaluatorToWriter": "END_TO_END_PASS via canonical OrderWriter in LOCAL_REPLAY",
+    "writerToReceipt": "END_TO_END_PASS via reconciliation/final WorkflowReceipt"
+  },
+  "crossSurfaceEquivalence": {
+    "workflowState": "PASS for SHADOW, reasoning refusal/failure, and convenience PAPER capability responses",
+    "reasoningReceiptHash": "PASS for REST/MCP/SDK reads in whole-system.integration.test.ts",
+    "thesisHash": "PASS for REST/MCP/SDK reads in whole-system.integration.test.ts",
+    "mandateHash": "NOT_EXPOSED in ordinary product read model; typed Paper mandate is internally validated",
+    "finalOutcome": "PASS for tested SHADOW/refusal/failure surfaces; typed Paper final FILLED verified locally"
+  },
+  "modes": {
+    "shadow": { "status": "END_TO_END_PASS", "noWrite": true },
+    "paper": { "status": "END_TO_END_PASS", "scope": "explicit typed paperExecution envelope; local replay/no exchange write" },
+    "testnet": { "status": "BLOCKED_EXTERNAL", "reason": "credentials and authenticated lifecycle unavailable" },
+    "live": { "status": "NOT_AUTHORIZED", "liveWrites": false }
+  },
+  "coldHuman": { "status": "LIMITED_PASS", "evidence": "static route/UI tests pass; browser hydration interaction not independently observed because Chromium harness unavailable" },
+  "coldAgent": { "status": "PASS_WITH_LIMITATION", "evidence": "hosted MCP example and local cross-surface tests pass; durable hosted availability is not guaranteed" },
+  "coldDeveloper": { "status": "PASS_WITH_LIMITATION", "evidence": "README/API/SDK/Integrate paths are runnable; SDK is repository-consumer verified, not independently published" },
+  "P0GapsRemaining": 0,
+  "P1GapsRemaining": [
+    "G-002 product-boundary reconciliation of Council/service receipt construction",
+    "G-003 ordinary product read model does not expose the complete canonical runtime chain",
+    "G-004 product workflow persistence is process-local and not restart durable",
+    "G-005 native market/account state-plane composition and authenticated Agentic MCP remain unproven",
+    "G-010 SDK package intentionally exposes only the thin client, not internal authority modules",
+    "G-011 Demo remains accepted static fixture evidence rather than a live workflow readback",
+    "G-013 stale implementation/evidence ledger reconciliation",
+    "G-014 Binance source planes remain intentionally separate"
+  ],
+  "P2GapsRemaining": [
+    "G-006 separate economics package is not a product read-model artifact",
+    "G-007 external exchange execution is blocked outside local Paper replay",
+    "G-008 hosted provider-backed inference is unproven",
+    "G-009 broader runtime read-model exposure remains limited",
+    "G-012 UI/API configuration documentation drift remediated"
+  ],
+  "authorityViolations": 0,
+  "remediated": [
+    "Removed fixed synthetic Paper intent and parallel PaperOrderWriter product path",
+    "Added explicit canonical typed Paper path through compiler, authority store, supervisor, evaluator, OrderWriter, and reconciliation",
+    "Minimal Paper input now fails closed with CAPABILITY_DENIED",
+    "MCP workflow identifiers are validated instead of coercing undefined",
+    "Provider normalization uses the injected service clock",
+    "Reconciled UI/API documentation with actual hosted default"
+  ],
+  "tests": {
+    "fullSuite": "537/537 pass",
+    "web": "5/5 pass",
+    "typedPaper": "pass",
+    "crossSurface": "pass",
+    "refusal": "pass",
+    "failure": "pass",
+    "readiness": "valid=true, liveWriteStatus=DISABLED",
+    "secretScan": "valid=true, valuesPrinted=false",
+    "diffCheck": "pass"
+  },
+  "independentReview": {
+    "priorVerdict": "REQUEST_CHANGES at 0dd8075",
+    "freshReviewRequired": true,
+    "evidenceCeiling": "local integration plus bounded hosted probes; no browser hydration proof, durable hosting proof, authenticated Testnet, LIVE, or hosted provider inference"
+  },
+  "finalVerdict": "GAPS_REMAIN"
+}

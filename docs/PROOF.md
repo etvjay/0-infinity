@@ -200,6 +200,8 @@ Local Ollama was reachable at the local OpenAI-compatible endpoint and the actua
 
 These are local-provider measurements, not hosted-provider proof. Latency is not authority: a successful provider artifact still must pass Council, receipt provenance, thesis compilation, mandate validity, freshness, and deterministic evaluation.
 
+The public Integrate surface now distinguishes the two directions: MCP/REST/SDK call 0-infinity, while RoleAdapters bring external intelligence into the reasoning stack. It names the implemented worker boundaries (`Builtin`, `OpenAI-compatible`, `HTTP Agent`, `MCP Worker`), maps Advocate/Opposer/Market Analyst/Council roles, and states that external adapters cannot create theses, mandates, intents, or receipts. The credential-free HTTP Agent/MCP Worker examples and the real local OpenAI-compatible adapter path are tested separately; this is contract and local-provider evidence, not a claim that every hosted provider is configured.
+
 ## Browser proof
 
 A real Chromium/CDP journey on the public Pages surface passed: Landing → Demo → Integrate → Try; REST and SDK integration tabs rendered; Try selected BTCUSDT/LONG/SHADOW; clicking `Run SHADOW` reached `API · connected`, rendered `ACTUAL · COMPLETE`, and exposed returned structured artifact/receipt controls. The same result survived browser refresh through session-scoped restoration, and the mobile viewport had no horizontal overflow. The page stated that no exchange write occurred. No credential or financial-write path was used.

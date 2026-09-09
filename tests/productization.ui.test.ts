@@ -37,6 +37,11 @@ test("demo is a read-only canonical workflow proof surface", () => {
   assert.doesNotMatch(demo, /POST\s+\/v1\/(shadow|paper-live)/i);
 });
 
+test("integrate surface explains BYO intelligence and adapter boundaries", () => {
+  const surface = `${read("web/app/integrate/index.html")}\n${read("web/app.js")}`;
+  for (const label of ["Bring your own intelligence", "ADVOCATE", "OPPOSER", "MARKET ANALYST", "COUNCIL", "Builtin", "OpenAI-compatible", "HTTP Agent", "MCP Worker", "MCP/REST/SDK", "RoleAdapter"]) assert.ok(surface.includes(label), label);
+});
+
 test("static UI uses configurable API base and explicit demo opt-in", () => {
   const app = read("web/app.js");
   assert.match(app, /window\.__ZERO_INFINITY_CONFIG__/);

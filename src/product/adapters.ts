@@ -17,10 +17,10 @@ const providerConfig = (env: OpenAICompatibleEnv): { readonly baseUrl: string; r
   if (!baseUrl || !model || !apiKey) return undefined;
   try { const url = new URL(baseUrl); if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) return undefined; return { baseUrl: url.toString().replace(/\/$/, ""), model, apiKey }; } catch { return undefined; }
 };
-function normalizeProviderPayload(input: RoleInvocation, raw: unknown): Record<string, unknown> {
+function normalizeProviderPayload(input: RoleInvocation, raw: unknown, clock: Clock): Record<string, unknown> {
   if (!exactOwnPlain(raw, Object.keys((raw as Record<string, unknown>) ?? {}))) throw new ValidationError("provider artifact must be a plain JSON object");
   const value = raw as Record<string, unknown>;
-  const observedAt = Date.now();
+  const observedAt = clock();
   const common = { symbol: input.opportunity.symbol ?? "BTCUSDT", ref: input.invocationId, hash: hash({ input, value }), observedAt, expiresAt: observedAt + 300000 };
   if (input.role === "ADVOCATE") {
     const direction = typeof value.direction === "string" ? value.direction.toUpperCase() : value.direction;
@@ -41,15 +41,15 @@ const providerSchema = (role: RoleName): string => role === "ADVOCATE"
   : role === "OPPOSER"
     ? '{"direction":"LONG","recommendation":"AGREE"}'
     : '{"market":"TRUSTED","account":"TRUSTED"}';
-const openAITransport = (config: { readonly baseUrl: string; readonly model: string; readonly apiKey: string }): Transport => async (input, signal) => {
+const openAITransport = (config: { readonly baseUrl: string; readonly model: string; readonly apiKey: string }, clock: Clock): Transport => async (input, signal) => {
   const role = input.role as Exclude<RoleName, "COUNCIL">;
   const response = await fetch(`${config.baseUrl}/chat/completions`, { method: "POST", signal, headers: { "content-type": "application/json", authorization: `Bearer ${config.apiKey}` }, body: JSON.stringify({ model: config.model, temperature: 0, max_tokens: 64, response_format: { type: "json_object" }, messages: [{ role: "system", content: `Output exactly one JSON object matching this example for the role: ${providerSchema(role)}. For MARKET_ANALYST, market must be the literal string TRUSTED, never the symbol. No envelope. No orders, mandates, intents, prices, quantities, or execution instructions.` }, { role: "user", content: JSON.stringify({ role, symbol: input.opportunity.symbol ?? "BTCUSDT", side: input.opportunity.side ?? null }) }] }) });
   if (!response.ok) throw new ValidationError("provider response unavailable");
   const body: unknown = await response.json(); if (!exactOwnPlain(body, ["choices"], ["choices"]) || !Array.isArray(body.choices) || body.choices.length !== 1) throw new ValidationError("provider response malformed");
   const choice = body.choices[0]; if (!exactOwnPlain(choice, ["message"], ["message"]) || !exactOwnPlain(choice.message, ["content"], ["content"]) || typeof choice.message.content !== "string") throw new ValidationError("provider content malformed");
-  try { return { workflowId: input.workflowId, invocationId: input.invocationId, role, kind: ROLE_ARTIFACT_KIND[role], payload: normalizeProviderPayload(input, JSON.parse(choice.message.content)) }; } catch (error) { if (error instanceof ValidationError) throw error; throw new ValidationError("provider artifact is not JSON"); }
+  try { return { workflowId: input.workflowId, invocationId: input.invocationId, role, kind: ROLE_ARTIFACT_KIND[role], payload: normalizeProviderPayload(input, JSON.parse(choice.message.content), clock) }; } catch (error) { if (error instanceof ValidationError) throw error; throw new ValidationError("provider artifact is not JSON"); }
 };
-export function createOpenAICompatibleAdapterFromEnv(env: OpenAICompatibleEnv = process.env, transport?: Transport): OpenAICompatibleModelAdapter | undefined { const config = providerConfig(env); return config ? new OpenAICompatibleModelAdapter("openai-compatible-reasoning-v1", transport ?? openAITransport(config)) : undefined; }
+export function createOpenAICompatibleAdapterFromEnv(env: OpenAICompatibleEnv = process.env, transport?: Transport, clock: Clock = () => Date.now()): OpenAICompatibleModelAdapter | undefined { const config = providerConfig(env); return config ? new OpenAICompatibleModelAdapter("openai-compatible-reasoning-v1", transport ?? openAITransport(config, clock), clock) : undefined; }
 
 export class OpenAICompatibleModelAdapter extends TransportAdapter { readonly independence = "external" as const; }
 export class HttpAgentAdapter extends TransportAdapter { readonly independence = "external" as const; }

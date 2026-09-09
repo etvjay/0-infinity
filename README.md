@@ -43,7 +43,7 @@ If the economics no longer hold, the result is `REFUSED` with `EDGE_COLLAPSED`. 
 The same bounded service is available through:
 
 - **MCP** — network JSON-RPC at `POST <configured-runtime>/mcp`, or the local line-delimited transport via `npm run mcp`;
-- **REST** — health, readiness, capabilities, workflow, receipt, thesis, SHADOW, and deterministic PAPER routes;
+- **REST** — health, readiness, capabilities, workflow, receipt, and thesis routes; SHADOW is executable through the product service, while PAPER_LIVE refuses unless canonical market/account/policy state is supplied;
 - **SDK** — the `0-infinity/sdk` package export and `ZeroInfinityClient`;
 - **Adapters** — explicit boundaries for bringing external agents and providers into the existing role and evidence model.
 
@@ -73,7 +73,7 @@ The static public UI is hosted at [`https://etvjay.github.io/0-infinity/`](https
 
 - `/` — landing explanation and architecture;
 - `/app/demo/` — canonical read-only construct;
-- `/app/try/` — no-write SHADOW/PAPER workflow for `BTCUSDT`;
+- `/app/try/` — no-write SHADOW workflow for `BTCUSDT`; PAPER_LIVE is visibly bounded and refuses when canonical execution state is unavailable;
 - `/app/integrate/` — MCP, REST, and SDK examples.
 
 The route inventory is documented in [`docs/WEB_UI.md`](docs/WEB_UI.md). The static UI and the REST/MCP runtime are separate deployments.
@@ -86,7 +86,7 @@ This is a paper-trading governance flow. The current runtime does not expose pay
 
 ## Evidence boundary
 
-The repository demonstrates deterministic local behavior, SHADOW replay, PAPER simulation, bounded public market-read evidence, and fail-closed authority boundaries. `LIVE` is `NOT_AUTHORIZED`; Testnet account/order lifecycle and authenticated Agentic MCP access remain externally blocked. Hosted responses are bounded probes, not proof of production durability or live financial authority.
+The repository demonstrates deterministic local reasoning, SHADOW replay, bounded PAPER capability checks, public market-read evidence, and fail-closed authority boundaries. A minimal public PAPER_LIVE request does not mint a mandate or paper receipt because the canonical market/account/policy handoff is not yet exposed. `LIVE` is `NOT_AUTHORIZED`; Testnet account/order lifecycle and authenticated Agentic MCP access remain externally blocked. Hosted responses are bounded probes, not proof of production durability or live financial authority.
 
 For the detailed evidence ceiling and current submission wording, see [`docs/SUBMISSION.md`](docs/SUBMISSION.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), and the [evidence appendix](docs/development/evidence/). The repository readiness manifest keeps account reads, MCP reads, and all write capabilities disabled. No credentials belong in this repository.
 

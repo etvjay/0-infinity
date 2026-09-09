@@ -28,7 +28,7 @@ The default is local `http://127.0.0.1:8787`. A hosted deployment may set the sa
 
 The form supports `BTCUSDT`, `LONG`, `SHADOW`, and `PAPER`. TESTNET is displayed as `Credentials required` and disabled. LIVE is displayed as `NOT AUTHORIZED` and is never selectable.
 
-SHADOW and PAPER call the existing REST endpoints with `credentials: omit`. Results expose the bounded workflow sequence, actual outcome, economics when returned, reasoning receipt, raw JSON, and a visibly unauthorized mandate control. No credential fields or financial-write controls exist.
+SHADOW calls the existing REST endpoint with `credentials: omit`. PAPER is exposed as a bounded capability check and returns `REFUSED/CAPABILITY_DENIED` for the current minimal form because no canonical market/account/policy state is supplied; it does not create a PaperReceipt. Results expose the bounded workflow sequence and returned reasoning artifacts. No credential fields or financial-write controls exist.
 
 The UI does not infer live or testnet state from a failed request. No private chain-of-thought is displayed.
 

@@ -109,6 +109,12 @@ test("refusal remains explicit and read-equivalent on every thin surface", async
   assert.deepEqual(await sdk.getWorkflow(workflow.workflowId), direct.workflow);
 });
 
+test("MCP requires a real workflowId instead of coercing undefined", async () => {
+  const response = await handleMcp(service("mcp-validation"), { jsonrpc: "2.0", id: 8, method: "get_workflow", params: {} });
+  assert.equal(response.error?.code, -32000);
+  assert.match(response.error?.message ?? "", /workflowId is required/);
+});
+
 test("reasoning failure is distinguished from council refusal and cannot mint thesis or paper receipt", async () => {
   const s = service("failure");
   s.registerStack(failingStack("failure"));

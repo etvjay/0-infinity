@@ -20,10 +20,7 @@ export async function handleMcp(service: ZeroInfinityService, query: unknown): P
     if (method === "create_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: service.createWorkflow(opportunity) }; }
     if (method === "run_shadow_workflow") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runShadowWorkflow(opportunity) }; }
     if (method === "run_paper_live") { const opportunity = plainObject(p.opportunity, "opportunity must be a plain object"); return { jsonrpc: "2.0", id, result: await service.runPaperLiveWorkflow(opportunity) }; }
-    if (method === "submit_opportunity") return { jsonrpc: "2.0", id, result: await service.submitOpportunity(String(p.workflowId)) };
-    if (method === "get_workflow") return { jsonrpc: "2.0", id, result: service.getWorkflow(String(p.workflowId)) };
-    if (method === "get_reasoning_receipt") return { jsonrpc: "2.0", id, result: service.getReasoningReceipt(String(p.workflowId)) };
-    if (method === "get_trade_thesis") return { jsonrpc: "2.0", id, result: service.getTradeThesis(String(p.workflowId)) };
+    if (method === "submit_opportunity" || method === "get_workflow" || method === "get_reasoning_receipt" || method === "get_trade_thesis") { if (typeof p.workflowId !== "string" || p.workflowId.length === 0) throw new ValidationError("workflowId is required"); if (method === "submit_opportunity") return { jsonrpc: "2.0", id, result: await service.submitOpportunity(p.workflowId) }; if (method === "get_workflow") return { jsonrpc: "2.0", id, result: service.getWorkflow(p.workflowId) }; if (method === "get_reasoning_receipt") return { jsonrpc: "2.0", id, result: service.getReasoningReceipt(p.workflowId) }; return { jsonrpc: "2.0", id, result: service.getTradeThesis(p.workflowId) }; }
     return { jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found" } };
   } catch (error) { return { jsonrpc: "2.0", id, error: { code: -32000, message: error instanceof Error ? error.message : "request failed" } }; }
 }

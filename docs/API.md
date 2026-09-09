@@ -12,7 +12,7 @@ The product-access surface is bounded and no-write by default. Runtime modes exp
 - `POST /v1/workflows/{workflowId}/submit` → bounded workflow result or 404
 - `GET /v1/workflows/{workflowId}/receipt` and `/thesis` → artifact or 404
 - `POST /v1/shadow` with a plain JSON object → no-write shadow result
-- `POST /v1/paper-live` with a plain JSON object → deterministic PAPER_LIVE result and PaperReceipt; no exchange write
+- `POST /v1/paper-live` with a plain JSON object → bounded PAPER_LIVE capability check; minimal opportunities return `REFUSED` with `CAPABILITY_DENIED` rather than fabricating a mandate or PaperReceipt; no exchange write
 
 Malformed JSON objects, arrays, inherited/custom-prototype objects, and accessor-backed objects are rejected with `400`. Unknown routes and workflows return `404`; unsupported content types return `415`.
 

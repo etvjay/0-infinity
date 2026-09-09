@@ -1,6 +1,6 @@
 # SDK
 
-The package export `0-infinity/sdk` provides `ZeroInfinityClient`, a thin TypeScript client over an injected `fetch` implementation. It never stores credentials or adds authority. The client covers workflow creation/submission, workflow/receipt/thesis reads, SHADOW, PAPER_LIVE, capabilities, and readiness; use the `/mcp` HTTP surface separately for JSON-RPC MCP calls.
+The package export `0-infinity/sdk` provides `ZeroInfinityClient`, a thin TypeScript client over an injected `fetch` implementation. It never stores credentials or adds authority. The client covers workflow creation/submission, workflow/receipt/thesis reads, SHADOW, the bounded PAPER_LIVE capability check, capabilities, and readiness. A minimal PAPER_LIVE opportunity returns `REFUSED/CAPABILITY_DENIED` until the canonical market/account/policy handoff is exposed; the SDK never fabricates or widens authority.
 
 ```ts
 import { ZeroInfinityClient } from "0-infinity/sdk";

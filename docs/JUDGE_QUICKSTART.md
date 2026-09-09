@@ -83,4 +83,4 @@ Expected result: a JSON line containing `"status":"COMPLETE"` and matching `work
 
 ## Evidence and non-claims
 
-Current receipts are indexed in [`INDEX.md`](INDEX.md) and [`development/EVIDENCE_LEDGER.md`](development/EVIDENCE_LEDGER.md). The repository does not claim authenticated Agentic MCP, authenticated Binance Futures Testnet lifecycle, LIVE authority, profitability, HFT performance, or production durability. Older `code.run` URLs remain only in explicitly historical receipts/transcripts.
+The public repository provides executable tests and bounded smoke commands rather than a private evidence ledger. The repository does not claim authenticated Agentic MCP, authenticated Binance Futures Testnet lifecycle, LIVE authority, profitability, HFT performance, or production durability.

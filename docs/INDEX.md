@@ -24,6 +24,7 @@ The Northflank service is a private upstream behind that front door. The GitHub 
 - [`API.md`](API.md) — REST routes, validation, errors, and CORS.
 - [`MCP.md`](MCP.md) — network JSON-RPC tools and resources.
 - [`SDK.md`](SDK.md) — `0-infinity/sdk` and `ZeroInfinityClient`.
+- [`PROOF.md`](PROOF.md) — public security properties, capability matrix, redacted artifact examples, test methodology, and bounded integration result.
 - [`BRING_YOUR_OWN_AGENT.md`](BRING_YOUR_OWN_AGENT.md) — public adapter boundary.
 - [`../openapi.json`](../openapi.json) — machine-readable REST contract.
 

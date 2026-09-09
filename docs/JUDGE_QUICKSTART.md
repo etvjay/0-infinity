@@ -57,7 +57,7 @@ npm run quickstart
 npm run judge:local
 ```
 
-`quickstart` runs the deterministic demo and readiness validation. `judge:local` runs type-checking, the full test suite, the web contract check, readiness validation, and the repository secret scan. In the current checkout, the full suite reports `1..540`, `# pass 540`; readiness reports `{"valid":true,...,"liveWriteStatus":"DISABLED"}`; and secret scan reports `{"valid":true,...,"valuesPrinted":false}`.
+`quickstart` runs the deterministic demo and readiness validation. `judge:local` runs type-checking, the full test suite, the web contract check, readiness validation, and the repository secret scan. The current local suite reports `1..541`, `# pass 541`; readiness reports `{"valid":true,...,"liveWriteStatus":"DISABLED"}`; and secret scan reports `{"valid":true,...,"valuesPrinted":false}`.
 
 For a single hosted smoke command, also run:
 

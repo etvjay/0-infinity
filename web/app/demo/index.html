@@ -24,8 +24,33 @@
     <section id="demo-panel" class="app-panel" aria-labelledby="demo-title">
       <div class="section-intro"><p class="kicker">DEMO / CANONICAL CONSTRUCT</p><h3 id="demo-title">Fourteen states. One fail-closed boundary.</h3><p class="muted">A read-only map of the canonical mandate runtime. It shows the actual state vocabulary and legal flow; no workflow is created and no execution value is invented.</p></div>
       <div class="demo-meta"><span class="status neutral">READ-ONLY</span><span>source: <code>src/runtime/mandateState.ts</code></span><span>private reasoning: not displayed</span></div>
-      <div id="stage-grid" class="stage-grid" aria-label="14-stage canonical construct"></div>
-      <details class="artifact-details"><summary>Canonical artifact boundaries</summary><div class="artifact-copy"><p><b>Visible artifacts:</b> state, transition, terminality, and bounded result references returned by the service.</p><p><b>Not visible:</b> private chain-of-thought, credentials, exchange writes, or fabricated receipt values.</p><p><b>Proof:</b> the construct is an inspectable representation of the repository's canonical runtime states, not a live claim.</p></div></details>
+      <div id="stage-grid" class="stage-grid" aria-label="14-stage canonical construct">
+        <article class="stage-card"><span class="stage-number">01</span><b>ARMED</b><small>ready for a bounded trigger</small><em>NON-TERMINAL</em></article>
+        <article class="stage-card"><span class="stage-number">02</span><b>TRIGGERED</b><small>trigger condition observed</small><em>NON-TERMINAL</em></article>
+        <article class="stage-card"><span class="stage-number">03</span><b>VALIDATING</b><small>state and policy checks</small><em>NON-TERMINAL</em></article>
+        <article class="stage-card"><span class="stage-number">04</span><b>SUBMITTING</b><small>submission boundary</small><em>NON-TERMINAL</em></article>
+        <article class="stage-card"><span class="stage-number">05</span><b>ACKNOWLEDGED</b><small>adapter acknowledged</small><em>NON-TERMINAL</em></article>
+        <article class="stage-card"><span class="stage-number">06</span><b>PARTIALLY_FILLED</b><small>partial fill recorded</small><em>NON-TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">07</span><b>FILLED</b><small>terminal: filled</small><em>TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">08</span><b>REFUSED</b><small>terminal: fail closed</small><em>TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">09</span><b>INVALIDATED</b><small>terminal: invalidated</small><em>TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">10</span><b>EXPIRED</b><small>terminal: expired</small><em>TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">11</span><b>SUPERSEDED</b><small>terminal: superseded</small><em>TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">12</span><b>CANCELLED</b><small>terminal: cancelled</small><em>TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">13</span><b>FAILED</b><small>terminal: failed</small><em>TERMINAL</em></article>
+        <article class="stage-card terminal"><span class="stage-number">14</span><b>UNKNOWN</b><small>terminal: no blind retry</small><em>TERMINAL</em></article>
+      </div>
+      <p class="demo-note"><b>Canonical ordering:</b> the first six states form the bounded path to a terminal result; the final eight are terminal outcomes, not a claim that one run traverses every card.</p>
+      <div class="artifact-stack" aria-label="Canonical workflow artifacts">
+        <details open><summary>Council</summary><div class="artifact-copy"><dl><dt>decision</dt><dd>REFUSE</dd><dt>direction</dt><dd>LONG</dd><dt>confidence</dt><dd>0.1</dd><dt>expected move</dt><dd>0 bps</dd><dt>strongest support</dt><dd>no-support</dd><dt>strongest opposition</dt><dd>opp-edge</dd><dt>unresolved</dt><dd>no executable trade is authorized</dd></dl></div></details>
+        <details><summary>Reasoning Receipt</summary><div class="artifact-copy"><dl><dt>version</dt><dd>ZO-BIN-REASONING-RECEIPT-V2</dd><dt>workflow</dt><dd>demo-workflow</dd><dt>method</dt><dd>bounded-council</dd><dt>claim</dt><dd>economics edge is below the configured floor</dd><dt>supporting refs</dt><dd>none</dd><dt>opposing refs</dt><dd>opp-edge</dd><dt>canonical SHA-256</dt><dd class="break">9007abe64d51f1ed2f2a4c1fcc9a0e8c19fcab5c70be7a9bf376c6f16c4fa794</dd></dl></div></details>
+        <details><summary>Trade Thesis</summary><div class="artifact-copy"><p>Not returned in this refusal artifact. The Council refusal is the terminal result; no thesis is substituted or inferred.</p></div></details>
+        <details><summary>Mandate</summary><div class="artifact-copy"><p>Not issued. A refusal does not create execution authority.</p></div></details>
+        <details><summary>Economics</summary><div class="artifact-copy"><dl><dt>expected move</dt><dd>0 bps</dd><dt>economic claim</dt><dd>edge is below the configured floor</dd><dt>execution authority</dt><dd>none</dd></dl></div></details>
+        <details><summary>Outcome</summary><div class="artifact-copy"><dl><dt>status</dt><dd>REFUSED</dd><dt>reason</dt><dd>no executable trade is authorized</dd><dt>write</dt><dd>none; this surface is read-only</dd></dl></div></details>
+        <details><summary>Receipt</summary><div class="artifact-copy"><dl><dt>receipt file</dt><dd>docs/development/evidence/ZO-BIN-MB8-reasoning-refuse.json</dd><dt>receipt hash</dt><dd class="break">9007abe64d51f1ed2f2a4c1fcc9a0e8c19fcab5c70be7a9bf376c6f16c4fa794</dd><dt>source boundary</dt><dd>accepted local canonical evidence; not a live execution receipt</dd></dl></div></details>
+      </div>
+      <details class="artifact-details"><summary>Canonical artifact boundaries</summary><div class="artifact-copy"><p><b>Visible artifacts:</b> state, terminality, Council decision, bounded evidence references, economics, outcome, and receipt provenance.</p><p><b>Not visible:</b> private chain-of-thought, credentials, exchange writes, or fabricated receipt values.</p><p><b>Proof:</b> this is a read-only rendering of accepted repository evidence, not a live workflow runner.</p></div></details>
     </section>
   </section>
 </main>

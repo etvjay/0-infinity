@@ -12,7 +12,7 @@ curl http://127.0.0.1:8787/health
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"get_readiness","params":{}}' | npm run mcp
 ```
 
-These surfaces share `ZeroInfinityService` and expose no live financial write endpoint. The local entrypoints remain available, and the same REST/MCP service responds at `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run`. The current response reports `version: v1`, `hostedEvidence: false`, and `authority: false`; no deployed commit SHA is inferred from those responses.
+These surfaces share `ZeroInfinityService` and expose no live financial write endpoint. The local entrypoints remain available, and the same REST/MCP service responds at `https://zero-infinity-projection-store.microcosm.workers.dev`. The current response reports `version: v1`, `hostedEvidence: false`, and `authority: false`; no deployed commit SHA is inferred from those responses.
 
 ## GitHub Pages
 

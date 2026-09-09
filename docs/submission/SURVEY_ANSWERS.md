@@ -10,8 +10,8 @@ These are proposed project answers only. Account-bound fields must be supplied b
 - Repository: `https://github.com/etvjay/0-infinity`
 - Web demo: `USER_INPUT_REQUIRED — provide only after independently verifying a public URL.`
 - Video: `USER_INPUT_REQUIRED — provide only after uploading the final rendered artifact.`
-- REST endpoint: `HOSTED_PASS — verified at https://http--zero-infinity-runtime--tw56snbf4tjj.code.run with health/readiness/workflow/SHADOW/PAPER no-write flows.`
-- MCP endpoint: `HOSTED_PASS — verified at https://http--zero-infinity-runtime--tw56snbf4tjj.code.run/mcp; it delegates to the same ZeroInfinityService.`
+- REST endpoint: `HOSTED_PASS — verified at https://zero-infinity-projection-store.microcosm.workers.dev with health/readiness/workflow/SHADOW/PAPER no-write flows.`
+- MCP endpoint: `HOSTED_PASS — verified at https://zero-infinity-projection-store.microcosm.workers.dev/mcp; it delegates to the same ZeroInfinityService.`
 - Binance UID/account fields: `USER_INPUT_REQUIRED`
 - X account actions: `USER_INPUT_REQUIRED`
 - Survey submission confirmation: `USER_INPUT_REQUIRED`

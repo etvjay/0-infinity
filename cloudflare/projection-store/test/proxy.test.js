@@ -32,6 +32,17 @@ test("proxy persists a successful workflow response before returning it", async 
   } finally { globalThis.fetch = original; }
 });
 
+test("proxy forwards empty POSTs without manufacturing a content type", async () => {
+  const original = globalThis.fetch;
+  let forwardedBody;
+  globalThis.fetch = async (_url, options) => { forwardedBody = options.body; return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } }); };
+  try {
+    const response = await worker.fetch(request("POST", "/v1/workflows/wf-proxy/submit"), { PROJECTION_STORE_AUTH_TOKEN: token, UPSTREAM_URL: "https://northflank.example", DB: db() });
+    assert.equal(response.status, 200);
+    assert.equal(forwardedBody, undefined);
+  } finally { globalThis.fetch = original; }
+});
+
 test("proxy recovers workflow reads from D1 when upstream is unavailable", async () => {
   const store = db();
   const original = globalThis.fetch;

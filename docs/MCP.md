@@ -1,6 +1,6 @@
 # MCP
 
-The 0-infinity MCP adapter exposes read, reasoning, SHADOW, and deterministic PAPER tools through the same `ZeroInfinityService`. It has no live-write tools and is independently verified over the hosted runtime at `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run`. The local stdin/stdout entrypoint remains available for development.
+The 0-infinity MCP adapter exposes read, reasoning, SHADOW, and deterministic PAPER tools through the same `ZeroInfinityService`. It has no live-write tools and is independently verified over the hosted runtime at `https://zero-infinity-projection-store.microcosm.workers.dev`. The local stdin/stdout entrypoint remains available for development.
 
 ## Tools
 

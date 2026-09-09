@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const config = window.__ZERO_INFINITY_CONFIG__ || {};
-  const HOSTED_RUNTIME = 'https://http--zero-infinity-runtime--tw56snbf4tjj.code.run';
+  const HOSTED_RUNTIME = 'https://zero-infinity-projection-store.microcosm.workers.dev';
   const apiBase = typeof config.apiBase === 'string' ? config.apiBase.replace(/\/$/, '') : HOSTED_RUNTIME;
   const $ = (id) => document.getElementById(id);
   const state = { mode: 'SHADOW', side: 'LONG', workflowId: null, payload: null };

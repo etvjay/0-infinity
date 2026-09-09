@@ -61,7 +61,7 @@ capabilities → readiness → paper workflow → workflow record
 Run it with:
 
 ```bash
-ZERO_INFINITY_MCP=https://http--zero-infinity-runtime--tw56snbf4tjj.code.run/mcp \
+ZERO_INFINITY_MCP=https://zero-infinity-projection-store.microcosm.workers.dev/mcp \
   node examples/mcp-agent/run-paper-workflow.mjs
 ```
 

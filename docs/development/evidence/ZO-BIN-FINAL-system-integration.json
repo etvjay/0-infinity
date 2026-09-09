@@ -1,9 +1,9 @@
 {
-  "canonicalSha": "b72fac21f11038cf033ac0df59aa4a794404e4da",
-  "evidenceRevision": "a093bfccf13aaf9a8786a879bd624c695b12b1c8",
+  "canonicalSha": "pending-front-door-release",
+  "evidenceRevision": "pending-front-door-evidence",
   "entrySurfaces": {
-    "web": { "status": "LOCAL_INTEGRATED", "routes": ["/", "/app/demo/", "/app/integrate/", "/app/try/"] },
-    "rest": { "status": "HOSTED_PASS", "paths": ["/health", "/readiness", "/capabilities", "/v1/shadow", "/v1/paper-live"] },
+    "web": { "status": "HOSTED_FRONT_DOOR_CONFIGURED", "routes": ["/", "/app/demo/", "/app/integrate/", "/app/try/"], "apiBase": "https://zero-infinity-projection-store.microcosm.workers.dev" },
+    "rest": { "status": "HOSTED_PASS", "paths": ["/health", "/readiness", "/capabilities", "/v1/shadow", "/v1/paper-live"], "frontDoor": "https://zero-infinity-projection-store.microcosm.workers.dev" },
     "mcp": { "status": "HOSTED_PASS", "path": "/mcp", "identifierValidation": "LOCAL_PASS" },
     "sdk": { "status": "LOCAL_INTEGRATED", "packageExport": "0-infinity/sdk" },
     "externalWorkerAdapters": { "status": "LOCAL_INTEGRATED", "evidence": "injected/local provider rehearsal; hosted provider inference not proven" }
@@ -32,11 +32,10 @@
     "live": { "status": "NOT_AUTHORIZED", "liveWrites": false }
   },
   "coldHuman": { "status": "LIMITED_PASS", "evidence": "static route/UI tests pass; browser hydration interaction not independently observed because Chromium harness unavailable" },
-  "coldAgent": { "status": "PASS_WITH_LIMITATION", "evidence": "hosted MCP/REST probes pass at the deployed head; hosted persistence is not claimed because Northflank storage is ephemeral" },
+  "coldAgent": { "status": "PASS_WITH_DURABLE_READBACK", "evidence": "front door completed workflow, persisted it to D1, and recovered COMPLETE thesis/receipt readback while Northflank was unavailable" },
   "coldDeveloper": { "status": "PASS_WITH_LIMITATION", "evidence": "README/API/SDK/Integrate paths are runnable; SDK is repository-consumer verified, not independently published" },
   "P0GapsRemaining": 0,
   "P1GapsRemaining": [
-    "G-004 hosted durability/HA is not proven because Northflank storage is ephemeral unless a persistent volume/external store is configured",
     "G-005 native market/account state-plane composition and authenticated Agentic MCP remain unproven",
     "G-011 Demo remains accepted static fixture evidence rather than a live workflow readback",
     "G-014 Binance source planes remain intentionally separate"
@@ -58,7 +57,9 @@
     "Reconciled legal ACKNOWLEDGED -> PARTIALLY_FILLED -> FILLED runtime transitions",
     "MCP workflow identifiers are validated instead of coercing undefined",
     "Provider normalization uses the injected service clock",
-    "Hosted runtime redeployed at cc6c16a6d947584e0f526521f7eeeb0a6df537ba and passed repeated REST/MCP probes"
+    "Hosted durable projection front door deployed and verified with D1 revision fencing",
+    "Completed workflow recovered from D1 while Northflank upstream was unavailable",
+    "CORS preflight and Pages front-door configuration verified"
   ],
   "tests": {
     "fullSuite": "540/540 pass",

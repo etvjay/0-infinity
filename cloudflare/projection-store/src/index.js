@@ -42,7 +42,24 @@ function authorized(request, env) {
   let different = 0; for (let i = 0; i < supplied.length; i++) different |= supplied.charCodeAt(i) ^ expected.charCodeAt(i);
   return different === 0;
 }
-const response = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+const allowedOrigin = (origin) => {
+  if (!origin) return undefined;
+  if (origin === "https://etvjay.github.io") return origin;
+  try { const parsed = new URL(origin); if ((parsed.protocol === "http:" || parsed.protocol === "https:") && (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1")) return origin; } catch { /* reject malformed origins */ }
+  return undefined;
+};
+const response = (body, status = 200, origin) => {
+  const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
+  if (origin) { headers["access-control-allow-origin"] = origin; headers.vary = "Origin"; }
+  return new Response(JSON.stringify(body), { status, headers });
+};
+function cors(request) {
+  const origin = allowedOrigin(request.headers.get("origin"));
+  if (request.method !== "OPTIONS") return { origin, proceed: true };
+  if (!origin) return { origin: undefined, proceed: false, result: response({ error: "CORS_ORIGIN_NOT_ALLOWED" }, 403) };
+  const result = new Response(null, { status: 204, headers: { "access-control-allow-origin": origin, "access-control-allow-methods": "GET, POST, PUT, OPTIONS", "access-control-allow-headers": "content-type, accept, authorization", "access-control-max-age": "600", vary: "Origin" } });
+  return { origin, proceed: false, result };
+}
 async function readRow(db) {
   const row = await db.prepare("SELECT revision, snapshot_json, provenance_json FROM projection_snapshots WHERE id = 'current'").bind().first();
   if (!row || !Number.isInteger(row.revision) || row.revision < 0) throw new Error("projection row unavailable");
@@ -70,39 +87,45 @@ async function persistCandidates(db, candidates) {
   }
   throw new Error("projection revision conflict");
 }
-function recoveredRead(row, pathname) {
+function recoveredRead(row, pathname, origin) {
   const match = pathname.match(/^\/v1\/workflows\/([^/]+)(?:\/(receipt|thesis))?$/); if (!match) return null;
-  const workflow = row.snapshot.workflows[match[1]]; if (!workflow) return response({ error: "NOT_FOUND" }, 404);
+  const workflow = row.snapshot.workflows[match[1]]; if (!workflow) return response({ error: "NOT_FOUND" }, 404, origin);
   const value = match[2] === "receipt" ? workflow.receipt : match[2] === "thesis" ? workflow.thesis : workflow;
-  return value === undefined ? response({ error: "NOT_FOUND" }, 404) : response(value);
+  return value === undefined ? response({ error: "NOT_FOUND" }, 404, origin) : response(value, 200, origin);
 }
-async function proxy(request, env, url) {
-  if (!env.UPSTREAM_URL) return response({ error: "proxy not configured" }, 503);
+async function proxy(request, env, url, origin) {
+  if (!env.UPSTREAM_URL) return response({ error: "proxy not configured" }, 503, origin);
   const target = new URL(url.pathname + url.search, env.UPSTREAM_URL).toString();
   let upstream;
   try {
     const headers = new Headers();
     for (const name of ["content-type", "accept"]) { const value = request.headers.get(name); if (value) headers.set(name, value); }
-    upstream = await fetch(target, { method: request.method, headers, body: request.method === "GET" ? undefined : await request.text() });
+    const requestBody = request.method === "GET" ? undefined : await request.text();
+    upstream = await fetch(target, { method: request.method, headers, ...(requestBody ? { body: requestBody } : {}) });
   } catch {
-    if (request.method === "GET") { try { const recovered = recoveredRead(await readRow(env.DB), url.pathname); if (recovered) return recovered; } catch { /* unavailable */ } }
-    return response({ error: "upstream unavailable" }, 502);
+    if (request.method === "GET") { try { const recovered = recoveredRead(await readRow(env.DB), url.pathname, origin); if (recovered) return recovered; } catch { /* unavailable */ } }
+    return response({ error: "upstream unavailable" }, 502, origin);
   }
   const body = await upstream.text();
   if (!upstream.ok && request.method === "GET") {
-    try { const recovered = recoveredRead(await readRow(env.DB), url.pathname); if (recovered && recovered.status === 200) return recovered; } catch { /* unavailable */ }
+    try { const recovered = recoveredRead(await readRow(env.DB), url.pathname, origin); if (recovered && recovered.status === 200) return recovered; } catch { /* unavailable */ }
   }
-  if (upstream.ok) { try { await persistCandidates(env.DB, projectionCandidates(JSON.parse(body))); } catch { return response({ error: "projection persistence failed" }, 503); } }
-  return new Response(body, { status: upstream.status, headers: { "content-type": upstream.headers.get("content-type") || "application/json", "cache-control": "no-store" } });
+  if (upstream.ok) { try { await persistCandidates(env.DB, projectionCandidates(JSON.parse(body))); } catch { return response({ error: "projection persistence failed" }, 503, origin); } }
+  const headers = { "content-type": upstream.headers.get("content-type") || "application/json", "cache-control": "no-store" };
+  if (origin) { headers["access-control-allow-origin"] = origin; headers.vary = "Origin"; }
+  return new Response(body, { status: upstream.status, headers });
 }
 export default {
   async fetch(request, env) {
+    const corsResult = cors(request);
+    if (!corsResult.proceed) return corsResult.result;
+    const origin = corsResult.origin;
     const url = new URL(request.url);
-    if (url.pathname !== SNAPSHOT_PATH && proxyPathAllowed(request.method, url.pathname)) return proxy(request, env, url);
-    if (!authorized(request, env)) return response({ error: "unauthorized" }, 401);
-    if (url.pathname !== SNAPSHOT_PATH) return response({ error: "not found" }, 404);
-    if (request.method === "GET") { try { return response(await readRow(env.DB)); } catch { return response({ error: "projection unavailable" }, 500); } }
-    if (request.method !== "PUT") return response({ error: "method not allowed" }, 405);
+    if (url.pathname !== SNAPSHOT_PATH && proxyPathAllowed(request.method, url.pathname)) return proxy(request, env, url, origin);
+    if (!authorized(request, env)) return response({ error: "unauthorized" }, 401, origin);
+    if (url.pathname !== SNAPSHOT_PATH) return response({ error: "not found" }, 404, origin);
+    if (request.method === "GET") { try { return response(await readRow(env.DB), 200, origin); } catch { return response({ error: "projection unavailable" }, 500, origin); } }
+    if (request.method !== "PUT") return response({ error: "method not allowed" }, 405, origin);
     try {
       const body = await request.json();
       if (!exact(body, ["version", "expectedRevision", "snapshot", "provenance"]) || body.version !== 1 || !Number.isInteger(body.expectedRevision) || body.expectedRevision < 0) fail("invalid save envelope");

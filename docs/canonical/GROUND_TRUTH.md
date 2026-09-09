@@ -50,10 +50,10 @@ ExecutionIntent → one OrderWriter → receipt/reconciliation
 | TradeThesis / ExecutionMandate schemas | CANONICAL TARGET |
 | Mandate kernel (M-B1) | IMPLEMENTED / INTEGRATED / LOCAL_PASS — A Domain/compiler, B MandateStore/authority persistence, C Runtime state machine, D Deterministic evaluator, E Integrated adversarial harness; independently reviewed `APPROVE` at integrated reviewed HEAD `db1d0df`; canonical main after ledger/docs integration `387b26e` |
 | Binance market/account adapters | NOT IMPLEMENTED / UNVERIFIED |
-| Execution-cost model | NOT IMPLEMENTED |
-| OrderWriter/reconciliation | NOT IMPLEMENTED / UNVERIFIED live behavior |
+| Execution-cost model | IMPLEMENTED / LOCAL_PASS through deterministic evaluator; no live economics claim |
+| OrderWriter/reconciliation | IMPLEMENTED / LOCAL_PASS through canonical local/replay path; no live behavior claim |
 | Live Binance reads | UNVERIFIED |
-| Shadow Binance workflow | UNVERIFIED |
+| Shadow Binance workflow | LOCAL_PASS — bounded no-write product workflow; no live Binance state claim |
 | Live bounded execution | UNVERIFIED |
 | Production durability | NOT CLAIMED |
 | Profitable alpha | NOT CLAIMED |

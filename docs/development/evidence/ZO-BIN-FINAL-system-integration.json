@@ -32,7 +32,7 @@
     "live": { "status": "NOT_AUTHORIZED", "liveWrites": false }
   },
   "coldHuman": { "status": "LIMITED_PASS", "evidence": "static route/UI tests pass; browser hydration interaction not independently observed because Chromium harness unavailable" },
-  "coldAgent": { "status": "PASS_WITH_LIMITATION", "evidence": "hosted MCP example and local cross-surface tests pass; durable hosted availability is not guaranteed" },
+  "coldAgent": { "status": "PASS_WITH_LIMITATION", "evidence": "hosted MCP/REST probes pass at the deployed head; hosted persistence is not claimed because Northflank storage is ephemeral" },
   "coldDeveloper": { "status": "PASS_WITH_LIMITATION", "evidence": "README/API/SDK/Integrate paths are runnable; SDK is repository-consumer verified, not independently published" },
   "P0GapsRemaining": 0,
   "P1GapsRemaining": [
@@ -58,7 +58,7 @@
     "Reconciled legal ACKNOWLEDGED -> PARTIALLY_FILLED -> FILLED runtime transitions",
     "MCP workflow identifiers are validated instead of coercing undefined",
     "Provider normalization uses the injected service clock",
-    "Hosted runtime redeployed at c489319 and passed repeated REST/MCP probes"
+    "Hosted runtime redeployed at cc6c16a6d947584e0f526521f7eeeb0a6df537ba and passed repeated REST/MCP probes"
   ],
   "tests": {
     "fullSuite": "540/540 pass",

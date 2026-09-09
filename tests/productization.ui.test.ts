@@ -28,7 +28,7 @@ test("demo is a read-only canonical workflow proof surface", () => {
   const stages = ["ARMED", "TRIGGERED", "VALIDATING", "SUBMITTING", "ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "REFUSED", "INVALIDATED", "EXPIRED", "SUPERSEDED", "CANCELLED", "FAILED", "UNKNOWN"];
   assert.equal((demo.match(/class="stage-card/g) ?? []).length, 14);
   for (const stage of stages) assert.match(demo, new RegExp(`<b>${stage}</b>`), stage);
-  for (const artifact of ["Council", "Reasoning Receipt", "Trade Thesis", "Mandate", "Economics", "Outcome", "Receipt"]) assert.match(demo, new RegExp(`<summary>${artifact}</summary>`), artifact);
+  for (const artifact of ["Council", "Reasoning Receipt", "Trade Thesis", "Execution Mandate", "Economics", "Outcome", "Receipt"]) assert.match(demo, new RegExp(`<summary>${artifact}</summary>`), artifact);
   assert.match(demo, /ZO-BIN-REASONING-RECEIPT-V2/);
   assert.match(demo, /9007abe64d51f1ed2f2a4c1fcc9a0e8c19fcab5c70be7a9bf376c6f16c4fa794/);
   assert.match(demo, /REFUSE/);

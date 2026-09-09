@@ -1,6 +1,6 @@
 {
-  "canonicalSha": "d26e95ea149421f3b0dddea4b1a70c06d2fbf915",
-  "evidenceRevision": "66eea51b0f206b5b5f33cbbb14b328f528277585",
+  "canonicalSha": "c489319b9212837505147a37e11dbf9ef747105d",
+  "evidenceRevision": "pending-final-evidence-commit",
   "entrySurfaces": {
     "web": { "status": "LOCAL_INTEGRATED", "routes": ["/", "/app/demo/", "/app/integrate/", "/app/try/"] },
     "rest": { "status": "HOSTED_PASS", "paths": ["/health", "/readiness", "/capabilities", "/v1/shadow", "/v1/paper-live"] },
@@ -36,8 +36,6 @@
   "coldDeveloper": { "status": "PASS_WITH_LIMITATION", "evidence": "README/API/SDK/Integrate paths are runnable; SDK is repository-consumer verified, not independently published" },
   "P0GapsRemaining": 0,
   "P1GapsRemaining": [
-    "G-002 product-boundary reconciliation of Council/service receipt construction",
-    "G-003 ordinary product read model does not expose the complete canonical runtime chain",
     "G-004 product workflow persistence is process-local and not restart durable",
     "G-005 native market/account state-plane composition and authenticated Agentic MCP remain unproven",
     "G-010 SDK package intentionally exposes only the thin client, not internal authority modules",
@@ -57,12 +55,15 @@
     "Removed fixed synthetic Paper intent and parallel PaperOrderWriter product path",
     "Added explicit canonical typed Paper path through compiler, authority store, supervisor, evaluator, OrderWriter, and reconciliation",
     "Minimal Paper input now fails closed with CAPABILITY_DENIED",
+    "Added product-boundary receipt verification against Council hashes and published thesis",
+    "Exposed typed canonical execution projection on the workflow read model",
+    "Reconciled legal ACKNOWLEDGED -> PARTIALLY_FILLED -> FILLED runtime transitions",
     "MCP workflow identifiers are validated instead of coercing undefined",
     "Provider normalization uses the injected service clock",
-    "Reconciled UI/API documentation with actual hosted default"
+    "Hosted runtime redeployed at c489319 and passed repeated REST/MCP probes"
   ],
   "tests": {
-    "fullSuite": "537/537 pass",
+    "fullSuite": "539/539 pass",
     "web": "5/5 pass",
     "typedPaper": "pass",
     "crossSurface": "pass",

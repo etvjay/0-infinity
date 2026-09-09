@@ -1,0 +1,66 @@
+{
+  "package": "0-infinity mechanism-led demo candidate",
+  "generated_from": "repository working tree; verify with sha256sum",
+  "files": [
+    {
+      "path": "0-infinity-mechanism-led-candidate.mp4",
+      "bytes": 7317345,
+      "sha256": "92a885dc361b6c092c51d6eda2e4196569f05fa9c4727c3d3fcde85d530673d6"
+    },
+    {
+      "path": "0-infinity-mechanism-led-qa.json",
+      "bytes": 404,
+      "sha256": "e3419ad786e2b7e54fe793d1c2f458ca68dcbf8ad65edbc644a9450e3b65e8a4"
+    },
+    {
+      "path": "0-infinity-voiceover-locked.mp3",
+      "bytes": 2190986,
+      "sha256": "4a979448a53ebb958df666d424c49e18465ed6453cb1f5234e3490b44a9342d5"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1915,
+      "sha256": "2aa5be60632cc488d829e2551511971baf908ef9ac03f84732339923060ca6e2"
+    },
+    {
+      "path": "demo.png",
+      "bytes": 109461,
+      "sha256": "fc1770663b05535a57ced036b48b0ef18e15bad2ce4d85e574995df320e57e03"
+    },
+    {
+      "path": "integrate.png",
+      "bytes": 96570,
+      "sha256": "164e4bfd2acea07b40cbbcd2a148e36457ac7e44bf2c38963ce466d5fb476ee8"
+    },
+    {
+      "path": "landing.png",
+      "bytes": 79217,
+      "sha256": "7066ea3677141eda8a1d81cc5b65e93221c29c469a08485bed14f9b3b3a35b51"
+    },
+    {
+      "path": "qa-end.png",
+      "bytes": 84048,
+      "sha256": "c7c260419b7ef299d5112c23ec0efc8c7092b3d166bd8576774fb1e3c806bc57"
+    },
+    {
+      "path": "qa-mechanism.png",
+      "bytes": 121885,
+      "sha256": "3c5c58d2b3c1ac554a9415695ee31c0954d48e936e48ac28353d3966e40c7c38"
+    },
+    {
+      "path": "qa-proof.png",
+      "bytes": 332208,
+      "sha256": "8594b53ce3c82223b27ec1ce48de6f86cf352ebd8d6ccb6eacdebbf594ec566a"
+    },
+    {
+      "path": "qa-start.png",
+      "bytes": 102909,
+      "sha256": "5b44e5923d2b3c395e104d0dc537167c6d07028fbc7e33dfacf95a7ae43c5da1"
+    },
+    {
+      "path": "try.png",
+      "bytes": 94429,
+      "sha256": "433abb1e543a79b5b39aea2c1c6afbbf1d2f7e69f29d0c507b916e2d9bd6f781"
+    }
+  ]
+}

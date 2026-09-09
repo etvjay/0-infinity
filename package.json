@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "files": ["dist", "docs", "examples"],
   "exports": {
-    "./sdk": "./dist/src/product/sdk.js"
+    "./sdk": "./dist/src/product/sdk.js",
+    "./product": "./dist/src/product/index.js",
+    "./reasoning": "./dist/src/reasoning/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

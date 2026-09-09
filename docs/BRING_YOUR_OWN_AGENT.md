@@ -105,14 +105,14 @@ const stack = createReasoningStack({
   advocate: { adapter: "openai-compatible", baseUrl: process.env.ALPHA_URL!, model: process.env.ALPHA_MODEL!, apiKey: process.env.ALPHA_KEY },
   opposer: { adapter: "http-agent", endpoint: process.env.RISK_WORKER_URL! },
   marketAnalyst: { adapter: "mcp-worker", endpoint: process.env.MARKET_WORKER_URL!, tool: "role_artifact" },
-  council: { adapter: "builtin" }
+  council: { adapter: "http-agent", endpoint: process.env.COUNCIL_WORKER_URL! }
 });
 const service = new ZeroInfinityService({ reasoningStack: stack });
 const workflow = service.createWorkflow({ symbol: "BTCUSDT", side: "LONG" }, "my-stack", "v1");
 const result = await service.submitOpportunity(workflow.workflowId);
 ```
 
-The configuration is runtime-only. Endpoint credentials are not placed in workflows, artifacts, receipts, or persisted projections. The current public path supports external Advocate/Opposer/Market Analyst workers and a Builtin Council. A provider-backed external Council requires a separate canonical `CouncilDecision` contract and is intentionally rejected by `createReasoningStack` today; no pre-Council role artifact is treated as Council output.
+The configuration is runtime-only. Endpoint credentials are not placed in workflows, artifacts, receipts, or persisted projections. The current public path supports external Advocate, Opposer, Market Analyst, and Council workers through their distinct boundaries. Provider-backed Council output is a `CouncilDecisionCandidate`, not a pre-Council `RoleArtifact`; 0-infinity validates it against the stack, workflow, evidence, and mandatory opposition before canonical Council/thesis processing.
 
 
 Bring your own intelligence does not transfer execution authority. 0-infinity retains the role contracts, mandatory opposition, Council constitution, Reasoning Receipt, Trade Thesis, short-lived freshness-bound mandate, market revalidation, execution policy, and receipt. A Council `APPROVE` is not an order; current execution economics can still produce `REFUSED` / `EDGE_COLLAPSED`.

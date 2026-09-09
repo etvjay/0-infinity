@@ -3,10 +3,10 @@
 This runnable consumer proves a real local heterogeneous stack without editing 0-infinity source:
 
 ```text
-Advocate       → OpenAI-compatible Ollama model
+Advocate       → OpenAI-compatible Ollama model (or HTTP worker in packed consumer proof)
 Opposer        → separate HTTP worker process
 Market Analyst → separate MCP worker process
-Council        → Builtin 0-infinity Council
+Council        → separate HTTP Council worker
 ```
 
 Run from the repository root:

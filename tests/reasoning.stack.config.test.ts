@@ -18,7 +18,8 @@ test("consumer can create a heterogeneous endpoint-backed reasoning stack", () =
   assert.equal(workflow.reasoningProfile, "STANDARD");
   assert.equal(workflow.composition.find(x => x.role === "OPPOSER")?.adapter, "http-agent:http://127.0.0.1:4101/role");
   assert.equal(workflow.composition.find(x => x.role === "MARKET_ANALYST")?.adapter, "mcp-worker:http://127.0.0.1:4102/mcp");
-  assert.throws(() => createReasoningStack({
-    name: "external-council", version: "v1", advocate: { adapter: "builtin" }, opposer: { adapter: "builtin" }, marketAnalyst: { adapter: "builtin" }, council: { adapter: "openai-compatible", baseUrl: "http://127.0.0.1:11434/v1", model: "llama3.2:1b" }
-  } as never), /custom Council workers are not supported/);
+  const councilStack = createReasoningStack({
+    name: "external-council", version: "v1", advocate: { adapter: "builtin" }, opposer: { adapter: "builtin" }, marketAnalyst: { adapter: "builtin" }, council: { adapter: "http-agent", endpoint: "http://127.0.0.1:4103/council" }
+  });
+  assert.equal(councilStack.bindings.COUNCIL.independence, "external");
 });

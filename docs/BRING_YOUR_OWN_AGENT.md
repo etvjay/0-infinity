@@ -63,7 +63,33 @@ The injected transport receives a `RoleInvocation` and returns only the artifact
 }
 ```
 
-The payload is parsed, schema-validated, role-validated, workflow-bound, provenance-bound, and frozen. Invalid JSON, timeouts, wrong roles, malformed evidence, replay conflicts, and authority-shaped fields fail closed as reasoning failure.
+## Normative external artifact envelope
+
+The current adapter contract is this exact JSON object; no additional top-level keys are accepted:
+
+```json
+{
+  "workflowId": "wf-example",
+  "invocationId": "wf-example:OPPOSER",
+  "role": "OPPOSER",
+  "kind": "OPPOSE",
+  "payload": {
+    "kind": "OPPOSE",
+    "ref": "worker-reference",
+    "hash": "worker-evidence-hash",
+    "symbol": "BTCUSDT",
+    "direction": "LONG",
+    "recommendation": "AGREE",
+    "observedAt": 1700000000000,
+    "expiresAt": 1700000300000
+  }
+}
+```
+
+For `ADVOCATE`, `kind` is `ADVOCATE` and the payload additionally requires `direction`, non-negative `expectedMoveBps`, and `confidence` from `0` through `1`. For `MARKET_ANALYST`, `kind` is `MARKET_ACCOUNT` and the payload requires `market: "TRUSTED"` and `account: "TRUSTED"`. The outer `role`, `workflowId`, `invocationId`, and `kind` must agree with the invocation; `symbol` must agree with the opportunity; `expiresAt` must be after `observedAt`; and authority-shaped fields such as `order`, `mandate`, `intent`, `trade`, `quantity`, or `price` are rejected.
+
+This is a role-artifact contract, not a hosted provider-registration API. Current public configuration is through injected transports and the OpenAI-compatible environment boundary; no public endpoint claims to register arbitrary remote workers or credentials. A developer connecting a remote worker must supply the transport in its own runtime and keep credentials outside the artifact. Rejection is fail-closed and does not produce a thesis or mandate.
+
 
 ## What 0-infinity still controls
 

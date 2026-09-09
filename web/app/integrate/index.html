@@ -25,7 +25,11 @@
       <div class="section-intro"><p class="kicker">INTEGRATE / EXISTING SURFACES</p><h3 id="integrate-title">Bring your own intelligence.</h3><p class="muted">MCP, REST, and SDK are how your agent calls 0-infinity. Role adapters are how your models, agents, risk engines, or quant workers participate inside the reasoning stack. 0-infinity still owns the contracts, Council, receipt, mandate, revalidation, and execution authority.</p></div>
       <div class="truth-grid" aria-label="Reasoning stack roles"><span><b>ADVOCATE</b> your alpha</span><span><b>OPPOSER</b> your risk challenge</span><span><b>MARKET ANALYST</b> your market worker</span><span><b>COUNCIL</b> your adjudicator</span></div>
       <div class="tabs" role="tablist" aria-label="Integration surfaces"><button class="tab active" role="tab" aria-selected="true" data-tab="mcp">MCP</button><button class="tab" role="tab" aria-selected="false" data-tab="rest">REST</button><button class="tab" role="tab" aria-selected="false" data-tab="sdk">SDK</button><button class="tab" role="tab" aria-selected="false" data-tab="adapters">Adapters</button></div>
-      <div class="code-panel"><div class="code-top"><span id="code-label">MCP / tools/list</span><button type="button" class="copy-button" id="copy-code">Copy</button></div><pre><code id="code-example"></code></pre></div>
+      <div class="code-panel"><div class="code-top"><span id="code-label">MCP / tools/list</span><button type="button" class="copy-button" id="copy-code">Copy</button></div><pre><code id="code-example">POST $ZERO_INFINITY_API/mcp
+
+{"jsonrpc":"2.0","id":1,"method":"tools/list"}
+
+Tools: get_capabilities · get_readiness · create_workflow · submit_opportunity · get_reasoning_receipt · get_trade_thesis · run_shadow_workflow · run_paper_live · get_workflow</code></pre></div>
       <div class="integration-note"><p class="kicker">CAPABILITY TRUTH</p><p class="capability-note" data-capability-note>Loading capability state from the configured service.</p><div class="truth-grid"><span><b>SHADOW</b> no-write</span><span><b>PAPER_LIVE</b> simulated</span><span><b>TESTNET</b> credentials required</span><span><b>LIVE</b> not authorized</span></div></div>
     </section>
   </section>

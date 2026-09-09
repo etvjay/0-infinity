@@ -10,7 +10,9 @@
     "/v1/workflows/{workflowId}/submit": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "post": { "responses": { "200": { "$ref": "#/components/responses/WorkflowResult" }, "404": { "$ref": "#/components/responses/Error" } } } },
     "/v1/workflows/{workflowId}/receipt": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "get": { "responses": { "200": { "description": "Reasoning receipt", "content": { "application/json": { "schema": { "type": "object" } } } }, "404": { "$ref": "#/components/responses/Error" } } } },
     "/v1/workflows/{workflowId}/thesis": { "parameters": [{ "$ref": "#/components/parameters/WorkflowId" }], "get": { "responses": { "200": { "description": "Trade thesis", "content": { "application/json": { "schema": { "type": "object" } } } }, "404": { "$ref": "#/components/responses/Error" } } } },
-    "/v1/shadow": { "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Opportunity" } } } }, "responses": { "200": { "$ref": "#/components/responses/WorkflowResult" }, "400": { "$ref": "#/components/responses/Error" } } } }
+    "/v1/shadow": { "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Opportunity" } } } }, "responses": { "200": { "$ref": "#/components/responses/WorkflowResult" }, "400": { "$ref": "#/components/responses/Error" } } } },
+    "/v1/paper-live": { "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Opportunity" } } } }, "responses": { "200": { "$ref": "#/components/responses/PaperLiveResult" }, "400": { "$ref": "#/components/responses/Error" } } } },
+    "/mcp": { "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JsonRpcRequest" } } } }, "responses": { "200": { "description": "JSON-RPC response", "content": { "application/json": { "schema": { "type": "object", "required": ["jsonrpc", "id"], "properties": { "jsonrpc": { "type": "string", "const": "2.0" }, "id": {}, "result": {}, "error": { "type": "object" } } } } } } } } }
   },
   "components": {
     "parameters": { "WorkflowId": { "name": "workflowId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } } },
@@ -21,7 +23,9 @@
       "Readiness": { "type": "object", "required": ["version", "ready", "mode", "liveWrites", "hostedEvidence"], "properties": { "version": { "type": "string" }, "ready": { "type": "boolean" }, "mode": { "type": "string" }, "liveWrites": { "type": "boolean" }, "hostedEvidence": { "type": "boolean" } } },
       "Error": { "type": "object", "required": ["error"], "properties": { "error": { "type": "string" }, "message": { "type": "string" } } },
       "Workflow": { "type": "object", "required": ["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition"], "properties": { "workflowId": { "type": "string" }, "stackName": { "type": "string" }, "stackVersion": { "type": "string" }, "createdAt": { "type": "number" }, "status": { "type": "string", "enum": ["CREATED", "COMPLETE", "REASONING_INCOMPLETE", "REFUSE"] }, "opportunity": { "$ref": "#/components/schemas/Opportunity" }, "composition": { "type": "array", "items": { "type": "object" } } } },
-      "WorkflowResult": { "type": "object", "required": ["workflow"], "properties": { "workflow": { "$ref": "#/components/schemas/Workflow" }, "thesis": { "type": "object" } } }
+      "WorkflowResult": { "type": "object", "required": ["workflow"], "properties": { "workflow": { "$ref": "#/components/schemas/Workflow" }, "thesis": { "type": "object" } } },
+      "PaperLiveResult": { "type": "object", "required": ["version", "mode", "noWrite", "workflowId", "status", "result", "paperReceipt"], "properties": { "version": { "type": "string" }, "mode": { "type": "string", "const": "PAPER_LIVE" }, "noWrite": { "type": "boolean", "const": true }, "workflowId": { "type": "string" }, "status": { "type": "string" }, "result": { "$ref": "#/components/schemas/WorkflowResult" }, "paperReceipt": { "type": "object" } } },
+      "JsonRpcRequest": { "type": "object", "required": ["jsonrpc", "id", "method"], "properties": { "jsonrpc": { "type": "string", "const": "2.0" }, "id": {}, "method": { "type": "string" }, "params": { "type": "object", "additionalProperties": true } } }
     },
     "responses": {
       "Health": { "description": "Healthy", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } } },
@@ -29,10 +33,11 @@
       "Readiness": { "description": "Local bounded readiness", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Readiness" } } } },
       "Workflow": { "description": "Workflow record", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workflow" } } } },
       "WorkflowResult": { "description": "Workflow result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkflowResult" } } } },
-      "Error": { "description": "Error contract", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+      "Error": { "description": "Error contract", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "PaperLiveResult": { "description": "Deterministic PAPER_LIVE no-write result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaperLiveResult" } } } }
     }
   },
-  "x-mcp": { "tools": ["tools/list", "get_capabilities", "get_readiness", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "get_workflow"], "resources": ["resources/list", "resources/read"] },
+  "x-mcp": { "tools": ["tools/list", "get_capabilities", "get_readiness", "create_workflow", "submit_opportunity", "get_reasoning_receipt", "get_trade_thesis", "run_shadow_workflow", "run_paper_live", "get_workflow"], "resources": ["resources/list", "resources/read"] },
   "x-runtime-modes": { "SHADOW": true, "PAPER_LIVE": true, "BINANCE_TESTNET": false, "LIVE_CONFIRMED": false },
   "x-writes": []
 }

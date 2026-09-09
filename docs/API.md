@@ -16,6 +16,8 @@ The product-access surface is bounded and no-write by default. Runtime modes exp
 
 Malformed JSON objects, arrays, inherited/custom-prototype objects, and accessor-backed objects are rejected with `400`. Unknown routes and workflows return `404`; unsupported content types return `415`.
 
+Browser callers may use CORS from the configured `STATIC_UI_ORIGIN`, the published UI origin, or localhost/127.0.0.1. Preflight is `OPTIONS` with `204`, `GET, POST, OPTIONS`, and `content-type, accept`; other origins receive `403`. Responses do not allow credentials.
+
 ## MCP
 
 `tools/list` advertises `get_capabilities`, `get_readiness`, `create_workflow`, `submit_opportunity`, `get_reasoning_receipt`, `get_trade_thesis`, `run_shadow_workflow`, `run_paper_live`, and `get_workflow`.

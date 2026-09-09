@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { ZeroInfinityService } from '../../dist/src/product/service.js';
+import { createReasoningStack } from '../../dist/src/product/reasoningStack.js';
+const root=new URL('./worker.mjs',import.meta.url).pathname; const processes=[];
+function start(mode,port){const p=spawn(process.execPath,[root,mode,String(port)],{stdio:['ignore','pipe','inherit']});processes.push(p);return new Promise((resolve,reject)=>{p.stdout.once('data',()=>resolve());p.once('error',reject);});}
+try {
+ await start('http',4311); await start('mcp',4312);
+ const stack=createReasoningStack({name:'heterogeneous-local',version:'v1',profile:'STANDARD',advocate:{adapter:'openai-compatible',baseUrl:'http://127.0.0.1:11434/v1',model:'llama3.2:1b'},opposer:{adapter:'http-agent',endpoint:'http://127.0.0.1:4311/role'},marketAnalyst:{adapter:'mcp-worker',endpoint:'http://127.0.0.1:4312/mcp',tool:'role_artifact'},council:{adapter:'builtin'}});
+ const service=new ZeroInfinityService({reasoningStack:stack,idFactory:()=>`wf-heterogeneous-${Date.now()}`}); const workflow=service.createWorkflow({symbol:'BTCUSDT',side:'LONG'},'heterogeneous-local','v1'); const result=await service.submitOpportunity(workflow.workflowId); if(result.workflow.status!=='COMPLETE') console.error(JSON.stringify({status:result.workflow.status,error:result.workflow.error,timing:result.workflow.reasoningTiming})); assert.equal(result.workflow.status,'COMPLETE'); const receipt=service.getReasoningReceipt(workflow.workflowId); assert.ok(receipt); assert.equal(result.workflow.composition.find(x=>x.role==='OPPOSER')?.adapter,'http-agent:http://127.0.0.1:4311/role'); assert.equal(result.workflow.composition.find(x=>x.role==='MARKET_ANALYST')?.adapter,'mcp-worker:http://127.0.0.1:4312/mcp'); console.log(JSON.stringify({status:'HETEROGENEOUS_REASONING_STACK_PASS',workflowId:workflow.workflowId,profile:result.workflow.reasoningProfile,composition:result.workflow.composition,receiptWorkflowId:receipt.workflowId,receiptHash:receipt.canonicalSha256,provider:result.workflow.composition.find(x=>x.role==='ADVOCATE')?.adapter,executionHotPath:'not invoked by submitOpportunity; deterministic after mandate'}));
+} finally {for(const p of processes)p.kill('SIGTERM');}

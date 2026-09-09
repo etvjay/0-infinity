@@ -10,7 +10,7 @@ export type IndependenceClass = "builtin" | "injected" | "external";
 export interface RoleInvocation { readonly workflowId: string; readonly invocationId: string; readonly role: RoleName; readonly opportunity: Readonly<Record<string, unknown>>; readonly timeoutMs: number; }
 export interface RoleArtifact { readonly workflowId: string; readonly invocationId: string; readonly role: RoleName; readonly kind: ArtifactKind; readonly payload: Readonly<Record<string, unknown>>; readonly artifactHash: string; readonly producedAt: number; readonly independence: IndependenceClass; }
 export interface RoleAdapter { readonly name: string; readonly independence: IndependenceClass; invoke(input: RoleInvocation): Promise<RoleArtifact>; }
-export interface ReasoningStack { readonly name: string; readonly version: string; readonly bindings: Readonly<Record<RoleName, RoleAdapter>>; readonly capabilities: readonly Capability[]; }
+export interface ReasoningStack { readonly name: string; readonly version: string; readonly reasoningProfile?: ReasoningProfile; readonly bindings: Readonly<Record<RoleName, RoleAdapter>>; readonly capabilities: readonly Capability[]; }
 export interface ReasoningTiming {
   readonly profile: ReasoningProfile;
   readonly budget: ReasoningBudget;

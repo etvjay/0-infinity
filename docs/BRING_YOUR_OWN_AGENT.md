@@ -91,7 +91,29 @@ For `ADVOCATE`, `kind` is `ADVOCATE` and the payload additionally requires `dire
 This is a role-artifact contract, not a hosted provider-registration API. Current public configuration is through injected transports and the OpenAI-compatible environment boundary; no public endpoint claims to register arbitrary remote workers or credentials. A developer connecting a remote worker must supply the transport in its own runtime and keep credentials outside the artifact. Rejection is fail-closed and does not produce a thesis or mandate.
 
 
-## What 0-infinity still controls
+## Consumer configuration path
+
+A consumer can create and inject a stack without editing 0-infinity source code:
+
+```ts
+import { ZeroInfinityService, createReasoningStack } from "0-infinity/product";
+
+const stack = createReasoningStack({
+  name: "my-stack",
+  version: "v1",
+  profile: "STANDARD",
+  advocate: { adapter: "openai-compatible", baseUrl: process.env.ALPHA_URL!, model: process.env.ALPHA_MODEL!, apiKey: process.env.ALPHA_KEY },
+  opposer: { adapter: "http-agent", endpoint: process.env.RISK_WORKER_URL! },
+  marketAnalyst: { adapter: "mcp-worker", endpoint: process.env.MARKET_WORKER_URL!, tool: "role_artifact" },
+  council: { adapter: "builtin" }
+});
+const service = new ZeroInfinityService({ reasoningStack: stack });
+const workflow = service.createWorkflow({ symbol: "BTCUSDT", side: "LONG" }, "my-stack", "v1");
+const result = await service.submitOpportunity(workflow.workflowId);
+```
+
+The configuration is runtime-only. Endpoint credentials are not placed in workflows, artifacts, receipts, or persisted projections. The current public path supports external Advocate/Opposer/Market Analyst workers and a Builtin Council. A provider-backed external Council requires a separate canonical `CouncilDecision` contract and is intentionally rejected by `createReasoningStack` today; no pre-Council role artifact is treated as Council output.
+
 
 Bring your own intelligence does not transfer execution authority. 0-infinity retains the role contracts, mandatory opposition, Council constitution, Reasoning Receipt, Trade Thesis, short-lived freshness-bound mandate, market revalidation, execution policy, and receipt. A Council `APPROVE` is not an order; current execution economics can still produce `REFUSED` / `EDGE_COLLAPSED`.
 

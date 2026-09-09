@@ -33,4 +33,4 @@ Not proven and not claimed:
 7. Open `/app/integrate/` and show the actual MCP, REST, and SDK examples.
 8. Close with the bounded evidence states: SHADOW/PAPER pass, Binance public market read pass, Testnet credential requirement, Agentic MCP authentication block, and LIVE not authorized.
 
-The current video script is `docs/submission/VIDEO_SCRIPT.md`. Existing binary media created for the former console is retained as historical media until a fresh capture of the simplified UI is produced; it must not be presented as a current UI capture.
+The current video script is `docs/submission/VIDEO_SCRIPT.md`. The media directory contains both former-console artifacts and locally generated candidates; do not present a clip as a current UI capture unless the selected candidate has been reviewed and uploaded.

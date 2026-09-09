@@ -2,7 +2,7 @@
  * 0-Infinity mandate runtime — canonical states, terminal set and the full
  * legal-transition table (change ZO-BIN-MB1-C, milestone M-B1).
  *
- * Source of truth: docs/development/STATE_MACHINES.md.
+ * This module is the executable source for the transition table; its behavior is covered by runtime transition tests.
  *
  * Main line:
  *   ARMED -> TRIGGERED -> VALIDATING -> SUBMITTING -> ACKNOWLEDGED
@@ -73,9 +73,8 @@ export function isTerminal(state: MandateState): boolean {
 }
 
 /**
- * The complete legal-transition table, enumerated as data exactly per
- * docs/development/STATE_MACHINES.md. Any (from, to) pair absent here is
- * illegal and must fail closed.
+ * The complete legal-transition table is enumerated as executable data. Any
+ * (from, to) pair absent here is illegal and must fail closed.
  */
 export const TRANSITIONS: Readonly<Record<MandateState, readonly MandateState[]>> = Object.freeze({
   ARMED: ["TRIGGERED", "EXPIRED", "SUPERSEDED", "INVALIDATED"] as const,

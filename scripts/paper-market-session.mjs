@@ -15,7 +15,7 @@ const freeze = (value) => {
 };
 const canonical = (value) => JSON.stringify(value, (_, item) => typeof item === "bigint" ? `${item}n` : item);
 const sha = (value) => `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`;
-const evidence = JSON.parse(await readFile("docs/development/evidence/ZO-BIN-MB8-paper-market-input.json", "utf8"));
+const evidence = JSON.parse(await readFile(".local/evidence/ZO-BIN-MB8-paper-market-input.json", "utf8"));
 const observation = evidence.observations.at(-1);
 const n = observation.normalized;
 const receivedAt = observation.receivedAt;
@@ -65,5 +65,6 @@ const artifact = {
   paperModel: { version: "paper-top-of-book-v1", depth: "not synchronized", fills: "simulated at selected top-of-book ask", funding: "not modeled", liveWrites: false },
   evidenceCeiling: "Bounded native public market observations plus deterministic local PAPER simulation. No synchronized depth, private account truth, exchange write, profitability, or production readiness claim.",
 };
-await writeFile("docs/development/evidence/ZO-BIN-MB8-paper-market-session.json", JSON.stringify(artifact, (_, item) => typeof item === "bigint" ? `${item}n` : item, 2) + "\n");
+await mkdir(".local/evidence", { recursive: true });
+await writeFile(".local/evidence/ZO-BIN-MB8-paper-market-session.json", JSON.stringify(artifact, (_, item) => typeof item === "bigint" ? `${item}n` : item, 2) + "\n");
 console.log(JSON.stringify({ status: artifact.status, workflowId: artifact.workflowId, assessment: assessment.kind, paperOutcome: paperReceipt?.outcome ?? null, refusal: artifact.refusalPath.code, reasoningReceiptHash: artifact.reasoningReceiptHash, thesisHash: artifact.thesisHash, mandateHash: artifact.mandateHash }));

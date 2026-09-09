@@ -90,7 +90,7 @@ This is a paper-trading governance flow. The current runtime does not expose pay
 
 The repository demonstrates deterministic local reasoning, SHADOW replay, bounded PAPER capability checks, public market-read evidence, and fail-closed authority boundaries. A minimal public PAPER_LIVE request does not mint a mandate or paper receipt because the canonical market/account/policy handoff is not yet exposed. `LIVE` is `NOT_AUTHORIZED`; Testnet account/order lifecycle and authenticated Agentic MCP access remain externally blocked. Hosted responses are bounded probes, not proof of production durability or live financial authority.
 
-For the detailed evidence ceiling and current submission wording, see [`docs/SUBMISSION.md`](docs/SUBMISSION.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), and the [evidence appendix](docs/development/evidence/). The repository readiness manifest keeps account reads, MCP reads, and all write capabilities disabled. No credentials belong in this repository.
+For public verification, start with [`docs/JUDGE_QUICKSTART.md`](docs/JUDGE_QUICKSTART.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Internal ground truth, experiment ledgers, detailed receipts, and submission drafts are maintained outside the public repository. No credentials belong in this repository.
 
 ## First run
 
@@ -133,4 +133,4 @@ window.__ZERO_INFINITY_CONFIG__ = {
 };
 ```
 
-The current hosted runtime is documented, with its evidence limits, in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). The current demo narration is [`docs/submission/VIDEO_SCRIPT.md`](docs/submission/VIDEO_SCRIPT.md).
+The current hosted runtime is documented, with its evidence limits, in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Submission scripts and media are maintained outside the public repository.

@@ -1,7 +1,7 @@
 /**
  * ZO-BIN-MB1-C structural tests — canonical states, terminal set and the
  * transition table as data, checked against an independent transcription of
- * docs/development/STATE_MACHINES.md. Deterministic: no I/O, no wall clock.
+ * Deterministic: no I/O, no wall clock.
  */
 import { strict as assert } from "node:assert";
 import { test } from "node:test";

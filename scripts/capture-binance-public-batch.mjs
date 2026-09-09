@@ -63,7 +63,7 @@ const artifact = {
   checks: { perSymbol: bySymbol, allSamplesValid: validity.every((x) => x.valid), validity, noCredentialsUsed: true, noWriteEndpointUsed: true },
   evidenceCeiling: "Bounded native public Binance bookTicker observations normalized locally. Top-of-book only; no synchronized depth, account state, profitability, execution, exchange write, or production-readiness claim."
 };
-await mkdir("docs/development/evidence", { recursive: true });
-await writeFile("docs/development/evidence/ZO-BIN-MB8-paper-market-input-v2.json", JSON.stringify(artifact, (_, value) => typeof value === "bigint" ? `${value}n` : value, 2) + "\n");
-console.log(JSON.stringify({ status: artifact.status, endpoint, responseStatus: artifact.capture.responseStatus, observationCount: artifact.observationCount, perSymbol: bySymbol, validity: artifact.checks.allSamplesValid, file: "docs/development/evidence/ZO-BIN-MB8-paper-market-input-v2.json" }));
+await mkdir(".local/evidence", { recursive: true });
+await writeFile(".local/evidence/ZO-BIN-MB8-paper-market-input-v2.json", JSON.stringify(artifact, (_, value) => typeof value === "bigint" ? `${value}n` : value, 2) + "\n");
+console.log(JSON.stringify({ status: artifact.status, endpoint, responseStatus: artifact.capture.responseStatus, observationCount: artifact.observationCount, perSymbol: bySymbol, validity: artifact.checks.allSamplesValid, file: ".local/evidence/ZO-BIN-MB8-paper-market-input-v2.json" }));
 if (artifact.status !== "LIVE_READ_PASS") process.exitCode = 2;

@@ -1,5 +1,6 @@
 {
   "canonicalSha": "d26e95ea149421f3b0dddea4b1a70c06d2fbf915",
+  "evidenceRevision": "66eea51b0f206b5b5f33cbbb14b328f528277585",
   "entrySurfaces": {
     "web": { "status": "LOCAL_INTEGRATED", "routes": ["/", "/app/demo/", "/app/integrate/", "/app/try/"] },
     "rest": { "status": "HOSTED_PASS", "paths": ["/health", "/readiness", "/capabilities", "/v1/shadow", "/v1/paper-live"] },

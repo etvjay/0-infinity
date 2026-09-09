@@ -53,7 +53,8 @@ test("result narrative is expandable and never renders private reasoning fields"
     assert.doesNotMatch(app, banned);
   }
   assert.match(app, /document\.createElement\('details'\)/);
-  assert.match(app, /textContent/);
+  assert.match(app, /sessionStorage/);
+  assert.match(app, /restoreTryResult/);
 });
 test("Pages workflow publishes only the static web directory", () => {
   const workflow = read(".github/workflows/pages.yml");

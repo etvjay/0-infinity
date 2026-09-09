@@ -2,6 +2,8 @@
 
 This isolated Worker is the durable store for the product projection only. It exposes no financial, execution, order, or wallet routes.
 
+The Worker is also the hosted REST/MCP front door. It forwards only the existing read/reasoning workflow routes to `UPSTREAM_URL`; it has no execution, order, wallet, or financial route. Successful upstream responses are persisted to D1 before the response is returned. If Northflank is unavailable, `GET /v1/workflows/:id`, `/receipt`, and `/thesis` are served from the last validated D1 projection. D1 authentication is used only inside the Worker and is never forwarded upstream or required from front-door callers.
+
 ## Contract
 
 - `GET /v1/projections/snapshot` loads `{ revision, snapshot, provenance }`.
@@ -23,6 +25,8 @@ npx wrangler secret put PROJECTION_STORE_AUTH_TOKEN
 npx wrangler d1 migrations apply zero-infinity-projections --remote --config wrangler.toml
 npx wrangler deploy --config wrangler.toml
 ```
+
+The configured front door is `https://zero-infinity-projection-store.microcosm.workers.dev`. The upstream URL is in `wrangler.toml` as `UPSTREAM_URL`; change it there and redeploy if Northflank is replaced. The deployment step requires the operator to set `PROJECTION_STORE_AUTH_TOKEN` in the Cloudflare account; it is intentionally not present in this repository. Do not send that token to clients or Northflank.
 
 `PROJECTION_STORE_AUTH_TOKEN` is required. The D1 binding is `DB`, configured in `wrangler.toml`. No token or secret belongs in git.
 

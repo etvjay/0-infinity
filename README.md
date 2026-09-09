@@ -49,6 +49,24 @@ The same bounded service is available through:
 
 See the [REST contract](docs/API.md), [MCP contract](docs/MCP.md), and [SDK contract](docs/SDK.md) for the implemented names and validation rules. No interface exposes a live financial write.
 
+## Watch an agent use 0-infinity
+
+The fastest way to understand the integration is the runnable [MCP agent example](examples/mcp-agent/). It connects to the hosted runtime and drives one bounded BTCUSDT paper workflow:
+
+```text
+capabilities → readiness → paper workflow → workflow record
+             → Reasoning Receipt → Trade Thesis
+```
+
+Run it with:
+
+```bash
+ZERO_INFINITY_MCP=https://http--zero-infinity-runtime--tw56snbf4tjj.code.run/mcp \
+  node examples/mcp-agent/run-paper-workflow.mjs
+```
+
+The example prints the returned decision boundary, receipt presence, and simulated/no-write status. It is the concrete agent-facing counterpart to the public [Demo](https://etvjay.github.io/0-infinity/app/demo/) and [Try](https://etvjay.github.io/0-infinity/app/try/) surfaces.
+
 ## Current public routes
 
 The static public UI is hosted at [`https://etvjay.github.io/0-infinity/`](https://etvjay.github.io/0-infinity/):

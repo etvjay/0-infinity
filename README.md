@@ -4,12 +4,12 @@
 
 Agents can propose a market opportunity. 0-infinity runs bounded evidence and opposition through a Council, produces inspectable reasoning artifacts, checks executable economics, and returns a bounded decision result or refusal. A Council result is not a live order: the public product has no financial-write path.
 
-The public UI is intentionally small:
+The public UI is intentionally small and is hosted at [`etvjay.github.io/0-infinity`](https://etvjay.github.io/0-infinity/):
 
-- **LANDING** — what 0-infinity is and why it exists;
-- **TRY** — a no-write SHADOW/PAPER workflow for `BTCUSDT`;
-- **INTEGRATE** — the implemented REST, MCP, and SDK entry points;
-- **PROOF** — compact evidence and blocked-state labels.
+- **Landing** — what 0-infinity is and why it exists;
+- **Demo** — the canonical read-only construct;
+- **Try** — a no-write SHADOW/PAPER workflow for `BTCUSDT`;
+- **Integrate** — the implemented REST, MCP, and SDK entry points.
 
 It is not a trading dashboard, HFT system, profitability claim, or live-order console.
 

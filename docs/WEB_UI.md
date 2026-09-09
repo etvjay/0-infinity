@@ -1,11 +1,11 @@
 # Web UI
 
-The `web/` directory is a dependency-free static public surface with four clearly separated views:
+The `web/` directory is a dependency-free static public surface with four clearly separated routes/views:
 
-- **LANDING** — what 0-infinity is and why an agent uses it;
-- **TRY** — the primary no-write SHADOW/PAPER workflow demo;
-- **INTEGRATE** — truthful MCP, REST, and SDK entry points;
-- **PROOF** — a compact list of bounded evidence states.
+- **Landing** (`/`) — what 0-infinity is and why an agent uses it;
+- **Demo** (`/app/demo/`) — the canonical read-only construct;
+- **Try** (`/app/try/`) — the primary no-write SHADOW/PAPER workflow demo;
+- **Integrate** (`/app/integrate/`) — truthful MCP, REST, and SDK entry points.
 
 It is not a trading dashboard. It does not expose Markets, Portfolio, Analytics, Bots, Strategies, Activity, Settings, or Readiness navigation.
 

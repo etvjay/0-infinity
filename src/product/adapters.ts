@@ -17,12 +17,37 @@ const providerConfig = (env: OpenAICompatibleEnv): { readonly baseUrl: string; r
   if (!baseUrl || !model || !apiKey) return undefined;
   try { const url = new URL(baseUrl); if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) return undefined; return { baseUrl: url.toString().replace(/\/$/, ""), model, apiKey }; } catch { return undefined; }
 };
+function normalizeProviderPayload(input: RoleInvocation, raw: unknown): Record<string, unknown> {
+  if (!exactOwnPlain(raw, Object.keys((raw as Record<string, unknown>) ?? {}))) throw new ValidationError("provider artifact must be a plain JSON object");
+  const value = raw as Record<string, unknown>;
+  const observedAt = Date.now();
+  const common = { symbol: input.opportunity.symbol ?? "BTCUSDT", ref: input.invocationId, hash: hash({ input, value }), observedAt, expiresAt: observedAt + 300000 };
+  if (input.role === "ADVOCATE") {
+    const direction = typeof value.direction === "string" ? value.direction.toUpperCase() : value.direction;
+    if ((direction !== "LONG" && direction !== "SHORT") || typeof value.expectedMoveBps !== "number" || !Number.isFinite(value.expectedMoveBps) || value.expectedMoveBps < 0 || typeof value.confidence !== "number" || !Number.isFinite(value.confidence) || value.confidence < 0 || value.confidence > 1) throw new ValidationError("provider Advocate payload invalid");
+    return { kind: "ADVOCATE", ...common, direction, expectedMoveBps: value.expectedMoveBps, confidence: value.confidence };
+  }
+  if (input.role === "OPPOSER") {
+    const direction = typeof value.direction === "string" ? value.direction.toUpperCase() : value.direction;
+    const recommendation = typeof value.recommendation === "string" ? value.recommendation.toUpperCase() : value.recommendation;
+    if ((direction !== "LONG" && direction !== "SHORT") || recommendation !== "AGREE") throw new ValidationError("provider Opposer payload invalid");
+    return { kind: "OPPOSE", ...common, direction, recommendation: "AGREE" };
+  }
+  if (value.market !== "TRUSTED" || value.account !== "TRUSTED") throw new ValidationError("provider Market Analyst payload invalid");
+  return { kind: "MARKET_ACCOUNT", ...common, market: "TRUSTED", account: "TRUSTED" };
+}
+const providerSchema = (role: RoleName): string => role === "ADVOCATE"
+  ? '{"direction":"LONG","expectedMoveBps":100,"confidence":0.8}'
+  : role === "OPPOSER"
+    ? '{"direction":"LONG","recommendation":"AGREE"}'
+    : '{"market":"TRUSTED","account":"TRUSTED"}';
 const openAITransport = (config: { readonly baseUrl: string; readonly model: string; readonly apiKey: string }): Transport => async (input, signal) => {
-  const response = await fetch(`${config.baseUrl}/chat/completions`, { method: "POST", signal, headers: { "content-type": "application/json", authorization: `Bearer ${config.apiKey}` }, body: JSON.stringify({ model: config.model, temperature: 0, messages: [{ role: "system", content: "Return only the requested JSON artifact. Never include orders, mandates, intents, or execution instructions." }, { role: "user", content: JSON.stringify({ workflowId: input.workflowId, invocationId: input.invocationId, role: input.role, symbol: input.opportunity.symbol ?? null, opportunity: input.opportunity }) }] }) });
+  const role = input.role as Exclude<RoleName, "COUNCIL">;
+  const response = await fetch(`${config.baseUrl}/chat/completions`, { method: "POST", signal, headers: { "content-type": "application/json", authorization: `Bearer ${config.apiKey}` }, body: JSON.stringify({ model: config.model, temperature: 0, max_tokens: 64, response_format: { type: "json_object" }, messages: [{ role: "system", content: `Output exactly one JSON object matching this example for the role: ${providerSchema(role)}. For MARKET_ANALYST, market must be the literal string TRUSTED, never the symbol. No envelope. No orders, mandates, intents, prices, quantities, or execution instructions.` }, { role: "user", content: JSON.stringify({ role, symbol: input.opportunity.symbol ?? "BTCUSDT", side: input.opportunity.side ?? null }) }] }) });
   if (!response.ok) throw new ValidationError("provider response unavailable");
   const body: unknown = await response.json(); if (!exactOwnPlain(body, ["choices"], ["choices"]) || !Array.isArray(body.choices) || body.choices.length !== 1) throw new ValidationError("provider response malformed");
   const choice = body.choices[0]; if (!exactOwnPlain(choice, ["message"], ["message"]) || !exactOwnPlain(choice.message, ["content"], ["content"]) || typeof choice.message.content !== "string") throw new ValidationError("provider content malformed");
-  try { return JSON.parse(choice.message.content) as unknown; } catch { throw new ValidationError("provider artifact is not JSON"); }
+  try { return { workflowId: input.workflowId, invocationId: input.invocationId, role, kind: ROLE_ARTIFACT_KIND[role], payload: normalizeProviderPayload(input, JSON.parse(choice.message.content)) }; } catch (error) { if (error instanceof ValidationError) throw error; throw new ValidationError("provider artifact is not JSON"); }
 };
 export function createOpenAICompatibleAdapterFromEnv(env: OpenAICompatibleEnv = process.env, transport?: Transport): OpenAICompatibleModelAdapter | undefined { const config = providerConfig(env); return config ? new OpenAICompatibleModelAdapter("openai-compatible-reasoning-v1", transport ?? openAITransport(config)) : undefined; }
 

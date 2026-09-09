@@ -1,41 +1,35 @@
-# Example MCP agent transcript
+# Cold-agent walkthrough (read-only)
 
-The following is an actual hosted read-only run of `run-paper-workflow.mjs` against:
+Target: `https://http--zero-infinity-runtime--tw56snbf4tjj.code.run`
+Evidence: [`docs/development/evidence/ZO-BIN-MB8-api-mcp-sdk-hosted.json`](../../docs/development/evidence/ZO-BIN-MB8-api-mcp-sdk-hosted.json)
+
+The agent uses the hosted MCP JSON-RPC boundary. No credentials are supplied and no exchange write is available.
+
+## Implemented method names
+
+- SDK `ZeroInfinityClient`: `createWorkflow`, `submitOpportunity`, `getWorkflow`, `getReasoningReceipt`, `getTradeThesis`, `runShadowWorkflow`, `runPaperLiveWorkflow`, `capabilities`, `readiness`.
+- MCP: `tools/list`, `resources/list`, `resources/read`, `get_capabilities`, `get_readiness`, `create_workflow`, `submit_opportunity`, `get_reasoning_receipt`, `get_trade_thesis`, `run_shadow_workflow`, `run_paper_live`, `get_workflow`.
+- REST: `GET /health`, `GET /capabilities`, `GET /readiness`, `POST /v1/workflows`, `GET /v1/workflows/{workflowId}`, `POST /v1/workflows/{workflowId}/submit`, `GET /v1/workflows/{workflowId}/receipt`, `GET /v1/workflows/{workflowId}/thesis`, `POST /v1/shadow`, `POST /v1/paper-live`.
+
+## Actual hosted run
 
 ```text
-https://http--zero-infinity-runtime--tw56snbf4tjj.code.run/mcp
+GET /health                       -> 200 {"ok":true,"version":"v1"}
+GET /readiness                    -> 200 {"ready":true,"mode":"bounded-local","liveWrites":false,"hostedEvidence":false}
+GET /capabilities                 -> 200 {"modes":["SHADOW","PAPER_LIVE"],"writes":[],"authority":false}
+MCP tools/list                    -> 200, 9 tools; names match the MCP list above
+MCP run_shadow_workflow           -> 200 {"mode":"SHADOW","noWrite":true,"workflowId":"wf-1788942350916-3","status":"COMPLETE"}
+REST POST /v1/paper-live          -> 200 {"mode":"PAPER_LIVE","noWrite":true,"workflowId":"wf-1788942351062-4","status":"COMPLETE","paperReceipt":{"simulated":true,"outcome":"FILLED"}}
+OPTIONS /health, GitHub origin   -> 204, allow-origin=https://etvjay.github.io
+OPTIONS /health, evil origin     -> 403 {"error":"CORS_ORIGIN_NOT_ALLOWED"}
 ```
+
+## Local SDK consumer
+
+From the repository root: `npm run build`; then `cd examples/consumer && npm install --ignore-scripts && npm run smoke` returned:
 
 ```text
-Agent → get_capabilities
-0-infinity → roles: ADVOCATE, OPPOSER, MARKET_ANALYST, COUNCIL
-0-infinity → modes: SHADOW, PAPER_LIVE
-0-infinity → authority: false
-
-Agent → get_readiness
-0-infinity → ready: true
-0-infinity → mode: bounded-local
-
-Agent → run_paper_live
-Agent → opportunity: BTCUSDT / LONG
-0-infinity → workflowId: wf-1788916676927-3
-0-infinity → status: COMPLETE
-0-infinity → mode: PAPER_LIVE
-0-infinity → noWrite: true
-0-infinity → simulated: true
-
-Agent → get_workflow
-0-infinity → workflow status: COMPLETE
-
-Agent → get_reasoning_receipt
-0-infinity → receipt: present
-0-infinity → canonical receipt hash: 031be63fef0babfcf88df43af7f8c69f227e6a66768edf63e78881b0fde32300
-
-Agent → get_trade_thesis
-0-infinity → thesis: present
-
-Agent → final interpretation
-The governed paper workflow completed. The result is simulated and no exchange write occurred. The reasoning receipt and thesis are available for inspection.
+{"workflowId":"wf-1788942294515-47","status":"COMPLETE","receiptWorkflowId":"wf-1788942294515-47"}
 ```
 
-This transcript demonstrates an agent using the public MCP boundary. It does not represent Binance account authentication, Testnet execution, or LIVE authority.
+The hosted checks prove only bounded read/discovery plus SHADOW/PAPER behavior. They do not prove credentials, authenticated account state, exchange execution, profitability, or production readiness.

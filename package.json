@@ -10,6 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/tests/*.test.js",
+    "rehearsal:external-model": "npm run build && node --test dist/tests/external-model.rehearsal.test.js",
     "shadow:campaign": "npm run build && node dist/src/shadow/mb7Campaign.js",
     "evidence:mb7": "npm run build && node dist/src/shadow/mb7Evidence.js",
     "demo": "npm run build && node dist/src/readiness/cli.js demo",

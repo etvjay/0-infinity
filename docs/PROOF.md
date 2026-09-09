@@ -205,6 +205,7 @@ These are local-provider measurements, not hosted-provider proof. Latency is not
 A real Chromium/CDP journey on the public Pages surface passed: Landing → Demo → Integrate → Try; REST and SDK integration tabs rendered; Try selected BTCUSDT/LONG/SHADOW; clicking `Run SHADOW` reached `API · connected`, rendered `ACTUAL · COMPLETE`, and exposed returned structured artifact/receipt controls. The page stated that no exchange write occurred. No credential or financial-write path was used.
 ## System integration result
 
+A fresh delegated agent run was blocked at the transport layer by a transient upstream `503`; Python `urllib` also received Cloudflare 1010 browser-signature blocking. Later Node/curl retries passed MCP initialization and bounded SDK/MCP smoke. This is an availability/client-variance limitation, not evidence of a protocol or authority regression.
 The local flagship integration tests currently prove that:
 
 - one workflow identity is preserved across service, REST, MCP, and SDK reads;

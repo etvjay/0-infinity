@@ -1,5 +1,5 @@
 {
-  "canonicalSha": "b907d92d10aa27bc213275599bd1f3fa58003ef4",
+  "canonicalSha": "95ffab72385b6bbe087967bf99aefdaa73034b88",
   "evidenceRevision": "ef2a6ca45753800252ffa9e7a37f0b6d3cc88901",
   "entrySurfaces": {
     "web": { "status": "HOSTED_FRONT_DOOR_CONFIGURED", "routes": ["/", "/app/demo/", "/app/integrate/", "/app/try/"], "apiBase": "https://zero-infinity-projection-store.microcosm.workers.dev" },
@@ -57,6 +57,7 @@
     "Reconciled legal ACKNOWLEDGED -> PARTIALLY_FILLED -> FILLED runtime transitions",
     "MCP workflow identifiers are validated instead of coercing undefined",
     "Provider normalization uses the injected service clock",
+    "MCP standard initialize lifecycle and explicit not-found errors verified through the hosted front door",
     "Hosted durable projection front door deployed and verified with D1 revision fencing",
     "Completed workflow recovered from D1 while Northflank upstream was unavailable",
     "CORS preflight and Pages front-door configuration verified"

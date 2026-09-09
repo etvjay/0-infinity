@@ -193,7 +193,7 @@ The current verified local run reports **548/548 tests passing** and **5/5 UI te
 
 Local Ollama was reachable at the local OpenAI-compatible endpoint and the actual provider adapter path was exercised. Results are separated by correctness and budget:
 
-- `llama3.2:1b`: structured role output valid; warm end-to-end three-role flow completed under FAST (~8.7s), STANDARD (~8.5s), and DEEP (~8.6s) in the measured run. Classified `LOCAL_PROVIDER_PASS` for that run.
+- `llama3.2:1b`: structured role output valid; FAST failed at the 5s role budget in the cold/warm matrix; STANDARD cold role ~10.1s and warm role ~3.8s; DEEP passed. A warmed full three-role STANDARD workflow completed in ~11.3s with receipt and thesis. Classified `LOCAL_PROVIDER_PASS` for STANDARD when warmed, `FAST_PROFILE_FAIL` for the measured boundary, and `PERFORMANCE_PROFILE_DEPENDENT` overall.
 - `llama3.2:3b`: FAST and STANDARD role budgets timed out in the measured run; DEEP produced valid structured role output in ~25.3s. Classified `DEEP_PROFILE_PASS`, `FAST_PROFILE_FAIL`, `STANDARD_PROFILE_FAIL` for that run.
 - `qwen2.5-7b-4k:latest`: timed out under FAST, STANDARD, and DEEP in the measured adapter run. Classified `FAST_PROFILE_FAIL`, `STANDARD_PROFILE_FAIL`, `DEEP_PROFILE_FAIL` for that run.
 - hosted provider-backed reasoning: `NOT_CONFIGURED`.
@@ -202,12 +202,11 @@ These are local-provider measurements, not hosted-provider proof. Latency is not
 
 ## Browser proof
 
-A real Chromium/CDP journey on the public Pages surface passed: Landing → Demo → Integrate → Try; REST and SDK integration tabs rendered; Try selected BTCUSDT/LONG/SHADOW; clicking `Run SHADOW` reached `API · connected`, rendered `ACTUAL · COMPLETE`, and exposed returned structured artifact/receipt controls. The page stated that no exchange write occurred. No credential or financial-write path was used.
+A real Chromium/CDP journey on the public Pages surface passed: Landing → Demo → Integrate → Try; REST and SDK integration tabs rendered; Try selected BTCUSDT/LONG/SHADOW; clicking `Run SHADOW` reached `API · connected`, rendered `ACTUAL · COMPLETE`, and exposed returned structured artifact/receipt controls. The same result survived browser refresh through session-scoped restoration, and the mobile viewport had no horizontal overflow. The page stated that no exchange write occurred. No credential or financial-write path was used.
 ## System integration result
 
 A fresh delegated agent run was blocked at the transport layer by a transient upstream `503`; Python `urllib` also received Cloudflare 1010 browser-signature blocking. Later Node/curl retries passed MCP initialization and bounded SDK/MCP smoke. This is an availability/client-variance limitation, not evidence of a protocol or authority regression.
-The local flagship integration tests currently prove that:
-
+The 10-round Node availability campaign returned 10/10 HTTP 200 for each of health, readiness, capabilities, MCP initialize, and MCP tools/list. This is bounded evidence, not an SLA. Northflank logs and direct probes showed the earlier 503s occurred at the private runtime process/deployment layer: Northflank reported deployment complete while the listener was intermittently refusing connections; one bounded service restart restored it.
 - one workflow identity is preserved across service, REST, MCP, and SDK reads;
 - SHADOW and PAPER capability responses agree across thin surfaces;
 - refusal remains explicit and equivalent across surfaces;

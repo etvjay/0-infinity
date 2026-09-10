@@ -15,7 +15,7 @@ const jsonTree = (x, seen = new Set()) => {
 };
 const fail = (message) => { throw new Error(message); };
 function validateWorkflow(value, id) {
-  const keys = ["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "reasoningProfile", "reasoningBudget", "reasoningTiming", "thesis", "receipt", "execution", "error"];
+  const keys = ["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "reasoningProfile", "reasoningBudget", "reasoningTiming", "thesis", "receipt", "mandate", "execution", "error"];
   if (!exact(value, keys) || value.workflowId !== id || !text(value.workflowId) || !text(value.stackName) || !text(value.stackVersion) || !finite(value.createdAt) || value.createdAt < 0 || !STATUSES.has(value.status) || !isRecord(value.opportunity) || !Array.isArray(value.composition) || !jsonTree(value)) fail(`invalid workflow ${id}`);
   if (value.reasoningProfile !== undefined && !["FAST", "STANDARD", "DEEP"].includes(value.reasoningProfile)) fail(`invalid reasoning profile ${id}`);
   if (value.reasoningBudget !== undefined) { const b = value.reasoningBudget; if (!isRecord(b) || !["FAST", "STANDARD", "DEEP"].includes(b.profile) || !finite(b.roleTimeoutMs) || !finite(b.councilTimeoutMs) || !finite(b.workflowDeadlineMs) || b.roleTimeoutMs <= 0 || b.councilTimeoutMs <= 0 || b.workflowDeadlineMs <= 0 || (b.maxEvidenceAgeMs !== undefined && (!finite(b.maxEvidenceAgeMs) || b.maxEvidenceAgeMs < 0)) || (value.reasoningProfile !== undefined && value.reasoningProfile !== b.profile)) fail(`invalid reasoning budget ${id}`); }
@@ -69,7 +69,7 @@ async function readRow(db) {
   const snapshot = JSON.parse(row.snapshot_json); const provenance = JSON.parse(row.provenance_json);
   validateSnapshot(snapshot); validateProvenance(provenance, snapshot); return { revision: row.revision, snapshot, provenance };
 }
-const proxyPathAllowed = (method, path) => method === "GET" || method === "POST" ? path === "/health" || path === "/capabilities" || path === "/readiness" || path === "/mcp" || path === "/v1/shadow" || path === "/v1/paper-live" || path === "/v1/workflows" || /^\/v1\/workflows\/[^/]+(?:\/(?:submit|receipt|thesis))?$/.test(path) : false;
+const proxyPathAllowed = (method, path) => method === "GET" || method === "POST" ? path === "/health" || path === "/capabilities" || path === "/readiness" || path === "/mcp" || path === "/v1/reasoning-stacks" || path === "/v1/advisory" || path === "/v1/shadow" || path === "/v1/paper-live" || path === "/v1/workflows" || /^\/v1\/workflows\/[^/]+(?:\/(?:submit|receipt|thesis|mandate))?$/.test(path) : false;
 function projectionCandidates(value, found = new Map()) {
   if (!value || typeof value !== "object") return found;
   if (isRecord(value) && text(value.workflowId) && text(value.stackName) && text(value.stackVersion) && STATUSES.has(value.status)) found.set(value.workflowId, value);
@@ -91,9 +91,9 @@ async function persistCandidates(db, candidates) {
   throw new Error("projection revision conflict");
 }
 function recoveredRead(row, pathname, origin) {
-  const match = pathname.match(/^\/v1\/workflows\/([^/]+)(?:\/(receipt|thesis))?$/); if (!match) return null;
+  const match = pathname.match(/^\/v1\/workflows\/([^/]+)(?:\/(receipt|thesis|mandate))?$/); if (!match) return null;
   const workflow = row.snapshot.workflows[match[1]]; if (!workflow) return response({ error: "NOT_FOUND" }, 404, origin);
-  const value = match[2] === "receipt" ? workflow.receipt : match[2] === "thesis" ? workflow.thesis : workflow;
+  const value = match[2] === "receipt" ? workflow.receipt : match[2] === "thesis" ? workflow.thesis : match[2] === "mandate" ? workflow.mandate : workflow;
   return value === undefined ? response({ error: "NOT_FOUND" }, 404, origin) : response(value, 200, origin);
 }
 async function proxy(request, env, url, origin) {

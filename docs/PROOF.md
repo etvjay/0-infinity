@@ -237,6 +237,7 @@ The result is bounded local/public integration proof, not proof of authenticated
 | Core system | `PASS` | canonical local suite and hosted bounded surfaces |
 | BYO intelligence | `PASS` | heterogeneous external Council and packed consumer |
 | Advisory mode | `PASS` | service, REST, MCP, SDK return `ADVISORY` mandate with `noWrite: true` |
+| Advisory mandate | `HOSTED_PROVEN` | public `POST /v1/advisory` returned `200`, `mode: ADVISORY`, `status: MANDATE_ISSUED`, `noWrite: true`; response included receipt, thesis, mandate, bounds, expiry, provenance |
 | Portable mandate | `PASS` | public serializer/verifier and clean packed consumer readback |
 | Enforced execution | `LOCALLY_PROVEN` | existing Paper/LocalReplay path; no authenticated venue connector |
 | Agent session model | `CONTRACT_ONLY` | public bounded bearer-protected deployment; no short-lived scoped agent session exchange |

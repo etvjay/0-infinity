@@ -94,9 +94,26 @@ The repository demonstrates deterministic local reasoning, SHADOW replay, adviso
 
 For public verification, start with [`docs/JUDGE_QUICKSTART.md`](docs/JUDGE_QUICKSTART.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Internal ground truth, experiment ledgers, detailed receipts, and submission drafts are maintained outside the public repository. No credentials belong in this repository.
 
-## First run
+## Reproduce the package without npm registry access
 
-From a clean clone, the credential-free local gate is:
+The package metadata, exports, declarations, and license are ready for publication, but this environment is not authenticated to npm. Until an authorized publisher runs `npm publish`, reproduce the exact package locally from the canonical source:
+
+```bash
+git clone https://github.com/etvjay/0-infinity.git
+cd 0-infinity
+npm ci
+npm run build
+mkdir -p /tmp/0-infinity-pack
+npm pack --pack-destination /tmp/0-infinity-pack
+mkdir /tmp/0-infinity-consumer
+cd /tmp/0-infinity-consumer
+npm init -y
+npm install /tmp/0-infinity-pack/0-infinity-0.1.0.tgz
+node -e "import('0-infinity/mandate').then(({verifySerializedMandate}) => console.log(typeof verifySerializedMandate))"
+```
+
+Expected output is `function`. This proves the public packed-consumer path without claiming that the package is already available from the npm registry.
+
 
 ```bash
 npm ci

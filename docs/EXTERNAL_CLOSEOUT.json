@@ -4,7 +4,7 @@
   "headEqualsOriginMain": true,
   "coreSystem": "PASS",
   "byoIntelligence": "PASS",
-  "advisoryMode": "PASS",
+  "advisoryMode": "HOSTED_PROVEN",
   "portableMandate": "PASS",
   "enforcedExecution": "LOCALLY_PROVEN",
   "agentSessionModel": "CONTRACT_ONLY",

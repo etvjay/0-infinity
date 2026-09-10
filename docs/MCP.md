@@ -8,6 +8,9 @@ The 0-infinity MCP adapter exposes read, reasoning, SHADOW, and deterministic PA
 
 - `get_capabilities`
 - `get_readiness`
+- `register_reasoning_stack`
+- `run_advisory`
+- `get_mandate`
 - `create_workflow`
 - `submit_opportunity`
 - `get_reasoning_receipt`
@@ -16,7 +19,7 @@ The 0-infinity MCP adapter exposes read, reasoning, SHADOW, and deterministic PA
 - `run_shadow_workflow`
 - `run_paper_live`
 
-`run_paper_live` returns the deterministic `PaperReceipt` and keeps exchange writes disabled. `run_shadow_workflow` returns a local replay result with `noWrite: true`.
+`run_advisory` executes the same reasoning/Council path and returns a bounded `ExecutionMandate` with `noWrite: true`. It does not invoke a venue connector. `run_paper_live` returns the deterministic `PaperReceipt` and keeps exchange writes disabled. `run_shadow_workflow` returns a local replay result with `noWrite: true`. `register_reasoning_stack` validates and freezes provider/worker bindings; credential-like fields are rejected.
 
 ## Resources
 

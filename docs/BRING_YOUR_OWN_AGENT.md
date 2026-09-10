@@ -127,4 +127,16 @@ The configuration is runtime-only. Endpoint credentials are not placed in workfl
 
 Bring your own intelligence does not transfer execution authority. 0-infinity retains the role contracts, mandatory opposition, Council constitution, Reasoning Receipt, Trade Thesis, short-lived freshness-bound mandate, market revalidation, execution policy, and receipt. A Council `APPROVE` is not an order; current execution economics can still produce `REFUSED` / `EDGE_COLLAPSED`.
 
+## Advisory mandate and portable verification
+
+Use the same canonical path without invoking a venue connector:
+
+```text
+workflow → Advocate/Opposer/Market Analyst → Council
+→ ReasoningReceipt → TradeThesis → ExecutionMandate
+→ return to the agent/user
+```
+
+The SDK method is `runAdvisoryWorkflow`; REST uses `POST /v1/advisory`; MCP uses `run_advisory`. The response is explicitly `mode: "ADVISORY"` and `noWrite: true`. A consumer can serialize the mandate and verify it through `0-infinity/mandate` using `serializeMandate`, `parseMandate`, or `verifySerializedMandate`. Verification provides canonical integrity, binding, expiry, bounds, and provenance assurance; it is not a cryptographic signature claim.
+
 Hosted credentials, authenticated Binance state, Testnet lifecycle, and LIVE authorization are not implied by adapter support.

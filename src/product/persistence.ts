@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { closeSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { verifyReasoningReceipt } from "../reasoning/receipt.js";
+import { verifyMandate } from "../mandate/verify.js";
 import type { WorkflowRecord } from "./types.js";
 
 export interface ProductProjectionSnapshot {
@@ -29,7 +30,7 @@ function plainTree(value: unknown, seen = new Set<object>()): boolean {
 function validWorkflow(value: unknown, key: string): value is WorkflowRecord {
   if (!isObject(value) || !plainTree(value)) return false;
   const x = value as Record<string, unknown>;
-  const allowed = new Set(["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "reasoningProfile", "reasoningBudget", "reasoningTiming", "thesis", "receipt", "execution", "error"]);
+  const allowed = new Set(["workflowId", "stackName", "stackVersion", "createdAt", "status", "opportunity", "composition", "reasoningProfile", "reasoningBudget", "reasoningTiming", "thesis", "receipt", "mandate", "execution", "error"]);
   if (Reflect.ownKeys(x).some((k) => typeof k !== "string" || !allowed.has(k)) || !text(x.workflowId) || x.workflowId !== key || !text(x.stackName) || !text(x.stackVersion) || !finite(x.createdAt) || x.createdAt < 0 || !["CREATED", "COMPLETE", "REASONING_INCOMPLETE", "REFUSE"].includes(String(x.status)) || !isObject(x.opportunity) || !Array.isArray(x.composition)) return false;
   if (x.reasoningProfile !== undefined && !["FAST", "STANDARD", "DEEP"].includes(String(x.reasoningProfile))) return false;
   if (x.reasoningBudget !== undefined) {
@@ -44,6 +45,7 @@ function validWorkflow(value: unknown, key: string): value is WorkflowRecord {
     const receipt = x.receipt as Record<string, unknown>;
     if (receipt.workflowId !== x.workflowId) return false;
   } else if (x.thesis !== undefined || x.receipt !== undefined) return false;
+  if (x.mandate !== undefined && !verifyMandate(x.mandate, { workflowId: x.workflowId }).valid) return false;
   if (x.execution !== undefined) {
     if (!isObject(x.execution)) return false;
     const execution = x.execution as Record<string, unknown>;

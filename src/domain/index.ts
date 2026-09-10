@@ -34,7 +34,7 @@ export interface MandateProvenance {
 export interface ExecutionMandate {
   readonly mandateId: string; readonly workflowId: string; readonly thesisId: string; readonly thesisHash?: string;
   readonly method: string; readonly advocateRef: string; readonly opposeRef: string; readonly marketAnalysisRef: string;
-  readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly provenance: MandateProvenance;
+  readonly evidenceBundleHash: string; readonly councilDecisionHash: string; readonly reasoningReceiptHash: string; readonly provenance: MandateProvenance;
   readonly venue: Venue; readonly instrument: Instrument; readonly symbol: string; readonly side: Side; readonly accountId: string;
   /** Canonical expiry consumed by MandateRuntime. */
   readonly expiresAt: number;

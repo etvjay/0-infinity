@@ -6,7 +6,7 @@ import { reasoningBudgetFor, resolveReasoningProfile } from "./reasoningBudget.j
 import type { RoleAdapter } from "./types.js";
 import { cloneFrozen, exactOwnPlain, IndependenceClass, ReasoningStack, CouncilAdapter, ReplayConflictError, RefusalError, RoleArtifact, RoleName, ReasoningTiming, ValidationError, NotFoundError, WorkflowRecord, WorkflowResult, ROLE_NAMES, freezeDeep } from "./types.js";
 import type { BinanceSkillsAdapter } from "../binance/skills.js";
-import { compileMandate, type AnchorState, type CompilerPolicy } from "../domain/index.js";
+import { compileMandate, type AnchorState, type CompilerPolicy, type ExecutionMandate } from "../domain/index.js";
 import type { EvaluationPolicy, LiveAccountState, LiveMarketState, StateEnvelope } from "../evaluator/index.js";
 import { MemoryOrderPersistence, OrderWriter, type ExchangeAdapter, type FillEvent } from "../execution/index.js";
 import { MandateStore, MemoryPersistence } from "../store/index.js";
@@ -22,6 +22,8 @@ export interface PaperExecutionInput {
   readonly evaluationPolicy: EvaluationPolicy;
   readonly fill: FillEvent;
 }
+export interface AdvisoryExecutionInput { readonly compilerPolicy: CompilerPolicy; readonly anchor: AnchorState; }
+export interface AdvisoryWorkflowResult { readonly version: "v1"; readonly mode: "ADVISORY"; readonly noWrite: true; readonly workflowId: string; readonly status: "MANDATE_ISSUED" | WorkflowRecord["status"] | "REFUSED"; readonly result: WorkflowResult; readonly thesis?: TradeThesis; readonly receipt?: ReasoningReceipt; readonly mandate?: ExecutionMandate; readonly code?: "CAPABILITY_DENIED"; readonly reason?: string; }
 export interface ServiceOptions { readonly clock?: Clock; readonly idFactory?: () => string; readonly binanceSkillsAdapter?: BinanceSkillsAdapter; readonly persistence?: ProductProjectionPersistence; readonly persistencePath?: string; readonly reasoningStack?: ReasoningStack; }
 export class ZeroInfinityService {
   private readonly stacks = new Map<string, ReasoningStack>(); private readonly workflows = new Map<string, WorkflowRecord>(); private readonly receipts = new Map<string, ReasoningReceipt>(); private readonly theses = new Map<string, unknown>(); private readonly clock: Clock; private readonly ids: () => string; private readonly binanceSkillsAdapter?: BinanceSkillsAdapter; private readonly persistence: ProductProjectionPersistence;
@@ -51,8 +53,25 @@ export class ZeroInfinityService {
   getWorkflow(id: string): WorkflowRecord | undefined { const value = this.workflows.get(id); return value && cloneFrozen(value); }
   getReasoningReceipt(id: string): ReasoningReceipt | undefined { const value = this.receipts.get(id); return value && cloneFrozen(value); }
   getTradeThesis(id: string): unknown { const value = this.theses.get(id); return value && cloneFrozen(value); }
+  getMandate(id: string): ExecutionMandate | undefined { const value = this.workflows.get(id)?.mandate as ExecutionMandate | undefined; return value && cloneFrozen(value); }
   getCapabilities() { const stack = this.getStack(); const provider = stack.bindings.ADVOCATE; return cloneFrozen({ version: "v1", modes: ["SHADOW", "PAPER_LIVE"], roles: [...ROLE_NAMES], capabilities: ["reasoning", "shadow", "paperLive", "readiness", "events"], reasoningProfiles: ["FAST", "STANDARD", "DEEP"], providerBackedReasoning: { configured: provider.independence === "external", adapter: provider.name }, writes: [], authority: false }); }
   getReadiness() { const stack = this.getStack(); const provider = stack.bindings.ADVOCATE; return cloneFrozen({ version: "v1", ready: true, mode: "bounded-local", liveWrites: false, hostedEvidence: false, reasoningProfiles: ["FAST", "STANDARD", "DEEP"], providerBackedReasoning: { configured: provider.independence === "external", adapter: provider.name } }); }
+  async runAdvisoryWorkflow(opportunity: Readonly<Record<string, unknown>>, compilerPolicy: CompilerPolicy, anchor: AnchorState, stackName = "default", stackVersion = "v1"): Promise<AdvisoryWorkflowResult> {
+    const workflow = this.createWorkflow(opportunity, stackName, stackVersion);
+    const result = await this.submitOpportunity(workflow.workflowId);
+    const thesis = result.thesis as TradeThesis | undefined;
+    const receipt = this.getReasoningReceipt(workflow.workflowId);
+    if (!thesis || !receipt || result.workflow.status !== "COMPLETE") return cloneFrozen({ version: "v1" as const, mode: "ADVISORY" as const, noWrite: true as const, workflowId: workflow.workflowId, status: result.workflow.status, result, ...(receipt ? { receipt } : {}) });
+    try {
+      const mandate = compileMandate({ workflowId: workflow.workflowId }, thesis, compilerPolicy, anchor, this.clock());
+      const published = cloneFrozen({ ...this.workflows.get(workflow.workflowId)!, mandate });
+      this.workflows.set(workflow.workflowId, published);
+      this.persistProjection();
+      return cloneFrozen({ version: "v1" as const, mode: "ADVISORY" as const, noWrite: true as const, workflowId: workflow.workflowId, status: "MANDATE_ISSUED" as const, result: { workflow: published, thesis }, thesis, receipt, mandate });
+    } catch (error) {
+      return cloneFrozen({ version: "v1" as const, mode: "ADVISORY" as const, noWrite: true as const, workflowId: workflow.workflowId, status: "REFUSED" as const, code: "CAPABILITY_DENIED" as const, reason: error instanceof Error ? error.message : "advisory mandate compilation failed", result, thesis, receipt });
+    }
+  }
   async runShadowWorkflow(opportunity: Readonly<Record<string, unknown>>) { const workflow = this.createWorkflow(opportunity); const result = await this.submitOpportunity(workflow.workflowId); return cloneFrozen({ version: "v1", mode: "SHADOW" as const, noWrite: true, workflowId: workflow.workflowId, status: result.workflow.status, result }); }
   async runPaperLiveWorkflow(opportunity: Readonly<Record<string, unknown>>, stackName = "default", stackVersion = "v1") {
     const workflow = this.createWorkflow(opportunity, stackName, stackVersion);

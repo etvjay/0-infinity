@@ -236,6 +236,11 @@ The result is bounded local/public integration proof, not proof of authenticated
 |---|---|---|
 | Core system | `PASS` | canonical local suite and hosted bounded surfaces |
 | BYO intelligence | `PASS` | heterogeneous external Council and packed consumer |
+| Advisory mode | `PASS` | service, REST, MCP, SDK return `ADVISORY` mandate with `noWrite: true` |
+| Portable mandate | `PASS` | public serializer/verifier and clean packed consumer readback |
+| Enforced execution | `LOCALLY_PROVEN` | existing Paper/LocalReplay path; no authenticated venue connector |
+| Agent session model | `CONTRACT_ONLY` | public bounded bearer-protected deployment; no short-lived scoped agent session exchange |
+| VenueConnection | `CONTRACT_ONLY` | account/connector boundary is represented by existing policy/account inputs; no hosted venue connection is configured |
 | Hosted remote BYO | `BLOCKED_EXTERNAL` | public `POST /v1/reasoning-stacks` returns `401 unauthorized` without deployment bearer authorization; no remote worker campaign was claimed |
 | Hosted provider reasoning | `NOT_CONFIGURED` | hosted `/readiness` reports `providerBackedReasoning.configured: false` and Builtin adapter |
 | Public npm distribution | `BLOCKED_AUTH` | package is public-ready and packable; `npm whoami` returns `ENEEDAUTH`, so no publication was attempted |

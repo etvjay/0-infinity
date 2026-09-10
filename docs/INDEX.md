@@ -33,6 +33,7 @@ The Northflank service is a private upstream behind that front door. The GitHub 
 
 - [`../examples/mcp-agent/`](../examples/mcp-agent/) — bounded hosted MCP example.
 - [`../examples/consumer/`](../examples/consumer/) — consumer-shaped SDK smoke fixture.
+- [`../examples/mandate-consumer/`](../examples/mandate-consumer/) — public portable-mandate verifier consumer.
 - [`../scripts/`](../scripts/) — credential-free local and hosted smoke commands.
 - [`../tests/`](../tests/) — executable implementation and contract tests.
 

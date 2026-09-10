@@ -7,10 +7,13 @@ The product-access surface is bounded and no-write by default. Runtime modes exp
 - `GET /health` → `{ ok: true, version }`
 - `GET /capabilities` → version, roles, capabilities, empty `writes`, and `authority: false`
 - `GET /readiness` → bounded-local readiness; `liveWrites: false`
+- `POST /v1/advisory` with `opportunity`, bounded `compilerPolicy`, and market `anchor` → canonical reasoning plus an `ADVISORY` `ExecutionMandate` with `noWrite: true`; it does not invoke a venue connector
+- `POST /v1/reasoning-stacks` → validated frozen stack registration; credentials are rejected at the API boundary
 - `POST /v1/workflows` accepts an optional `reasoningProfile` of `FAST`, `STANDARD`, or `DEEP`. The service resolves one bounded budget per workflow and exposes the resolved profile, budget, and reasoning timing in the workflow read model. Profiles affect reasoning-resource budgets only; they do not remove OPPOSER/COUNCIL, widen authority, or change the deterministic execution lane.
 - `GET /v1/workflows/{workflowId}` → workflow record or `404 { error: "NOT_FOUND", message }`
 - `POST /v1/workflows/{workflowId}/submit` → bounded workflow result or 404
 - `GET /v1/workflows/{workflowId}/receipt` and `/thesis` → artifact or 404
+- `GET /v1/workflows/{workflowId}/mandate` → persisted portable mandate or 404
 - `POST /v1/shadow` with a plain JSON object → no-write shadow result
 - `POST /v1/paper-live` with a plain JSON object → bounded PAPER_LIVE capability check; minimal opportunities return `REFUSED` with `CAPABILITY_DENIED` rather than fabricating a mandate or PaperReceipt; no exchange write
 
@@ -20,7 +23,7 @@ Browser callers may use CORS from the configured `STATIC_UI_ORIGIN`, the publish
 
 ## MCP
 
-`tools/list` advertises `get_capabilities`, `get_readiness`, `create_workflow`, `submit_opportunity`, `get_reasoning_receipt`, `get_trade_thesis`, `run_shadow_workflow`, `run_paper_live`, and `get_workflow`.
+`tools/list` advertises `get_capabilities`, `get_readiness`, `register_reasoning_stack`, `run_advisory`, `get_mandate`, `create_workflow`, `submit_opportunity`, `get_reasoning_receipt`, `get_trade_thesis`, `run_shadow_workflow`, `run_paper_live`, and `get_workflow`. `run_advisory` returns a bounded no-write mandate; it does not execute a venue action.
 
 `resources/list` advertises the canonical JSON resources `zero-infinity://capabilities` and `zero-infinity://readiness`. `resources/read` accepts `{ "uri": "..." }` and returns standard `contents` entries containing JSON text. Invalid params are errors; malformed opportunities are never replaced with `{}`.
 

@@ -27,6 +27,7 @@ The Northflank service is a private upstream behind that front door. The GitHub 
 - [`PROOF.md`](PROOF.md) — public security properties, capability matrix, redacted artifact examples, test methodology, and bounded integration result.
 - [`BRING_YOUR_OWN_AGENT.md`](BRING_YOUR_OWN_AGENT.md) — public adapter boundary.
 - [`../openapi.json`](../openapi.json) — machine-readable REST contract.
+- [`EXTERNAL_CLOSEOUT.json`](EXTERNAL_CLOSEOUT.json) — machine-readable final external capability statuses.
 
 ## Runnable examples and tests
 

@@ -1,0 +1,41 @@
+{
+  "artifact": "ZO-BIN-external-closeout",
+  "repository": "etvjay/0-infinity",
+  "canonicalSha": "1e878fd8417b97b427601c6a4b4e96160eaaef35",
+  "headEqualsOriginMain": true,
+  "coreSystem": "PASS",
+  "byoIntelligence": "PASS",
+  "hostedRemoteByo": {
+    "status": "BLOCKED_EXTERNAL",
+    "observed": "public stack registration returned HTTP 401 unauthorized",
+    "claim": "not claimed"
+  },
+  "hostedProviderReasoning": {
+    "status": "NOT_CONFIGURED",
+    "readinessConfigured": false,
+    "adapter": "builtin-worker-v1"
+  },
+  "publicNpmDistribution": {
+    "status": "BLOCKED_AUTH",
+    "package": "0-infinity@0.1.0",
+    "packDryRun": "PASS",
+    "license": "MIT",
+    "declarations": "PASS",
+    "npmWhoami": "ENEEDAUTH",
+    "published": false
+  },
+  "hostedResilience": {
+    "status": "PASS",
+    "rounds": 10,
+    "endpointsPerRound": 5,
+    "requests": 50,
+    "http200": 50,
+    "transportErrors": 0,
+    "slaClaim": false
+  },
+  "binancePublic": "PASS",
+  "binanceAuthenticatedTestnet": "CREDENTIAL_REQUIRED",
+  "live": "NOT_AUTHORIZED",
+  "financialWrites": 0,
+  "secretsPrinted": false
+}

@@ -230,6 +230,22 @@ The 10-round Node availability campaign returned 10/10 HTTP 200 for each of heal
 
 The result is bounded local/public integration proof, not proof of authenticated Testnet, LIVE execution, profitability, or hosted provider-backed reasoning.
 
+## Final external closeout matrix
+
+| Capability | Status | Evidence / blocker |
+|---|---|---|
+| Core system | `PASS` | canonical local suite and hosted bounded surfaces |
+| BYO intelligence | `PASS` | heterogeneous external Council and packed consumer |
+| Hosted remote BYO | `BLOCKED_EXTERNAL` | public `POST /v1/reasoning-stacks` returns `401 unauthorized` without deployment bearer authorization; no remote worker campaign was claimed |
+| Hosted provider reasoning | `NOT_CONFIGURED` | hosted `/readiness` reports `providerBackedReasoning.configured: false` and Builtin adapter |
+| Public npm distribution | `BLOCKED_AUTH` | package is public-ready and packable; `npm whoami` returns `ENEEDAUTH`, so no publication was attempted |
+| Hosted resilience | `PASS` | 10 rounds × 5 endpoints = 50/50 HTTP 200, zero transport errors; bounded evidence, not an SLA |
+| Binance public data | `PASS` | existing bounded public market evidence |
+| Binance authenticated/Testnet | `CREDENTIAL_REQUIRED` | no dedicated Testnet credentials present in runtime; no authenticated request attempted |
+| LIVE | `NOT_AUTHORIZED` | intentionally locked |
+
+The hosted remote BYO, hosted provider, npm publication, and Binance Testnet statuses are external blockers, not fabricated passes. The package is prepared for publication with license metadata, public exports, declaration files, and a clean packed-consumer path.
+
 ## Evidence boundary
 
 This public proof summary intentionally excludes private implementation ledgers, detailed experiments, agent transcripts, submission drafts, video scripts, operational secrets, and historical internal receipts. Those remain outside the public repository.

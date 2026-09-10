@@ -2,12 +2,14 @@
   "name": "0-infinity",
   "version": "0.1.0",
   "private": false,
+  "license": "MIT",
   "type": "module",
+  "types": "./dist/src/product/index.d.ts",
   "files": ["dist", "docs", "examples"],
   "exports": {
-    "./sdk": "./dist/src/product/sdk.js",
-    "./product": "./dist/src/product/index.js",
-    "./reasoning": "./dist/src/reasoning/index.js"
+    "./sdk": { "types": "./dist/src/product/sdk.d.ts", "import": "./dist/src/product/sdk.js" },
+    "./product": { "types": "./dist/src/product/index.d.ts", "import": "./dist/src/product/index.js" },
+    "./reasoning": { "types": "./dist/src/reasoning/index.d.ts", "import": "./dist/src/reasoning/index.js" }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

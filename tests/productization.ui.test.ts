@@ -25,6 +25,13 @@ test("public IA is landing plus exactly three app routes", () => {
   for (const label of ["ARMED", "TRIGGERED", "VALIDATING", "SUBMITTING", "ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "REFUSED", "INVALIDATED", "EXPIRED", "SUPERSEDED", "CANCELLED", "FAILED", "UNKNOWN"]) assert.match(app, new RegExp(label), label);
 });
 
+test("landing explains the control layer and judge path", () => {
+  const landing = read("web/index.html");
+  for (const label of ["The control layer between intelligence and execution.", "Evidence before action.", "OPPORTUNITY", "ADVOCATE", "OPPOSER", "MARKET ANALYST", "COUNCIL", "REASONING RECEIPT", "TRADE THESIS", "EXECUTION MANDATE", "Open Demo", "Integrate 0∞", "Try the runtime", "Your venue remains yours."]) assert.match(landing, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), label);
+  assert.match(landing, /Demo\/.*Try|See it\. Run it\. Connect it\./s);
+  assert.doesNotMatch(landing, /dashboard|profitability|deposit|fund your 0-infinity account/i);
+});
+
 test("demo is a read-only canonical workflow proof surface", () => {
   const demo = read("web/app/demo/index.html");
   const stages = ["ARMED", "TRIGGERED", "VALIDATING", "SUBMITTING", "ACKNOWLEDGED", "PARTIALLY_FILLED", "FILLED", "REFUSED", "INVALIDATED", "EXPIRED", "SUPERSEDED", "CANCELLED", "FAILED", "UNKNOWN"];

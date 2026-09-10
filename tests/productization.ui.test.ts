@@ -17,6 +17,8 @@ test("public IA is landing plus exactly three app routes", () => {
   for (const [route, heading] of [["demo", "demo-panel"], ["integrate", "integrate-panel"], ["try", "try-panel"]] as const) {
     const page = read(`web/app/${route}/index.html`);
     assert.match(page, new RegExp(`id="${heading}"`));
+    assert.match(page, /<h1 id="app-title">/);
+    assert.match(page, new RegExp(`<h2 id="${route}-title">`));
     assert.doesNotMatch(page, /id="landing"|id="hero-title"/);
   }
   assert.doesNotMatch(html, /Markets|Portfolio|Analytics|Bots|Strategies|Activity|Settings/);
@@ -43,6 +45,10 @@ test("integrate surface explains BYO intelligence and adapter boundaries", () =>
   const page = read("web/app/integrate/index.html");
   for (const label of ["BUILTIN", "OPENAI-COMPATIBLE", "HTTP AGENT", "MCP WORKER", "workflowId", "invocationId", "RoleArtifact"]) assert.ok(page.includes(label), label);
   assert.ok(surface.includes('POST $ZERO_INFINITY_API/mcp'));
+  assert.match(page, /role="tablist"/);
+  assert.equal((page.match(/role="tab"/g) ?? []).length, 4);
+  assert.match(page, /aria-controls="integration-code-panel"/);
+  assert.match(page, /role="tabpanel"/);
 });
 
 test("try surface states public no-write behavior", () => {

@@ -1,10 +1,15 @@
 {
   "artifact": "ZO-BIN-external-closeout",
   "repository": "etvjay/0-infinity",
-  "canonicalSha": "1e878fd8417b97b427601c6a4b4e96160eaaef35",
+  "canonicalSha": "e6f5c69abfe94d2833c9e4a3faabf924d1260299",
   "headEqualsOriginMain": true,
   "coreSystem": "PASS",
   "byoIntelligence": "PASS",
+  "advisoryMode": "PASS",
+  "portableMandate": "PASS",
+  "enforcedExecution": "LOCALLY_PROVEN",
+  "agentSessionModel": "CONTRACT_ONLY",
+  "venueConnection": "CONTRACT_ONLY",
   "hostedRemoteByo": {
     "status": "BLOCKED_EXTERNAL",
     "observed": "public stack registration returned HTTP 401 unauthorized",

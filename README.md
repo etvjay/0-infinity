@@ -101,6 +101,7 @@ The package metadata, exports, declarations, and license are ready for publicati
 ```bash
 git clone https://github.com/etvjay/0-infinity.git
 cd 0-infinity
+git checkout f53203b33c9845ec16b39c9ccee2379b21c4d009
 npm ci
 npm run build
 mkdir -p /tmp/0-infinity-pack

@@ -1,7 +1,6 @@
 {
   "artifact": "ZO-BIN-external-closeout",
   "repository": "etvjay/0-infinity",
-  "canonicalSha": "e6f5c69abfe94d2833c9e4a3faabf924d1260299",
   "headEqualsOriginMain": true,
   "coreSystem": "PASS",
   "byoIntelligence": "PASS",

@@ -38,7 +38,7 @@ If the economics no longer hold, the result is `REFUSED` with `EDGE_COLLAPSED`. 
 
 ## Binance Agent OS context
 
-0-infinity is designed as a control and authority layer around agent intelligence in the Binance Agent OS context. The intelligence source is replaceable: agents and models can enter through MCP, REST, SDK, or adapter boundaries while the evidence, authority, and revalidation rules remain the same. This repository does not claim authenticated Binance Agentic MCP access, authenticated Futures Testnet execution, profitability, or live financial authority.
+0-infinity is designed as a control and authority layer around agent intelligence in the Binance Agent OS context. The intelligence source is replaceable: agents and models can enter through MCP, REST, SDK, or adapter boundaries while the evidence, authority, and revalidation rules remain the same. Read-only authenticated Binance Agentic MCP access has been proven through the supported Codex client for a live SPOT account; this repository does not claim live order execution, authenticated Futures Testnet execution, profitability, or live financial authority.
 
 ## Interfaces
 
@@ -90,7 +90,7 @@ This is a paper-trading governance flow. The current runtime does not expose pay
 
 ## Evidence boundary
 
-The repository demonstrates deterministic local reasoning, SHADOW replay, advisory mandate issuance and verification, bounded PAPER capability checks, public market-read evidence, and fail-closed authority boundaries. A minimal public PAPER_LIVE request still refuses when canonical market/account/policy state is absent. `LIVE` is `NOT_AUTHORIZED`; Testnet account/order lifecycle and authenticated Agentic MCP access remain externally blocked. Hosted responses are bounded probes, not proof of production durability or live financial authority.
+The repository demonstrates deterministic local reasoning, SHADOW replay, advisory mandate issuance and verification, bounded PAPER capability checks, public market-read evidence, read-only authenticated Binance Agentic MCP discovery through Codex, and fail-closed authority boundaries. A minimal public PAPER_LIVE request still refuses when canonical market/account/policy state is absent. `LIVE` is `NOT_AUTHORIZED`; Futures Testnet account/order lifecycle remains credential-gated and authenticated Agentic order execution has not been performed. Hosted responses are bounded probes, not proof of production durability or live financial authority.
 
 For public verification, start with [`docs/JUDGE_QUICKSTART.md`](docs/JUDGE_QUICKSTART.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Internal ground truth, experiment ledgers, detailed receipts, and submission drafts are maintained outside the public repository. No credentials belong in this repository.
 

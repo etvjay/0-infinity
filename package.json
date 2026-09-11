@@ -30,7 +30,8 @@
     "judge:local": "bash scripts/judge-local.sh",
     "smoke:front-door": "node scripts/front-door-smoke.mjs",
     "smoke:hosted": "npm run build && npm run smoke:front-door && node scripts/sdk-mcp-smoke.mjs",
-    "sdk:mcp:smoke": "npm run build && node scripts/sdk-mcp-smoke.mjs"
+    "sdk:mcp:smoke": "npm run build && node scripts/sdk-mcp-smoke.mjs",
+    "testnet:direct": "npm run build && node scripts/testnet-direct-runner.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

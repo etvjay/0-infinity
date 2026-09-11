@@ -8,7 +8,7 @@ export type OrderOutcome = (typeof ORDER_OUTCOMES)[number];
 export type CancelState = "NONE" | "REQUESTED" | "UNKNOWN" | "CANCELLED";
 export type BoundedIntent = ExecutionIntent & { readonly quantity?: number; readonly accountId?: string; readonly price: number };
 export type AdapterResult = { readonly kind: "ACKNOWLEDGED" | "REJECTED" | "FAILED" | "TIMEOUT"; readonly message?: string; readonly clientOrderId?: string };
-export interface ExchangeAdapter { submit(intent: BoundedIntent, clientOrderId: string): Promise<AdapterResult>; cancel?: (clientOrderId: string) => Promise<void>; }
+export interface ExchangeAdapter { submit(intent: BoundedIntent, clientOrderId: string): Promise<AdapterResult>; cancel?: (clientOrderId: string, symbol?: string) => Promise<void>; }
 export interface FillEvent { readonly eventId: string; readonly status: "ACKNOWLEDGED" | "PARTIALLY_FILLED" | "FILLED" | "CANCELLED" | "REJECTED" | "FAILED"; readonly fillQuantity?: number; readonly fillPrice?: number; }
 export interface OrderReceipt {
   readonly clientOrderId: string; readonly mandateId: string; readonly workflowId: string; readonly symbol: string; readonly side: BoundedIntent["side"];
@@ -253,7 +253,7 @@ export class OrderWriter {
     const requested = freeze({ ...prior, cancelState: "REQUESTED" as const });
     await this.persistence.save(requested);
     try {
-      await this.adapter.cancel(clientOrderId);
+      await this.adapter.cancel(clientOrderId, prior.symbol);
     } catch {
       const unknown = freeze({ ...requested, outcome: "UNKNOWN" as const, acceptanceProvenance: "TIMEOUT" as const, cancelState: "UNKNOWN" as const });
       await this.persistence.save(unknown);

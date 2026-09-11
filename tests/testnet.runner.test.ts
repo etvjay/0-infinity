@@ -28,5 +28,9 @@ test("runner composes account read, metadata, supervisor, and order writer", asy
   const mandates = new MandateStore(new MemoryPersistence(), () => 2_600);
   await mandates.issue(mandate);
   const result = await runBinanceTestnet({ ...input(adapter), mandates });
-  assert.equal(result.status, "COMPLETE"); assert.equal(result.noWrite, false); assert.equal(result.receipt.status, "ACKNOWLEDGED"); assert.deepEqual(calls, ["GET /fapi/v2/account", "GET /fapi/v2/account", "POST /fapi/v1/order"]);
+  assert.equal(result.status, "COMPLETE"); assert.equal(result.noWrite, false); assert.equal(result.receipt.status, "ACKNOWLEDGED");
+  assert.deepEqual(calls, ["GET /fapi/v2/account", "GET /fapi/v2/account", "POST /fapi/v1/order"]);
+  const cancelled = await result.cancel();
+  assert.equal(cancelled.status, "CANCELLED"); assert.equal(cancelled.runtime.state, "CANCELLED");
+  assert.deepEqual(calls, ["GET /fapi/v2/account", "GET /fapi/v2/account", "POST /fapi/v1/order", "GET /fapi/v2/account", "DELETE /fapi/v1/order"]);
 });

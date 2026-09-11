@@ -2,7 +2,7 @@ import type { MandateStore } from "../store/index.js";
 import type { ExecutionMandate } from "../domain/index.js";
 import type { EvaluationPolicy, EvaluationWorkflow } from "../evaluator/index.js";
 import type { ExchangeAdapter } from "../execution/index.js";
-import { MemoryOrderPersistence, OrderWriter } from "../execution/index.js";
+import { MemoryOrderPersistence, OrderWriter, type FillEvent, type OrderPersistence } from "../execution/index.js";
 import { MemoryWorkflowPersistence, RuntimeSupervisor, type WorkflowAccountState, type WorkflowMarketState, type WorkflowReceipt, type WorkflowPersistence } from "../runtime/index.js";
 import { BinanceTestnetAdapter, normalizeExchangeInfo, type AccountEvidence, type ExchangeInfoMetadata } from "./index.js";
 
@@ -21,12 +21,13 @@ export interface BinanceTestnetRunInput {
   readonly state: TestnetStateSource;
   readonly mandates: MandateStore;
   readonly persistence?: WorkflowPersistence;
+  readonly orderPersistence?: OrderPersistence;
   readonly clock: () => number;
 }
 
 export type BinanceTestnetRunResult =
   | Readonly<{ kind: "BINANCE_TESTNET_RUN"; status: "BLOCKED_EXTERNAL"; account: AccountEvidence; blocker: string; noWrite: true }>
-  | Readonly<{ kind: "BINANCE_TESTNET_RUN"; status: "READY" | "COMPLETE"; account: AccountEvidence; exchangeInfo: ExchangeInfoMetadata; receipt: WorkflowReceipt; noWrite: false }>;
+  | Readonly<{ kind: "BINANCE_TESTNET_RUN"; status: "READY" | "COMPLETE"; account: AccountEvidence; exchangeInfo: ExchangeInfoMetadata; receipt: WorkflowReceipt; cancel: () => Promise<WorkflowReceipt>; reconcile: (event: FillEvent) => Promise<WorkflowReceipt>; restore: () => Promise<WorkflowReceipt>; noWrite: false }>;
 
 function blocked(account: AccountEvidence, blocker: string): BinanceTestnetRunResult {
   return Object.freeze({ kind: "BINANCE_TESTNET_RUN", status: "BLOCKED_EXTERNAL" as const, account, blocker, noWrite: true as const });
@@ -55,8 +56,8 @@ export async function runBinanceTestnet(input: BinanceTestnetRunInput): Promise<
   const market = await input.state.market(input.mandate.symbol);
   const accountState = await input.state.account();
   const persistence = input.persistence ?? new MemoryWorkflowPersistence();
-  const writer = new OrderWriter(input.mandates, new MemoryOrderPersistence(), input.adapter as ExchangeAdapter);
+  const writer = new OrderWriter(input.mandates, input.orderPersistence ?? new MemoryOrderPersistence(), input.adapter as ExchangeAdapter);
   const supervisor = new RuntimeSupervisor({ mode: "BINANCE_TESTNET", writer, persistence, clock: input.clock });
   const receipt = await supervisor.start({ workflowId: input.workflowId, mandate: input.mandate, market, account: accountState, evaluationPolicy: input.evaluationPolicy, authorityStatus: input.authorityStatus });
-  return Object.freeze({ kind: "BINANCE_TESTNET_RUN", status: receipt.status === "READY" ? "READY" : "COMPLETE", account, exchangeInfo, receipt, noWrite: false as const });
+  return Object.freeze({ kind: "BINANCE_TESTNET_RUN", status: receipt.status === "READY" ? "READY" : "COMPLETE", account, exchangeInfo, receipt, cancel: () => supervisor.cancel(input.workflowId), reconcile: (event: FillEvent) => supervisor.reconcile(input.workflowId, event), restore: () => supervisor.restore(input.workflowId), noWrite: false as const });
 }

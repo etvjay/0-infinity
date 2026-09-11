@@ -6,7 +6,7 @@ export const RuntimeMode = { SHADOW: "SHADOW", PAPER_LIVE: "PAPER_LIVE", BINANCE
 export type RuntimeMode = (typeof RuntimeMode)[keyof typeof RuntimeMode];
 export type TestnetStatus = "BLOCKED_EXTERNAL" | "READY";
 export type AccountEvidence = Readonly<{ capability: "BINANCE_TESTNET"; status: TestnetStatus; blocker?: string }>;
-export type SignedRequest = Readonly<{ method: "GET" | "POST"; path: string; params: Readonly<Record<string, string | number>>; headers: Readonly<Record<string, string>> }>;
+export type SignedRequest = Readonly<{ method: "GET" | "POST" | "DELETE"; path: string; params: Readonly<Record<string, string | number>>; headers: Readonly<Record<string, string>> }>;
 export type TransportResponse = Readonly<{ status: number; body: unknown }>;
 export interface SignedRequestTransport { request(request: SignedRequest): Promise<TransportResponse>; }
 export type ExchangeInfoMetadata = Readonly<{ symbols: ReadonlyArray<Readonly<{ symbol: "BTCUSDT" | "ETHUSDT"; status: string; filters: ReadonlyArray<Readonly<Record<string, string>>> }>> }>;
@@ -20,7 +20,7 @@ const noNetworkTransport: SignedRequestTransport = { request: async () => { thro
 const freeze = <T>(v: T): T => { if (v && typeof v === "object" && !Object.isFrozen(v)) Object.freeze(v); return v; };
 
 function queryString(params: Readonly<Record<string, string | number>>): string { return Object.keys(params).sort().map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(params[key]))}`).join("&"); }
-export function buildSignedRequest(method: "GET" | "POST", path: string, params: Readonly<Record<string, string | number>>, apiKey: string, apiSecret: string, signature: Signature = (query, secret) => createHmac("sha256", secret).update(query).digest("hex")): SignedRequest {
+export function buildSignedRequest(method: "GET" | "POST" | "DELETE", path: string, params: Readonly<Record<string, string | number>>, apiKey: string, apiSecret: string, signature: Signature = (query, secret) => createHmac("sha256", secret).update(query).digest("hex")): SignedRequest {
   if (path.startsWith("http") || path.includes("binance.com")) throw new Error("signed path must be relative to the Binance Futures Testnet endpoint");
   const signedParams = { ...params, signature: signature(queryString(params), apiSecret) };
   return freeze({ method, path, params: freeze(signedParams), headers: freeze({ "X-MBX-APIKEY": apiKey, "Content-Type": "application/x-www-form-urlencoded" }) });
@@ -64,6 +64,14 @@ export class BinanceTestnetAdapter {
     const body = response.body as any;
     if (response.status < 200 || response.status >= 300) return { kind: "REJECTED", message: typeof body?.msg === "string" ? body.msg : `HTTP ${response.status}`, clientOrderId };
     return { kind: body?.status === "FILLED" ? "ACKNOWLEDGED" : "ACKNOWLEDGED", clientOrderId };
+  }
+  async cancel(clientOrderId: string, symbol?: string): Promise<void> {
+    if (!symbol || !allowedSymbols.has(symbol)) throw new RangeError("cancel symbol is outside the Binance Testnet allowlist");
+    const account = await this.accountRead();
+    if (account.status !== "READY") throw new Error("BLOCKED_EXTERNAL: Binance Testnet account read is unavailable");
+    if (!this.config.apiKey || !this.config.apiSecret) throw new Error("BLOCKED_EXTERNAL: credentials unavailable");
+    const response = await this.transport.request(buildSignedRequest("DELETE", "/fapi/v1/order", { symbol, origClientOrderId: clientOrderId, timestamp: Date.now() }, this.config.apiKey, this.config.apiSecret));
+    if (response.status < 200 || response.status >= 300) throw new Error(`Binance Futures Testnet cancel returned HTTP ${response.status}`);
   }
 }
 

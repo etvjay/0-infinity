@@ -51,6 +51,7 @@ These are implementation/test claims, not a claim of a completed external exchan
 | SHADOW | available | local/replay only | `src/shadow/`, shadow tests |
 | PAPER_LIVE minimal request | available as fail-closed refusal | no write; `CAPABILITY_DENIED` | `docs/JUDGE_QUICKSTART.md` |
 | PAPER typed execution path | covered locally with canonical writer | local paper/replay only | product execution integration tests |
+| Binance Testnet runner composition | local composed | `BINANCE_TESTNET` now routes through RuntimeSupervisor → OrderWriter → BinanceTestnetAdapter; account-read remains the credential gate |
 | Binance authenticated Testnet | blocked | not authorized | readiness/capability boundary |
 | LIVE_CONFIRMED | blocked | disabled | readiness/capability boundary |
 | hosted provider-backed reasoning | not configured | unavailable | provider/readiness boundary |

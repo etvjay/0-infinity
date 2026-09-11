@@ -20,6 +20,22 @@ function setup(adapter: ExchangeAdapter = { submit: async () => ({ kind: "ACKNOW
   return { mandates, persistence, writer, supervisor: new RuntimeSupervisor({ mode: "LOCAL_REPLAY", writer, persistence: new MemoryWorkflowPersistence(), clock: () => 2_600 }) };
 }
 
+test("BINANCE_TESTNET composes through the supervisor and injected adapter without enabling LIVE", async () => {
+  const calls: string[] = [];
+  const adapter = new (await import("../src/testnet/index.js")).BinanceTestnetAdapter({
+    mode: (await import("../src/testnet/index.js")).RuntimeMode.BINANCE_TESTNET,
+    apiKey: "test-key", apiSecret: "test-secret",
+    transport: { request: async (request) => { calls.push(`${request.method} ${request.path}`); return { status: 200, body: { status: "NEW" } }; } },
+  });
+  const mandates = new MandateStore(new MemoryPersistence(), () => 2_600);
+  const orderPersistence = new MemoryOrderPersistence();
+  const writer = new OrderWriter(mandates, orderPersistence, adapter);
+  const supervisor = new RuntimeSupervisor({ mode: "BINANCE_TESTNET", writer, persistence: new MemoryWorkflowPersistence(), clock: () => 2_600 });
+  await mandates.issue(mandate);
+  const receipt = await supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });
+  assert.equal(receipt.status, "ACKNOWLEDGED");
+  assert.deepEqual(calls, ["GET /fapi/v2/account", "POST /fapi/v1/order"]);
+});
 test("valid local replay trigger reaches an immutable receipt once", async () => {
   const x = setup(); await x.mandates.issue(mandate);
   const first = await x.supervisor.start({ workflowId: "wf", mandate, market, account, evaluationPolicy: evalPolicy, authorityStatus: "ACTIVE" });

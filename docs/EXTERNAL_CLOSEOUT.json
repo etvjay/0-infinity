@@ -38,6 +38,7 @@
     "slaClaim": false
   },
   "binancePublic": "PASS",
+  "binanceTestnetRunner": "LOCAL_COMPOSED_CREDENTIAL_GATED",
   "binanceAuthenticatedTestnet": "CREDENTIAL_REQUIRED",
   "live": "NOT_AUTHORIZED",
   "financialWrites": 0,

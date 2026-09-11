@@ -7,7 +7,7 @@ export const ORDER_OUTCOMES = ["ACKNOWLEDGED", "REJECTED", "FAILED", "UNKNOWN", 
 export type OrderOutcome = (typeof ORDER_OUTCOMES)[number];
 export type CancelState = "NONE" | "REQUESTED" | "UNKNOWN" | "CANCELLED";
 export type BoundedIntent = ExecutionIntent & { readonly quantity?: number; readonly accountId?: string; readonly price: number };
-export type AdapterResult = { readonly kind: "ACKNOWLEDGED" | "REJECTED" | "FAILED" | "TIMEOUT"; readonly message?: string };
+export type AdapterResult = { readonly kind: "ACKNOWLEDGED" | "REJECTED" | "FAILED" | "TIMEOUT"; readonly message?: string; readonly clientOrderId?: string };
 export interface ExchangeAdapter { submit(intent: BoundedIntent, clientOrderId: string): Promise<AdapterResult>; cancel?: (clientOrderId: string) => Promise<void>; }
 export interface FillEvent { readonly eventId: string; readonly status: "ACKNOWLEDGED" | "PARTIALLY_FILLED" | "FILLED" | "CANCELLED" | "REJECTED" | "FAILED"; readonly fillQuantity?: number; readonly fillPrice?: number; }
 export interface OrderReceipt {
@@ -34,7 +34,7 @@ function freeze<T>(value: T): T { if (value && typeof value === "object" && !Obj
 function fail(message: string): never { throw new TypeError(message); }
 const INTENT_KEYS = ["kind", "mandateId", "workflowId", "symbol", "side", "method", "price", "notional", "executableEdgeBps", "marketStateVersion", "accountStateVersion", "quantity", "accountId"] as const;
 const EVENT_KEYS = ["eventId", "status", "fillQuantity", "fillPrice"] as const;
-const ADAPTER_RESULT_KEYS = ["kind", "message"] as const;
+const ADAPTER_RESULT_KEYS = ["kind", "message", "clientOrderId"] as const;
 const CANONICAL_ARRAY_PROTO_KEYS = new Set<PropertyKey>([
   "length", "constructor", "at", "concat", "copyWithin", "fill", "find", "findIndex", "findLast", "findLastIndex", "lastIndexOf", "pop", "push", "reverse", "shift", "unshift", "slice", "sort", "splice", "includes", "indexOf", "join", "keys", "entries", "values", "forEach", "filter", "flat", "flatMap", "map", "every", "some", "reduce", "reduceRight", "toReversed", "toSorted", "toSpliced", "with", "toLocaleString", "toString", Symbol.iterator, Symbol.unscopables,
 ]);
@@ -123,10 +123,10 @@ function canonicalFrozenStringArray(value: unknown): value is readonly string[] 
     return typeof entry === "string" && entry.length > 0 && !!descriptor && descriptor.enumerable === true && descriptor.configurable === false && descriptor.writable === false && "value" in descriptor;
   });
 }
-function validAdapterResult(value: unknown): value is AdapterResult {
+function validAdapterResult(value: unknown, expectedClientOrderId?: string): value is AdapterResult {
   if (!value || typeof value !== "object" || !canonicalOwnData(value, ADAPTER_RESULT_KEYS, ["kind"])) return false;
   const result = value as Record<string, unknown>;
-  return ["ACKNOWLEDGED", "REJECTED", "FAILED", "TIMEOUT"].includes(result.kind as string) && (result.message === undefined || typeof result.message === "string");
+  return ["ACKNOWLEDGED", "REJECTED", "FAILED", "TIMEOUT"].includes(result.kind as string) && (result.message === undefined || typeof result.message === "string") && (result.clientOrderId === undefined || (typeof result.clientOrderId === "string" && (expectedClientOrderId === undefined || result.clientOrderId === expectedClientOrderId)));
 }
 function decimalParts(value: number): [bigint, number] {
   const text = value.toString().toLowerCase(); const [coefficient, exponentText] = text.split("e"); const exponent = exponentText ? Number(exponentText) : 0;
@@ -215,7 +215,7 @@ export class OrderWriter {
     await this.persistence.save(order); await this.hooks.beforeAdapterCall?.();
     let result: AdapterResult; try { result = await this.adapter.submit(intent, clientOrderId); } catch { result = { kind: "TIMEOUT" }; }
     await this.hooks.afterAdapterCall?.();
-    if (!validAdapterResult(result)) fail("adapter result is invalid");
+    if (!validAdapterResult(result, clientOrderId)) fail("adapter result is invalid");
     order = { ...order, outcome: result.kind === "TIMEOUT" ? "UNKNOWN" : result.kind, acceptanceProvenance: result.kind, events: [] }; await this.persistence.save(freeze(order)); return freeze(clone(order));
   }
   reconcile(clientOrderId: string, event: FillEvent): Promise<OrderReceipt> { return this.serial(() => this.reconcileOnce(clientOrderId, event)); }

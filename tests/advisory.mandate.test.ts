@@ -30,6 +30,14 @@ test("advisory returns a portable mandate without executing", async () => {
   assert.equal(result.mandate.workflowId, "wf-advisory");
   assert.equal(service.getMandate("wf-advisory")?.mandateId, result.mandate.mandateId);});
 
+test("SPOT advisory preserves product across thesis, receipt, and mandate", async () => {
+  const service = new ZeroInfinityService({ clock: () => now, idFactory: () => "wf-spot-advisory" });
+  const result = await service.runAdvisoryWorkflow({ symbol: "BTCUSDT", venue: "BINANCE", product: "SPOT", side: "LONG" }, { ...compilerPolicy, accountId: "1275006787" }, anchor);
+  assert.equal(result.status, "MANDATE_ISSUED");
+  assert.equal(result.thesis?.instrument, "SPOT");
+  assert.equal(result.receipt?.opportunity.product, "SPOT");
+  assert.equal(result.mandate?.instrument, "SPOT");
+});
 test("portable mandate verification rejects expiry and binding drift", async () => {
   const result = await advisory(new ZeroInfinityService({ clock: () => now, idFactory: () => "wf-portable" }));
   assert.equal(result.status, "MANDATE_ISSUED");

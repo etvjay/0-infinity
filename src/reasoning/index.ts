@@ -20,7 +20,7 @@ export interface MarketAccountEvidence {
 }
 export interface CouncilPolicy {
   readonly method: string; readonly now: number; readonly maxAgeMs: number; readonly minConfidence: number; readonly minExpectedMoveBps: number;
-  readonly thesisId?: string; readonly thesisHash?: string;
+  readonly thesisId?: string; readonly thesisHash?: string; readonly instrument?: "SPOT" | "USD_M_FUTURES";
 }
 export interface CouncilInput { readonly advocate: AdvocateAnalysis; readonly oppose: OpposingAnalysis; readonly evidence: MarketAccountEvidence; readonly policy: CouncilPolicy; }
 export type TradeThesis = DomainTradeThesis;
@@ -84,12 +84,12 @@ const refusal = (code: CouncilRefusalCode, message: string): CouncilRefusal => O
 const analysisKeys = ["kind", "ref", "hash", "symbol", "direction", "expectedMoveBps", "confidence", "observedAt", "expiresAt"] as const;
 const opposeKeys = ["kind", "ref", "hash", "symbol", "direction", "recommendation", "observedAt", "expiresAt"] as const;
 const evidenceKeys = ["kind", "ref", "hash", "symbol", "market", "account", "observedAt", "expiresAt", "economics", "sourceEvidence"] as const;
-const policyKeys = ["method", "now", "maxAgeMs", "minConfidence", "minExpectedMoveBps", "thesisId", "thesisHash"] as const;
+const policyKeys = ["method", "now", "maxAgeMs", "minConfidence", "minExpectedMoveBps", "thesisId", "thesisHash", "instrument"] as const;
 const assessmentKeys = ["kind", "side", "requestedQuantity", "executableQuantity", "bestExecutableReference", "vwap", "worstExecutionPrice", "limitPrice", "totalCost", "spreadBps", "slippageBps", "feeBps", "fundingCostBps", "executableEdgeBps", "fills"] as const;
 const fillKeys = ["price", "quantity", "notional"] as const;
-const exactSourceEvidence = (value: unknown): value is { readonly ref: string; readonly hash: string; readonly workflowId: string; readonly venue: "BINANCE"; readonly product: "USD_M_FUTURES"; readonly symbol: string } => {
+const exactSourceEvidence = (value: unknown): value is { readonly ref: string; readonly hash: string; readonly workflowId: string; readonly venue: "BINANCE"; readonly product: "SPOT" | "USD_M_FUTURES"; readonly symbol: string } => {
   if (!Object.isFrozen(value) || !allowed(value, ["ref", "hash", "workflowId", "venue", "product", "symbol"], ["ref", "hash", "workflowId", "venue", "product", "symbol"])) return false;
-  const x = value as Record<string, unknown>; return [x.ref, x.hash, x.workflowId, x.symbol].every(requiredString) && x.venue === "BINANCE" && x.product === "USD_M_FUTURES";
+  const x = value as Record<string, unknown>; return [x.ref, x.hash, x.workflowId, x.symbol].every(requiredString) && x.venue === "BINANCE" && (x.product === "SPOT" || x.product === "USD_M_FUTURES");
 };
 type CanonicalArrayDescriptor = {
   readonly key: string | symbol;
@@ -160,9 +160,11 @@ export function conveneEvidenceCouncil(input: CouncilInput): CouncilResult {
     const decisionHash = p.thesisHash ?? hash({ advocate: a.hash, oppose: o.hash, evidence: e.hash, policy: p });
     const thesisId = p.thesisId ?? `thesis-${hash({ symbol: a.symbol, direction: a.direction, decisionHash }).slice(0, 32)}`;
     const createdAt = Math.max(a.observedAt, o.observedAt, e.observedAt); const expiresAt = Math.min(a.expiresAt, o.expiresAt, e.expiresAt);
-    const evidenceRefs = [a.ref, o.ref, e.ref].map((ref, index) => ({ ref, hash: index === 0 ? a.hash : index === 1 ? o.hash : e.hash, workflowId: p.thesisId ?? "council-workflow", venue: "BINANCE", product: "USD_M_FUTURES", symbol: a.symbol }));
-    const receipt = createReasoningReceipt({ receiptVersion: "ZO-BIN-REASONING-RECEIPT-V2", workflowId: p.thesisId ?? "council-workflow", createdAt, opportunity: { venue: "BINANCE", product: "USD_M_FUTURES", symbol: a.symbol }, evidence: { evidenceBundleHash: e.hash, supporting: [evidenceRefs[0], evidenceRefs[2]], opposing: [evidenceRefs[1]] }, analyses: { advocate: a.ref, oppose: o.ref, market: e.ref }, council: { decision: "APPROVE", direction: a.direction, confidence: a.confidence, expectedMoveBps: a.expectedMoveBps, horizonMs: expiresAt - createdAt, strongestSupport: a.ref, strongestOpposition: o.ref, invalidation: ["stale evidence", "contradictory evidence", "economics edge collapse"], unresolved: ["authenticated account and MCP reads remain bounded externally"] }, rationale: { method: p.method, claims: [{ claimId: "threshold", statement: "council thresholds are met", supportedBy: [a.ref], opposedBy: [], assumptions: ["evidence references are externally resolvable"] }, { claimId: "evidence", statement: "market and account evidence are trusted", supportedBy: [e.ref], opposedBy: [], assumptions: [] }] }, output: { councilDecisionHash: decisionHash } });
-    const thesis: TradeThesis = { thesisId, thesisHash: decisionHash, venue: "BINANCE", instrument: "USD_M_FUTURES", symbol: a.symbol, direction: a.direction, side: a.direction === "LONG" ? "BUY" : "SELL", horizonMs: expiresAt - createdAt, confidence: a.confidence, expectedMove: { bps: a.expectedMoveBps, lowerBps: a.expectedMoveBps, upperBps: a.expectedMoveBps }, reasoning: { method: p.method, advocateRef: a.ref, opposeRef: o.ref, marketAnalysisRef: e.ref, evidenceBundleHash: e.hash, councilDecisionHash: decisionHash, reasoningReceiptHash: receipt.canonicalSha256 }, createdAt, expiresAt };
+    const instrument = p.instrument ?? "USD_M_FUTURES";
+    const product = instrument;
+    const evidenceRefs = [a.ref, o.ref, e.ref].map((ref, index) => ({ ref, hash: index === 0 ? a.hash : index === 1 ? o.hash : e.hash, workflowId: p.thesisId ?? "council-workflow", venue: "BINANCE", product, symbol: a.symbol }));
+    const receipt = createReasoningReceipt({ receiptVersion: "ZO-BIN-REASONING-RECEIPT-V2", workflowId: p.thesisId ?? "council-workflow", createdAt, opportunity: { venue: "BINANCE", product, symbol: a.symbol }, evidence: { evidenceBundleHash: e.hash, supporting: [evidenceRefs[0], evidenceRefs[2]], opposing: [evidenceRefs[1]] }, analyses: { advocate: a.ref, oppose: o.ref, market: e.ref }, council: { decision: "APPROVE", direction: a.direction, confidence: a.confidence, expectedMoveBps: a.expectedMoveBps, horizonMs: expiresAt - createdAt, strongestSupport: a.ref, strongestOpposition: o.ref, invalidation: ["stale evidence", "contradictory evidence", "economics edge collapse"], unresolved: ["authenticated account and MCP reads remain bounded externally"] }, rationale: { method: p.method, claims: [{ claimId: "threshold", statement: "council thresholds are met", supportedBy: [a.ref], opposedBy: [], assumptions: ["evidence references are externally resolvable"] }, { claimId: "evidence", statement: "market and account evidence are trusted", supportedBy: [e.ref], opposedBy: [], assumptions: [] }] }, output: { councilDecisionHash: decisionHash } });
+    const thesis: TradeThesis = { thesisId, thesisHash: decisionHash, venue: "BINANCE", instrument, symbol: a.symbol, direction: a.direction, side: a.direction === "LONG" ? "BUY" : "SELL", horizonMs: expiresAt - createdAt, confidence: a.confidence, expectedMove: { bps: a.expectedMoveBps, lowerBps: a.expectedMoveBps, upperBps: a.expectedMoveBps }, reasoning: { method: p.method, advocateRef: a.ref, opposeRef: o.ref, marketAnalysisRef: e.ref, evidenceBundleHash: e.hash, councilDecisionHash: decisionHash, reasoningReceiptHash: receipt.canonicalSha256 }, createdAt, expiresAt };
     return freeze({ kind: "THESIS", thesis });
   } catch { return refusal("MALFORMED_INPUT", "input is malformed"); }
 }

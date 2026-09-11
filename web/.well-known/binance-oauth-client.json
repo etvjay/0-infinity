@@ -1,0 +1,10 @@
+{
+  "client_id": "https://etvjay.github.io/0-infinity/.well-known/binance-oauth-client.json",
+  "client_name": "0-infinity",
+  "client_uri": "https://etvjay.github.io/0-infinity/",
+  "redirect_uris": ["http://127.0.0.1:8765/callback"],
+  "grant_types": ["authorization_code"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "application_type": "native"
+}
